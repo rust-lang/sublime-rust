@@ -5,7 +5,7 @@
   "foldingStopMarker": "^\\s*\\}",
   "patterns": [
     {"name": "variable.other.source.rust",
-     "match": "'[a-zA-Z_][a-zA-Z0-9_]*(?=[^\'])"
+     "match": "'[a-zA-Z_][a-zA-Z0-9_]*(?=[^\\'])"
     },
     {"name": "string.quoted.single.source.rust",
      "begin": "'",
@@ -45,7 +45,7 @@
      "match": "\\b(EXIT_FAILURE|EXIT_SUCCESS|RAND_MAX|EOF|SEEK_SET|SEEK_CUR|SEEK_END|_IOFBF|_IONBF|_IOLBF|BUFSIZ|FOPEN_MAX|FILENAME_MAX|L_tmpnam|TMP_MAX|O_RDONLY|O_WRONLY|O_RDWR|O_APPEND|O_CREAT|O_EXCL|O_TRUNC|S_IFIFO|S_IFCHR|S_IFBLK|S_IFDIR|S_IFREG|S_IFMT|S_IEXEC|S_IWRITE|S_IREAD|S_IRWXU|S_IXUSR|S_IWUSR|S_IRUSR|F_OK|R_OK|W_OK|X_OK|STDIN_FILENO|STDOUT_FILENO|STDERR_FILENO)\\b"
     },
     {"name": "comment.block.preprocessor.rust",
-     "match": "^(\\w\\(\\w\\)*!)|(#\\[[\\w=\\(\\)_]+\\])$"
+     "match": "^(\\w\\(\\w\\)*!)|(#\\[[\\w=\\(,\\s\\)_]+\\])$"
     },
     {"name": "keyword.operator.rust",
      "match": "\\{|\\}"
@@ -81,7 +81,7 @@
      "end": "\\*/"
     },
     {"name": "keyword.operator.rust",
-     "match": "(=>)|(->)|[-:=*,!.+|%/&amp;~@<>;]"
+     "match": "(=>)|(->)|[-:=*,!.+|%/&~@<>;]"
     },
     {"name": "support.function.rust",
      "match": "_"
