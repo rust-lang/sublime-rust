@@ -76,6 +76,56 @@
 			<string>meta.function.source.rust</string>
 		</dict>
 		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.source.rust</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>variable.other.rust</string>
+				</dict>
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.source.rust</string>
+				</dict>
+				<key>4</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.rust</string>
+				</dict>
+			</dict>
+			<key>comment</key>
+			<string>This matches the 'let x = val' style of variable intitialization.</string>
+			<key>match</key>
+			<string>(let)\s+([[:alpha:]_][[:alnum:]_]*)\s*(:.+)?\s*(=)</string>
+			<key>name</key>
+			<string>meta.initialization.rust</string>
+		</dict>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.source.rust</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>support</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>(extern\s+crate)\s+(\w+)</string>
+			<key>name</key>
+			<string>meta.import.rust</string>
+		</dict>
+		<dict>
 			<key>match</key>
 			<string>\b(as|break|claim|const|continue|copy|Copy|crate|do|drop|else|extern|for|if|impl|in|let|loop|match|mod|mut|Owned|priv|pub|pure|ref|return|unsafe|use|while|mod|Send|static|trait|struct|enum|type)\b</string>
 			<key>name</key>
@@ -110,24 +160,6 @@
 			<string>^(\w\(\w\)*!)|(#\[[\w=\(,\s\)_]+\])$</string>
 			<key>name</key>
 			<string>comment.block.preprocessor.rust</string>
-		</dict>
-		<dict>
-			<key>match</key>
-			<string>\{|\}</string>
-			<key>name</key>
-			<string>keyword.operator.rust</string>
-		</dict>
-		<dict>
-			<key>match</key>
-			<string>\(|\)</string>
-			<key>name</key>
-			<string>keyword.operator.rust</string>
-		</dict>
-		<dict>
-			<key>match</key>
-			<string>\[|\]</string>
-			<key>name</key>
-			<string>keyword.operator.rust</string>
 		</dict>
 		<dict>
 			<key>match</key>
@@ -188,6 +220,30 @@
 			<string>_</string>
 			<key>name</key>
 			<string>support.function.rust</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>\b(\w+)\b(?=\()</string>
+			<key>name</key>
+			<string>support.function.rust</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>\b(\w+)::</string>
+			<key>name</key>
+			<string>meta.namespace-block.rust</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>\b(\w+)!</string>
+			<key>name</key>
+			<string>meta.preprocessor.rust</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>(\[|\]|{|}|\(|\))</string>
+			<key>name</key>
+			<string>punctuation.definition.bracket.rust</string>
 		</dict>
 	</array>
 	<key>repository</key>

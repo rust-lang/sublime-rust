@@ -29,6 +29,25 @@
         "3": {"name": "keyword.operator.rust"}
         }
     },
+    {
+        "name": "meta.initialization.rust",
+        "match": "(let)\\s+([[:alpha:]_][[:alnum:]_]*)\\s*(:.+)?\\s*(=)",
+        "captures": {
+            "1": {"name": "keyword.source.rust"},
+            "2": {"name": "variable.other.rust"},
+            "3": {"name": "storage.type.source.rust"},
+            "4": {"name": "keyword.operator.rust"}
+        },
+        "comment": "This matches the 'let x = val' style of variable intitialization."
+    },
+    {
+        "name": "meta.import.rust",
+        "match": "(extern\\s+crate)\\s+(\\w+)",
+        "captures": {
+            "1": {"name": "keyword.source.rust"},
+            "2": {"name": "support"}
+        }
+    },
     {"name": "keyword.source.rust",
      "match": "\\b(as|break|claim|const|continue|copy|Copy|crate|do|drop|else|extern|for|if|impl|in|let|loop|match|mod|mut|Owned|priv|pub|pure|ref|return|unsafe|use|while|mod|Send|static|trait|struct|enum|type)\\b"
     },
@@ -47,15 +66,15 @@
     {"name": "comment.block.preprocessor.rust",
      "match": "^(\\w\\(\\w\\)*!)|(#\\[[\\w=\\(,\\s\\)_]+\\])$"
     },
-    {"name": "keyword.operator.rust",
-     "match": "\\{|\\}"
-    },
-    {"name": "keyword.operator.rust",
-     "match": "\\[|\\]"
-    },
-    {"name": "keyword.operator.rust",
-     "match": "\\(|\\)"
-    },
+    // {"name": "keyword.operator.rust",
+    //  "match": "\\{|\\}"
+    // },
+    // {"name": "keyword.operator.rust",
+    //  "match": "\\[|\\]"
+    // },
+    // {"name": "keyword.operator.rust",
+    //  "match": "\\(|\\)"
+    // },
     {"name": "constant.numeric.integer.source.rust",
      "match": "\\b(([0-9][0-9_]*)|([0-9][0-9_]*(u|u8|u16|u32|u64))|([0-9][0-9_]*(i|i8|i16|i32|i64)))\\b"
     },
@@ -85,6 +104,18 @@
     },
     {"name": "support.function.rust",
      "match": "_"
+    },
+    {"name": "support.function.rust",
+     "match": "\\b(\\w+)\\b(?=\\()"
+    },
+    {"name": "meta.namespace-block.rust",
+     "match": "\\b(\\w+)::"
+    },
+    {"name": "meta.preprocessor.rust",
+     "match": "\\b(\\w+)!"
+    },
+    {"match": "(\\[|\\]|{|}|\\(|\\))",
+     "name": "punctuation.definition.bracket.rust"
     }
   ],
   "repository": {
