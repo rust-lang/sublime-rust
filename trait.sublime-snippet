@@ -1,6 +1,6 @@
 <snippet>
-    <content><![CDATA[trait ${1} {
-	${2}
+    <content><![CDATA[trait ${1:Name} {
+	${2:// Add code here}
 }
 ]]></content>
     <tabTrigger>trait</tabTrigger>

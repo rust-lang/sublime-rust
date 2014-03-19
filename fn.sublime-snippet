@@ -1,6 +1,6 @@
 <snippet>
-	<content><![CDATA[fn ${1:name}(${2}) ${3}{
-	${4}
+	<content><![CDATA[fn ${1:name}(${2:arg}: ${3:typ}) -> ${4:ret} {
+	${5:// add code here}
 }]]></content>
 	<tabTrigger>fn</tabTrigger>
 	<scope>source.rust</scope>
