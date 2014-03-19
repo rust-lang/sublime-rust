@@ -1,6 +1,6 @@
 <snippet>
-	<content><![CDATA[match ${1} {
-	${2}
+	<content><![CDATA[match ${1:foo} {
+	${2:Some()} => ${3:expr},
 }]]></content>
 	<tabTrigger>match</tabTrigger>
 	<scope>source.rust</scope>
