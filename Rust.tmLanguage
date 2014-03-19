@@ -156,10 +156,21 @@
 			<string>support.constant.source.rust</string>
 		</dict>
 		<dict>
-			<key>match</key>
-			<string>^(\w\(\w\)*!)|(#\[[\w=\(,\s\)_]+\])$</string>
+			<key>begin</key>
+			<string>#\[</string>
+			<key>end</key>
+			<string>\]</string>
 			<key>name</key>
-			<string>comment.block.preprocessor.rust</string>
+			<string>comment.block.attribute.rust</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>match</key>
+					<string>".+?"</string>
+					<key>name</key>
+					<string>string.quoted.double</string>
+				</dict>
+			</array>
 		</dict>
 		<dict>
 			<key>match</key>
