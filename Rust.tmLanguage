@@ -64,14 +64,9 @@
 					<key>name</key>
 					<string>entity.name.function.source.rust</string>
 				</dict>
-				<key>3</key>
-				<dict>
-					<key>name</key>
-					<string>keyword.operator.rust</string>
-				</dict>
 			</dict>
 			<key>match</key>
-			<string>\b(fn)\s+([a-zA-Z_][a-zA-Z0-9_]?[\w\:,+ \'&lt;&gt;]*)\s*(\()</string>
+			<string>\b(fn)\s+([a-zA-Z_][a-zA-Z0-9_]?[\w\:,+ \'&lt;&gt;]*)\s*(?:\()</string>
 			<key>name</key>
 			<string>meta.function.source.rust</string>
 		</dict>
@@ -88,12 +83,12 @@
 					<key>name</key>
 					<string>variable.other.rust</string>
 				</dict>
-				<key>3</key>
+				<key>4</key>
 				<dict>
 					<key>name</key>
 					<string>storage.type.source.rust</string>
 				</dict>
-				<key>4</key>
+				<key>5</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.rust</string>
@@ -102,7 +97,7 @@
 			<key>comment</key>
 			<string>This matches the 'let x = val' style of variable intitialization.</string>
 			<key>match</key>
-			<string>(let)\s+([[:alpha:]_][[:alnum:]_]*)\s*(:.+)?\s*(=)</string>
+			<string>(let)\s+([[:alpha:]_][[:alnum:]_]*)\s*(:(.+))?\s*(=)</string>
 			<key>name</key>
 			<string>meta.initialization.rust</string>
 		</dict>

@@ -22,21 +22,20 @@
      ]
     },
     {"name": "meta.function.source.rust",
-     "match": "\\b(fn)\\s+([a-zA-Z_][a-zA-Z0-9_]?[\\w\\:,+ \\'<>]*)\\s*(\\()",
+     "match": "\\b(fn)\\s+([a-zA-Z_][a-zA-Z0-9_]?[\\w\\:,+ \\'<>]*)\\s*(?:\\()",
      "captures": {
         "1": {"name": "keyword.source.rust"},
-        "2": {"name": "entity.name.function.source.rust"},
-        "3": {"name": "keyword.operator.rust"}
+        "2": {"name": "entity.name.function.source.rust"}
         }
     },
     {
         "name": "meta.initialization.rust",
-        "match": "(let)\\s+([[:alpha:]_][[:alnum:]_]*)\\s*(:.+)?\\s*(=)",
+        "match": "(let)\\s+([[:alpha:]_][[:alnum:]_]*)\\s*(:(.+))?\\s*(=)",
         "captures": {
             "1": {"name": "keyword.source.rust"},
             "2": {"name": "variable.other.rust"},
-            "3": {"name": "storage.type.source.rust"},
-            "4": {"name": "keyword.operator.rust"}
+            "4": {"name": "storage.type.source.rust"},
+            "5": {"name": "keyword.operator.rust"}
         },
         "comment": "This matches the 'let x = val' style of variable intitialization."
     },
@@ -68,21 +67,10 @@
      "end": "\\]",
      "patterns": [
         {  "name": "string.quoted.double",
-           // "match": "(?<=)\".+?\"(?=)"
-           // (?<=[^"])(".+?")(?=[^"])
            "match": "\".+?\""
         }
      ]
     },
-    // {"name": "keyword.operator.rust",
-    //  "match": "\\{|\\}"
-    // },
-    // {"name": "keyword.operator.rust",
-    //  "match": "\\[|\\]"
-    // },
-    // {"name": "keyword.operator.rust",
-    //  "match": "\\(|\\)"
-    // },
     {"name": "constant.numeric.integer.source.rust",
      "match": "\\b(([0-9][0-9_]*)|([0-9][0-9_]*(u|u8|u16|u32|u64))|([0-9][0-9_]*(i|i8|i16|i32|i64)))\\b"
     },
