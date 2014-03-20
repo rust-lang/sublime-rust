@@ -1,6 +1,6 @@
 <snippet>
-	<content><![CDATA[while ${1} {
-	${2}
+	<content><![CDATA[while ${1:_condition_} {
+	${2:// Add code here}
 }]]></content>
 	<tabTrigger>while</tabTrigger>
 	<scope>source.rust</scope>

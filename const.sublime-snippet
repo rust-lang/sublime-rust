@@ -1,5 +1,5 @@
 <snippet>
-    <content><![CDATA[const ${1}: ${2} = ${4}]]></content>
+    <content><![CDATA[const ${1:var}: ${2:typ} = ${4:val}]]></content>
     <tabTrigger>const</tabTrigger>
     <scope>source.rust</scope>
     <description>const …: … = …</description>
