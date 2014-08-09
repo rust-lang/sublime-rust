@@ -4,6 +4,9 @@
   "foldingStartMarker": "^.*\\bfn\\s*(\\w+\\s*)?\\([^\\)]*\\)(\\s*\\{[^\\}]*)?\\s*$",
   "foldingStopMarker": "^\\s*\\}",
   "patterns": [
+    {"include": "#rust_comment_doc_block"},
+    {"include": "#rust_ref_lifetime"},
+    {"include": "#rust_lifetime"},
     {"name": "variable.other.source.rust",
      "match": "'[a-zA-Z_][a-zA-Z0-9_]*(?=[^\\'])"
     },
@@ -21,9 +24,9 @@
       {"include": "#rust_escaped_character"}
      ]
     },
-    {"name": "string.quoted.doube.source.rust",
-     "begin": "r##\"",
-     "end": "\"##"
+    {"name": "string.quoted.double.raw.source.rust",
+     "begin": "r(#*)\"",
+     "end": "\"(\\1)"
     },
     {"name": "meta.function.source.rust",
      "match": "\\b(fn)\\s+([a-zA-Z_][a-zA-Z0-9_]?[\\w\\:,+ \\'<>]*)\\s*(?:\\()",
@@ -88,7 +91,7 @@
      "match": "([0-9][0-9_]*(f32|f64|f))|([0-9][0-9_]*([eE][+-]=[0-9_]+))|([0-9][0-9_]*([eE][+-]=[0-9_]+)(f32|f64|f))|([0-9][0-9_]*\\.[0-9_]+)|([0-9][0-9_]*\\.[0-9_]+(f32|f64|f))|([0-9][0-9_]*\\.[0-9_]+%([eE][+-]=[0-9_]+))|([0-9][0-9_]*\\.[0-9_]+%([eE][+-]=[0-9_]+)(f32|f64|f))"
     },
     {"name": "comment.line.documentation.source.rust",
-     "begin": "//!",
+     "begin": "//[!/][^/].*",
      "end": "$\\n"
     },
     {"name": "comment.line.double-dash.source.rust",
@@ -116,12 +119,50 @@
     },
     {"match": "(\\[|\\]|{|}|\\(|\\))",
      "name": "punctuation.definition.bracket.rust"
+    },
+    {
+      "match": "\\b(Box|Vec|StrBuf|Path|Option|Result|Reader|Writer|Stream|Seek|Buffer|IoError|IoResult|Sender|SyncSender|Receiver|Cell|RefCell|Any)\\b",
+      "name": "support.class.std.source.rust"
+    },
+    {
+      "match": "\\b(Send|Sized|Copy|Share)\\b",
+      "name": "support.type.kind.source.rust"
+    },
+    {
+      "match": "\\bbox\\b",
+      "name": "storage.modifier.box.source.rust"
+    },
+    {
+      "match": "\\bmut\\b",
+      "name": "storage.modifier.mut.source.rust"
     }
   ],
   "repository": {
     "rust_escaped_character": {
       "name": "constant.character.escape.source.rust",
       "match": "\\\\(x\\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)"
+    },
+    "rust_comment_doc_block": {
+      "name": "comment.block.documentation.source.rust",
+      "begin": "/\\*[!\\*][^\\*]",
+      "end": "\\*/",
+      "patterns": [
+          {"include": "#rust_comment_doc_block"}
+      ]
+    },
+    "rust_ref_lifetime": {
+      "match": "&(\\'([a-zA-Z_][a-zA-Z0-9_]*))\\b",
+      "captures": {
+        "1": { "name": "storage.modifier.lifetime.source.rust" },
+        "2": { "name": "entity.name.lifetime.source.rust" }
+      }
+    },
+    "rust_lifetime": {
+      "name": "storage.modifier.lifetime.source.rust",
+      "match": "\\'([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+      "captures": {
+        "1": { "name": "entity.name.lifetime.source.rust" }
+      }
     }
   },
   "uuid": "4339386b-4d67-4f0e-9e78-09ecbcddf71d"
