@@ -16,6 +16,18 @@
 	<key>patterns</key>
 	<array>
 		<dict>
+			<key>include</key>
+			<string>#rust_comment_doc_block</string>
+		</dict>
+		<dict>
+			<key>include</key>
+			<string>#rust_ref_lifetime</string>
+		</dict>
+		<dict>
+			<key>include</key>
+			<string>#rust_lifetime</string>
+		</dict>
+		<dict>
 			<key>match</key>
 			<string>'[a-zA-Z_][a-zA-Z0-9_]*(?=[^\'])</string>
 			<key>name</key>
@@ -53,11 +65,11 @@
 		</dict>
 		<dict>
 			<key>begin</key>
-			<string>r##"</string>
+			<string>r(#*)"</string>
 			<key>end</key>
-			<string>"##</string>
+			<string>"(\1)</string>
 			<key>name</key>
-			<string>string.quoted.doube.source.rust</string>
+			<string>string.quoted.double.raw.source.rust</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -201,7 +213,7 @@
 		</dict>
 		<dict>
 			<key>begin</key>
-			<string>//!</string>
+			<string>//[!/][^/].*</string>
 			<key>end</key>
 			<string>$\n</string>
 			<key>name</key>
@@ -259,15 +271,88 @@
 			<key>name</key>
 			<string>punctuation.definition.bracket.rust</string>
 		</dict>
+		<dict>
+			<key>match</key>
+			<string>\b(Box|Vec|StrBuf|Path|Option|Result|Reader|Writer|Stream|Seek|Buffer|IoError|IoResult|Sender|SyncSender|Receiver|Cell|RefCell|Any)\b</string>
+			<key>name</key>
+			<string>support.class.std.source.rust</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>\b(Send|Sized|Copy|Share)\b</string>
+			<key>name</key>
+			<string>support.type.kind.source.rust</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>\bbox\b</string>
+			<key>name</key>
+			<string>storage.modifier.box.source.rust</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>\bmut\b</string>
+			<key>name</key>
+			<string>storage.modifier.mut.source.rust</string>
+		</dict>
 	</array>
 	<key>repository</key>
 	<dict>
+		<key>rust_comment_doc_block</key>
+		<dict>
+			<key>begin</key>
+			<string>/\*[!\*][^\*]</string>
+			<key>end</key>
+			<string>\*/</string>
+			<key>name</key>
+			<string>comment.block.documentation.source.rust</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#rust_comment_doc_block</string>
+				</dict>
+			</array>
+		</dict>
 		<key>rust_escaped_character</key>
 		<dict>
 			<key>match</key>
 			<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)</string>
 			<key>name</key>
 			<string>constant.character.escape.source.rust</string>
+		</dict>
+		<key>rust_lifetime</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.lifetime.source.rust</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>\'([a-zA-Z_][a-zA-Z0-9_]*)\b</string>
+			<key>name</key>
+			<string>storage.modifier.lifetime.source.rust</string>
+		</dict>
+		<key>rust_ref_lifetime</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>storage.modifier.lifetime.source.rust</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.lifetime.source.rust</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>&amp;(\'([a-zA-Z_][a-zA-Z0-9_]*))\b</string>
 		</dict>
 	</dict>
 	<key>scopeName</key>
