@@ -2,6 +2,10 @@
     "cmd": ["cargo", "build"],
     "file_regex": "^(.*?):([0-9]+):([0-9]+):\\s[0-9]+:[0-9]+\\s(.*)$",
     "syntax": "Packages/Makefile/Make.build-language",
+    "windows":
+    {
+        "path": "C:/Rust/bin"
+    },
 
     "variants": [
         {
