@@ -4,7 +4,7 @@
     "syntax": "Packages/Makefile/Make.build-language",
     "windows":
     {
-        "path": "C:/Rust/bin"
+        "path": "C:\Program Files (x86)\Rust"
     },
 
     "variants": [
