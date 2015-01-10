@@ -183,19 +183,19 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b(([0-9][0-9_]*)|([0-9][0-9_]*(u|u8|u16|u32|u64))|([0-9][0-9_]*(i|i8|i16|i32|i64)))\b</string>
+			<string>\b(([0-9][0-9_]*)|([0-9][0-9_]*(u|us|u8|u16|u32|u64))|([0-9][0-9_]*(i|is|i8|i16|i32|i64)))\b</string>
 			<key>name</key>
 			<string>constant.numeric.integer.source.rust</string>
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b((0x[a-fA-F0-9_]+)|(0x[a-fA-F0-9_]+(u|u8|u16|u32|u64))|(0x[a-fA-F0-9_]+(i|i8|i16|i32|i64)))\b</string>
+			<string>\b((0x[a-fA-F0-9_]+)|(0x[a-fA-F0-9_]+(u|us|u8|u16|u32|u64))|(0x[a-fA-F0-9_]+(i|is|i8|i16|i32|i64)))\b</string>
 			<key>name</key>
 			<string>constant.numeric.hex.source.rust</string>
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b((0b[01_]+)|(0b[01_]+(u|u8|u16|u32|u64))|(0b[01_]+(i|i8|i16|i32|i64)))\b</string>
+			<string>\b((0b[01_]+)|(0b[01_]+(u|us|u8|u16|u32|u64))|(0b[01_]+(i|is|i8|i16|i32|i64)))\b</string>
 			<key>name</key>
 			<string>constant.numeric.binary.source.rust</string>
 		</dict>
