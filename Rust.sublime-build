@@ -6,7 +6,10 @@
     {
         "path": "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
     },
-	
+    "linux":
+    {
+        "path": "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
+    },
     "variants": [
         { 	
             "selector": "source.rust",
