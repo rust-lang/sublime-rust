@@ -12,6 +12,10 @@
         {
             "cmd": ["cargo", "test"],
             "name": "Test"
+        },
+        {
+            "cmd": ["cargo", "bench"],
+            "name": "Bench"
         }
     ]
 }
