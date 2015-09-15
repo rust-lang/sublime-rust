@@ -15,18 +15,10 @@
         },
         {
             "cmd": ["cargo", "test"],
-            "env":
-            {
-                "RUST_BACKTRACE": "1"
-            },
             "name": "Test"
         },
         {
             "cmd": ["cargo", "bench"],
-            "env":
-            {
-                "RUST_BACKTRACE": "1"
-            },
             "name": "Bench"
         },
         {
