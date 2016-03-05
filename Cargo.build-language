@@ -28,6 +28,72 @@
         </dict>
         <dict>
             <key>match</key>
+            <string>\bFAILED\b</string>
+            <key>name</key>
+            <string>invalid</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>^note:</string>
+            <key>name</key>
+            <string>variable.parameter</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>^test result:</string>
+            <key>name</key>
+            <string>variable.parameter</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>^failures:</string>
+            <key>name</key>
+            <string>message.error</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>\bok\b</string>
+            <key>name</key>
+            <string>markup.inserted.diff</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>\bhelp:[\s\S]+$</string>
+            <key>name</key>
+            <string>markup.inserted.diff</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>^\s{4}[\S\s]+,\s([\w,\s-]+\.[A-Za-z]{2}):([0-9]+)</string>
+            <key>name</key>
+            <string>message.error</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>[0-9]+ passed</string>
+            <key>name</key>
+            <string>markup.inserted.diff</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>[1-9][0-9]* failed</string>
+            <key>name</key>
+            <string>message.error</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>[1-9][0-9]* ignored</string>
+            <key>name</key>
+            <string>markup.changed.diff</string>
+        </dict>
+        <dict>
+            <key>match</key>
+            <string>[1-9][0-9]* measured</string>
+            <key>name</key>
+            <string>support.constant</string>
+        </dict>
+        <dict>
+            <key>match</key>
             <string>\berror: </string>
             <key>name</key>
             <string>message.error</string>
