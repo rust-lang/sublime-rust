@@ -18,6 +18,18 @@
             "name": "Bench"
         },
         {
+            "cmd": ["cargo", "release"],
+            "name": "Release"
+        },
+        {
+            "cmd": ["cargo", "doc", "--no-deps"],
+            "name": "Doc"
+        },
+        {
+            "cmd": ["cargo", "update"],
+            "name": "Update"
+        },
+        {
             "cmd": ["cargo", "clean"],
             "name": "Clean"
         }
