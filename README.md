@@ -3,7 +3,8 @@
 ## About
 
 This package supports Rust starting with version 1.0,
-it makes no attempt at supporting earlier incompatible versions.
+it makes no attempt at supporting earlier incompatible versions.   
+This package is soley for Sublime Text 3+, and may not work on version 2
 
 ## Installation
 
@@ -18,7 +19,7 @@ the list. That's it.
 
 ## Syntax Checking
 The sublime-rust package now comes with syntax checking.  
-This relies on Cargo and Rust (>= 1.8.0) being installed and on your system path.
+This relies on Cargo and Rust (>= 1.8.0) being installed and on your system path, and on Sublime Text >= 3118.
 Once installed sublime will make a call to cargo to syntax check the project you're on then will feedback any line numbers which are failing by displaying a dot within the gutter of the editor. By clicking the dot you should get a tooltip of the error displayed.  
 This feature is in Alpha stage and not on by default, so you will need to change the value of ```rust_syntax_checking``` to true within your settings (see Settings).   
 ```json
@@ -60,8 +61,7 @@ Derived primarily from the Vim syntax file, maintained by
 [Patrick Walton](https://github.com/pcwalton) and
 [Ben Blum](https://github.com/bblum)
 
-With a little help from the (now very outdated) TextMate rust mode written
-by [Tom Ellis](https://github.com/tomgrohl).
+Currently maintained by [Jason Williams](https://github.com/jayflux)
 
 ## License
 
