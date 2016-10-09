@@ -7,6 +7,10 @@
     "variants": [
         {
             "cmd": ["cargo", "run"],
+            "env":
+            {
+                "RUST_BACKTRACE": "1"
+            },
             "name": "Run"
         },
         {
