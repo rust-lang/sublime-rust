@@ -26,11 +26,11 @@
             "name": "Clean"
         },
         {
-            "cmd": ["cargo", "build", "--release"],
+            "shell_cmd": ["cargo", "build", "--release"],
             "name": "Release"
         },
         {
-            "cmd": ["cargo", "clippy"],
+            "shell_cmd": ["cargo", "clippy"],
             "name": "Clippy"
         },
     ]
