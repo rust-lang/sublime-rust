@@ -1,14 +1,14 @@
 {
-	// Enable the syntax checking plugin, which will highlight any errors during build
-	"rust_syntax_checking": true,
+    // Enable the syntax checking plugin, which will highlight any errors during build
+    "rust_syntax_checking": true,
 
-    // If your cargo project has several build targets, it's possible to specify mapping of 
+    // If your cargo project has several build targets, it's possible to specify mapping of
     // source code filenames to the target names to enable syntax checking.
     // "projects": {
     //     // One entry per project. Key is a project name.
     //     "my_cool_stuff": {
     //         "root": "/path/to/my/cool/stuff/project",  // without trailing /src
-    //         // Targets will be used to replace {target} part in the syntax check command: 
+    //         // Targets will be used to replace {target} part in the syntax check command:
     //         // command = 'cargo rustc {target} -- <some options>'. If no one target matches
     //         // an empty string will be used.
     //         "targets": {
