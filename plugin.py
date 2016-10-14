@@ -64,9 +64,9 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
             # Warning color
             base_color = "#FF0"
 
-        view_filename = view.file_name()
+        view_filename = os.path.realpath(view.file_name())
         for span in info['spans']:
-            if not view_filename.endswith(span['file_name']):
+            if view_filename != os.path.realpath(span['file_name']):
                 continue
             color = base_color
             char = "^"

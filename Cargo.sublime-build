@@ -1,25 +1,37 @@
 {
-    "cmd": ["cargo", "build"],
+    "shell_cmd": "cargo build",
     "selector": "source.rust",
-    "file_regex": "--> ([^:]+):([0-9]+):([0-9]+)$",
+    "file_regex": "(?|(^[^<].*?):([0-9]+):([0-9]+):\\s[0-9]+:[0-9]+\\s(.*)$|([[a-zA-Z]+\\.[A-Za-z]{2}):([0-9]+)$)",
     "syntax": "Cargo.build-language",
+    "osx":
+    {
+        "path": "~/.cargo/bin:$path",
+    },
 
     "variants": [
         {
-            "cmd": ["cargo", "run"],
+            "shell_cmd": "cargo run",
             "name": "Run"
         },
         {
-            "cmd": ["cargo", "test"],
+            "shell_cmd": "cargo test",
             "name": "Test"
         },
         {
-            "cmd": ["cargo", "bench"],
+            "shell_cmd": "cargo bench",
             "name": "Bench"
         },
         {
-            "cmd": ["cargo", "clean"],
+            "shell_cmd": "cargo clean",
             "name": "Clean"
-        }
+        },
+        {
+            "shell_cmd": "cargo build --release",
+            "name": "Release"
+        },
+        {
+            "shell_cmd": "cargo clippy",
+            "name": "Clippy"
+        },
     ]
 }

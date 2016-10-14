@@ -1,0 +1,8 @@
+<snippet>
+    <content><![CDATA[
+#[repr(C)]
+]]></content>
+    <tabTrigger>repr</tabTrigger>
+    <scope>source.rust</scope>
+    <description>repr(C)</description>
+</snippet>
