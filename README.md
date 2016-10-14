@@ -21,7 +21,7 @@ http://wbond.net/sublime_packages/package_control/installation for
 instructions.
 
 Open the palette (`control+shift+P` or `command+shift+P`) in Sublime Text
-and select `Package Control: Install Package` and then select `Rust Enhanced` from
+and select `Package Control: Install Package` and then select `Rust` from
 the list. That's it.  
 
 ## Features
