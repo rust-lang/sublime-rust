@@ -1,6 +1,6 @@
 {
     // Enable the syntax checking plugin, which will highlight any errors during build
-    "rust_syntax_checking": true,
+    "rust_syntax_checking": true
 
     // If your cargo project has several build targets, it's possible to specify mapping of
     // source code filenames to the target names to enable syntax checking.
