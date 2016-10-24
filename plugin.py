@@ -37,7 +37,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                 # Can't show without spans
                 if len(info['spans']) == 0:
                     continue
-                self.add_error_phantom(view, info)
+                self.add_error_phantom(view, info, settings)
 
     def cargo_rustc_command(self, file_name, settings):
         command = 'cargo rustc {target} -- -Zno-trans -Zunstable-options --error-format=json'
@@ -56,13 +56,26 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         return command.replace('{target}', target)
 
 
-    def add_error_phantom(self, view, info):
+    def add_error_phantom(self, view, info, settings):
         msg = info['message']
-
-        base_color = "#F00" # Error color
+        error_colour = settings.get('rust_syntax_error_color')
+        warning_colour = settings.get('rust_syntax_warning_color')
+        
+        print(error_colour)
+        print(warning_colour)
+        
+        if error_colour is None:
+            base_color = "#F00" # Error color
+        else:
+            base_color = error_colour
+        
         if info['level'] != "error":
             # Warning color
-            base_color = "#FF0"
+            if warning_colour is None:
+                base_color = "#ff6600"
+            else:
+                base_color = warning_colour
+                
 
         view_filename = os.path.realpath(view.file_name())
         for span in info['spans']:
