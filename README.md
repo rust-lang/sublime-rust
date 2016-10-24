@@ -58,7 +58,7 @@ This relies on Cargo and Rust (>= 1.8.0) being installed and on your system path
 This feature is on by default, but you can adjust the the value of ```rust_syntax_checking``` within your settings (see Settings). Additionally, the colour of the warnings and errors can be changed from the default values (seen below).
 ```json
 {
-    "rust_syntax_checking": true
+    "rust_syntax_checking": true,
     "rust_syntax_error_color": "#F00",
     "rust_syntax_warning_color":"#FF0"
 }
