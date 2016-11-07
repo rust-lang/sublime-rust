@@ -372,13 +372,14 @@ contexts:
       pop: true
 
   generic-angles-contents:
+    - include: comments
     - match: \bextern\b
       scope: keyword.other.rust
       push:
         - include: strings
         - match: '(?=\S)'
           pop: true
-    - match: '(?=>|[^ \$=<_+''(),&:[:alnum:]])'
+    - match: '(?=>|[^\s\$=<_+''(),&:[:alnum:]])'
       pop: true
     - match: '<'
       scope: punctuation.definition.generic.begin.rust

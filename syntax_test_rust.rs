@@ -848,7 +848,17 @@ pub fn next_lex<T:PartialOrd>(/* block */data: &mut [T] // line {
     ) -> bool {
     unimplemented!();
 }
-pub fn next_lex2<T:PartialOrd>(
+
+pub fn next_lex2</* block */T/* comments */:/* everywhere */
+//               ^^^^^^^^^^^ comment.block.rust
+//                           ^^^^^^^^^^^^^^ comment.block.rust
+//                                          ^^^^^^^^^^^^^^^^ comment.block.rust
+    // Many comments
+//  ^^^^^^^^^^^^^^^^ comment.line.double-slash.rust
+    /* help */ PartialOrd // Possibly too many comments
+//  ^^^^^^^^^^ comment.block.rust
+//                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ comment.line.double-slash.rust
+> (   
     /* block2 */ data2: &mut [T]  // line
 //  ^^^^^^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.block.rust
 //                                ^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.line.double-slash.rust
