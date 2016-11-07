@@ -653,7 +653,7 @@ pub mod my_mod {
 //^^^^^^^^^^^^^^ meta.module
 // <- storage.modifier
 //  ^^^ storage.type.module
-//      ^^^^^^ entity.name.module
+//      ^^^^^^ entity.name.type.module.rust
 //             ^ meta.block punctuation.definition.block.begin
 }
 // <- meta.module meta.block punctuation.definition.block.end

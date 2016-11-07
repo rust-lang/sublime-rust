@@ -39,7 +39,7 @@ contexts:
       captures:
         1: storage.modifier.rust
         2: storage.type.module.rust
-        3: entity.name.module.rust
+        3: entity.name.type.module.rust
       push:
         - meta_scope: meta.module.rust
         - match: ';'
