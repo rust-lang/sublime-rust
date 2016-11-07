@@ -85,14 +85,12 @@ contexts:
       scope: keyword.impl.rust
       push: impl-definition
 
-    - match: '\b(?:(pub)\s+)?(enum)\s+({{identifier}})\b'
+    - match: '\b(?:(pub)\s+)?(enum)\s+'
+      scope: meta.enum.rust
       captures:
         1: storage.modifier.rust
         2: storage.type.enum.rust
-        3: entity.name.enum.rust
-      push:
-        - meta_scope: meta.enum.rust
-        - include: statements-block
+      set: enum-identifier
 
     - match: \b(let|const|static)\b
       scope: storage.type.rust keyword.other.rust
@@ -421,13 +419,7 @@ contexts:
         - include: type-any-identifier
     - match: '''{{identifier}}(?!\'')\b'
       scope: storage.modifier.lifetime.rust
-    - match: '\b([[:upper:]]|_*[[:upper:]][[:alnum:]_]*[[:lower:]][[:alnum:]_]*)\b::'
-      scope: meta.path.rust storage.type.rust
-      captures:
-        1: storage.type.rust
-    - match: '{{identifier}}::'
-      scope: meta.path.rust
-    - match: '::(?={{identifier}})'
+    - match: '\b({{identifier}})\b::'
       scope: meta.path.rust
     - match: '(?=<)'
       push: generic-angles
@@ -496,6 +488,85 @@ contexts:
         - include: comments
         - match: \bpub\b
           scope: storage.modifier.rust
+        - match: '{{identifier}}(?=\s*:)'
+          scope: variable.other.member.rust
+          push:
+            - match: ',|(?=\})'
+              pop: true
+            - include: comments
+            - match: ':'
+              scope: punctuation.separator.rust
+            - include: type-any-identifier
+
+  enum-identifier:
+    - meta_scope: meta.enum.rust
+    - match: '{{identifier}}(?=<)'
+      scope: entity.name.type.enum.rust
+      set:
+        - meta_scope: meta.enum.rust meta.generic.rust
+        - match: '(?=<)'
+          push: generic-angles
+        - match: ''
+          set: enum-body
+    - match: '{{identifier}}'
+      scope: entity.name.type.enum.rust
+      set: enum-body
+
+  enum-body:
+    - meta_scope: meta.enum.rust
+    - include: comments
+    - match: '\}'
+      scope: punctuation.definition.block.end.rust
+      pop: true
+    - match: '\{'
+      scope: punctuation.definition.block.begin.rust
+      push:
+        - meta_scope: meta.block.rust
+        - include: comments 
+        - match: '(?=\})'
+          pop: true
+        - match: '{{identifier}}'
+          scope: storage.type.enum.rust
+          push:
+            - include: comments
+            - match: ',|(?=\})'
+              pop: true
+            - match: '(?=\()'
+              push: enum-unnamed
+            - match: '(?=\{)'
+              push: enum-named
+
+  enum-unnamed:
+    - include: comments
+    - match: '\)'
+      scope: punctuation.definition.group.end.rust
+      pop: true
+    - match: '\('
+      scope: punctuation.definition.group.begin.rust
+      # Ensure that we end the unnamed at the next ) to
+      # prevent odd highlighting as the user is typing
+      with_prototype:
+        - match: '(?=\))'
+          pop: true
+      push:
+        - meta_scope: meta.group.rust
+        - include: comments
+        - include: type-any-identifier
+
+  enum-named:
+    - include: comments
+    - match: '\}'
+      scope: punctuation.definition.block.end.rust
+      pop: true
+    - match: '\{'
+      scope: punctuation.definition.block.begin.rust
+      push:
+        - meta_scope: meta.block.rust
+        - match: '(?=\})'
+          pop: true
+        - include: comments
+        - match: \bpub\b
+          scope: invalid.illegal.rust
         - match: '{{identifier}}(?=\s*:)'
           scope: variable.other.member.rust
           push:

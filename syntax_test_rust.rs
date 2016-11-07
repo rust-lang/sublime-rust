@@ -212,8 +212,8 @@ struct PrintableStruct(Box<i32>);
 //                             ^ punctuation.definition.group.end
 
 impl fmt::Display for PrintableStruct {
-// <- meta.impl
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
+// <- meta.impl.rust
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl.rust
 // <- keyword.impl.rust
 //^^ keyword.impl.rust
 //   ^^^^^ meta.path
@@ -323,21 +323,22 @@ struct Pair(i32, i32);
 enum OperatingSystem
 // <- storage.type.enum
 // ^^^^^^^^^^^^^^^^^ meta.enum
-//   ^^^^^^^^^^^^^^^ entity.name.enum
+//   ^^^^^^^^^^^^^^^ entity.name.type.enum
 {
 // <- meta.enum meta.block punctuation.definition.block.begin
     Osx,
     Windows,
     Linux,
     Bsd(String),
-    //  ^^^^^^ support.type
+//     ^ punctuation.definition.group.begin.rust
+//            ^ punctuation.definition.group.end.rust
     Info { field: i32, value: str }
-    //   ^ meta.block meta.block punctuation.definition.block.begin
-    //            ^^^ storage.type
-    //                        ^^^ storage.type
-    //                            ^ meta.block meta.block punctuation.definition.block.end
+//       ^ meta.enum meta.block punctuation.definition.block.begin
+//                ^^^ storage.type
+//                            ^^^ storage.type
+//                                ^ meta.enum meta.block punctuation.definition.block.end
 }
-// <- meta.enum meta.block punctuation.definition.block.end
+// <- meta.enum punctuation.definition.block.end
 
 const ZERO: u64 = 0;
 // <- storage.type
@@ -924,3 +925,8 @@ impl<T> Iterator for Fibonacci<T>
 pub const FOO: Option<[i32; 1]> = Some([1]);
 //                    ^ punctuation.definition.group.begin.rust
 //                           ^ punctuation.definition.group.end.rust
+
+pub struct Channel<T:Service> {
+    pub rx: Receiver<T::In::Blah>,
+    pub tx: Receiver<T::Out::Blah>,
+}
