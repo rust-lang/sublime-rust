@@ -716,6 +716,7 @@ impl<'a, T: MyTrait + OtherTrait> PrintInOption for T where
 pub trait Animal {
 // <- storage.modifier
 //^^^^^^^^^^^^^^^^ meta.trait
+//        ^^^^^^ entity.name.type.trait.rust
 //               ^ meta.block punctuation.definition.block.begin
     fn noise(quiet: bool) {
         // Comment

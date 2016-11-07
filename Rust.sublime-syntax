@@ -76,7 +76,7 @@ contexts:
       captures:
         1: storage.modifier.rust
         2: storage.type.trait.rust
-        3: entity.name.trait.rust
+        3: entity.name.type.trait.rust
       push:
         - meta_scope: meta.trait.rust
         - include: statements-block
