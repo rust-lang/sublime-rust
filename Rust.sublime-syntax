@@ -56,7 +56,7 @@ contexts:
       scope: meta.function.rust
       captures:
         1: storage.modifier.rust
-        2: storage.type.function.rust
+        2: keyword.function.rust
       push: fn-definition
 
     - match: '\b(?:(pub)\s+)?(struct)\s+'
@@ -82,7 +82,7 @@ contexts:
         - include: statements-block
 
     - match: '\bimpl\b'
-      scope: storage.type.impl.rust
+      scope: keyword.impl.rust
       push: impl-definition
 
     - match: '\b(?:(pub)\s+)?(enum)\s+({{identifier}})\b'
@@ -98,7 +98,7 @@ contexts:
       scope: storage.type.rust keyword.other.rust
 
     - match: \bfn\b
-      scope: storage.type.function.rust
+      scope: keyword.function.rust
 
     - match: \bmod\b
       scope: storage.type.module.rust
@@ -107,7 +107,7 @@ contexts:
       scope: storage.type.struct.rust
 
     - match: \bimpl\b
-      scope: storage.type.impl.rust
+      scope: keyword.impl.rust
 
     - match: \benum\b
       scope: storage.type.enum.rust
@@ -408,7 +408,7 @@ contexts:
       scope: storage.modifier.rust
     - match: \b(fn)\b(\()
       captures:
-        1: storage.type.function.rust
+        1: keyword.other.rust
         2: meta.group.rust punctuation.definition.group.begin.rust
       push:
         - meta_content_scope: meta.group.rust

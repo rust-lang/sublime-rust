@@ -214,8 +214,8 @@ struct PrintableStruct(Box<i32>);
 impl fmt::Display for PrintableStruct {
 // <- meta.impl
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
-// <- storage.type.impl
-//^^ storage.type.impl
+// <- keyword.impl.rust
+//^^ keyword.impl.rust
 //   ^^^^^ meta.path
 //                ^^^ keyword.other
 //                    ^^^^^^^^^^^^^^^ entity.name.impl
@@ -223,7 +223,7 @@ impl fmt::Display for PrintableStruct {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function
-//  ^^ storage.type.function
+//  ^^ keyword.function.rust
 //     ^^^ entity.name.function
 //        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function.parameters
 //        ^ punctuation.definition.parameters.begin
@@ -287,7 +287,7 @@ let xsl = &xs;
 
 type FnPointer = fn(i32) -> i32;
 //   ^^^^^^^^^ entity.name.type
-//               ^^ storage.type.function
+//               ^^ keyword.function.rust
 //                 ^^^^^ meta.group
 //                  ^^^ storage.type
 //                       ^^ punctuation.separator
@@ -296,7 +296,7 @@ type FnPointer = fn(i32) -> i32;
 type GenFnPointer = Bar<fn(i32) -> i32>;
 //   ^^^^^^^^^^^^ entity.name.type
 //                  ^^^^^^^^^^^^^^^^^^^ meta.generic
-//                      ^^ storage.type.function
+//                      ^^ keyword.other.rust
 //                        ^^^^^ meta.group
 //                         ^^^ storage.type
 //                              ^^ punctuation.separator
@@ -308,7 +308,7 @@ type GenFnPointer2 = Bar<extern "C" fn()>;
 //                   ^^^^^^^^^^^^^^^^^^^^ meta.generic
 //                       ^^^^^^ keyword.other
 //                              ^^^ string.quoted.double
-//                                  ^^ storage.type.function
+//                                  ^^ keyword.other.rust
 //                                       ^ - meta.generic
 
 struct Nil;
@@ -365,7 +365,7 @@ let z = {
 // <- meta.block punctuation.definition.block.end
 
 fn my_func(x: i32)
-// <- storage.type.function
+// <- keyword.function.rust
 // ^^^^^^^ entity.name.function
 //        ^^^^^^^^ meta.function.parameters
 //        ^ punctuation.definition.parameters.begin
@@ -492,7 +492,7 @@ while let BasicStruct(k) = j {
 // <- meta.block punctuation.definition.block.end
 
 fn foo<A>(i: u32, b: i64) -> u32 {
-// <- storage.type.function
+// <- keyword.function.rust
 // ^^^ entity.name.function
 //    ^ punctuation.definition.generic.begin
 //      ^ punctuation.definition.generic.end
@@ -564,7 +564,7 @@ impl Point
 {
 // <- meta.impl meta.block punctuation.definition.block.begin
     fn new(x: i32, y: i32) -> Point
-    // <- storage.type.function
+    // <- keyword.function.rust
     // ^^^ entity.name.function
     {
     // <- meta.function meta.block
@@ -580,7 +580,7 @@ impl Point
 
 pub fn pub_function() -> bool
 // <- storage.modifier
-//  ^^ storage.type.function
+//  ^^ keyword.function.rust
 //     ^^^^^^^^^^^^ entity.name.function
 {
 // <- meta.function
@@ -755,7 +755,7 @@ macro_rules! forward_ref_binop [
 //                                                    ^^ keyword.operator
 //                                                       ^ meta.macro meta.group meta.block punctuation.definition.block.begin
         impl<'a, 'b> $imp<&'a $u> for &'b $t {
-//      ^^^^ storage.type.impl
+//      ^^^^ keyword.impl.rust
 //          ^^^^^^^^ meta.generic
 //           ^^ storage.modifier.lifetime
 //               ^^ storage.modifier.lifetime
@@ -776,7 +776,7 @@ macro_rules! forward_ref_binop [
             #[inline]
 //          ^^^^^^^^^ comment.block.attribute
             fn $method(self, other: &'a $u) -> <$t as $imp<$u>>::Output {
-//          ^^ storage.type.function
+//          ^^ keyword.function.rust
 //             ^^^^^^^ variable.other
 //                     ^^^^ variable.language
 //                                  ^ keyword.operator
