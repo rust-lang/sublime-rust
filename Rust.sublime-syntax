@@ -489,17 +489,13 @@ contexts:
           scope: storage.modifier.rust
         - match: '{{identifier}}(?=\s*:)'
           scope: variable.other.member.rust
-        # - match: '\b{{identifier}}'
-        #   scope: storage.type.rust
           push:
             - match: ',|(?=\})'
               pop: true
             - include: comments
             - match: ':'
               scope: punctuation.separator.rust
-            - include: basic-identifiers
-            - match: '(?=<)'
-              push: generic-angles
+            - include: type-any-identifier
 
   macro-block:
     - meta_scope: meta.macro.rust
