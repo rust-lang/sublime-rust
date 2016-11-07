@@ -18,7 +18,6 @@ Block doc comments
 */
 
 let c = 'c';
-
 // <- storage.type
 //    ^ keyword.operator
 //      ^^^ string.quoted.single
