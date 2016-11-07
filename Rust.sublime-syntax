@@ -444,7 +444,7 @@ contexts:
 
   struct-identifier:
     - match: '{{identifier}}(?=<)'
-      scope: entity.name.struct.rust
+      scope: entity.name.type.struct.rust
       set:
         - meta_scope: meta.struct.rust meta.generic.rust
         - match: '(?=<)'
@@ -452,7 +452,7 @@ contexts:
         - match: ''
           set: struct-body
     - match: '{{identifier}}'
-      scope: entity.name.struct.rust
+      scope: entity.name.type.struct.rust
       set: struct-body
 
   struct-body:

@@ -191,7 +191,7 @@ struct BasicStruct(i32);
 // ^^^^^^^^^^^^^^^^^^^^ meta.struct
 // <- storage.type.struct
 //^^^^ storage.type.struct
-//     ^^^^^^^^^^^ entity.name.struct
+//     ^^^^^^^^^^^ entity.name.type.struct
 //                ^ punctuation.definition.group.begin
 //                 ^^^ storage.type
 //                    ^ punctuation.definition.group.end
@@ -203,7 +203,7 @@ struct PrintableStruct(Box<i32>);
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.struct
 // <- storage.type.struct
 //^^^^ storage.type.struct
-//     ^^^^^^^^^^^^^^^ entity.name.struct
+//     ^^^^^^^^^^^^^^^ entity.name.type.struct
 //                    ^ punctuation.definition.group.begin
 //                     ^^^^^^^^ meta.generic
 //                        ^ punctuation.definition.generic.begin
@@ -661,8 +661,8 @@ pub mod my_mod {
 struct Val (f64,);
 struct GenVal<T>(T,);
 //     ^^^^^^^^^ meta.generic
-//     ^^^^^^ entity.name.struct
-//           ^ punctuation.definition.generic.begin - entity.name.struct
+//     ^^^^^^ entity.name.type.struct
+//           ^ punctuation.definition.generic.begin - entity.name.type.struct
 //             ^ punctuation.definition.generic.end
 
 // impl of Val
