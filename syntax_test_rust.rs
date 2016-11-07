@@ -839,3 +839,20 @@ macro_rules! kleene_star {
         println!($($arg)*);
     )
 }
+
+pub fn next_lex<T:PartialOrd>(/* block */data: &mut [T] // line {
+//                            ^^^^^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.block.rust
+//                                                      ^^^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.line.double-slash.rust
+    /* block2 */ data2: &mut [T]  // line
+//  ^^^^^^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.block.rust
+//                                ^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.line.double-slash.rust
+    ) -> bool {
+    unimplemented!();
+}
+pub fn next_lex2<T:PartialOrd>(
+    /* block2 */ data2: &mut [T]  // line
+//  ^^^^^^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.block.rust
+//                                ^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.line.double-slash.rust
+    ) -> bool {
+    unimplemented!();
+}

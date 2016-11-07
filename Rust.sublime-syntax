@@ -681,6 +681,7 @@ contexts:
       scope: punctuation.definition.parameters.begin.rust
       push:
         - meta_scope: meta.function.parameters.rust
+        - include: comments
         - match: '(?=\))'
           pop: true
         - match: \bself\b
