@@ -919,3 +919,7 @@ impl<T> Iterator for Fibonacci<T>
 {
     unimplemented!();
 }
+
+pub const FOO: Option<[i32; 1]> = Some([1]);
+//                    ^ punctuation.definition.group.begin.rust
+//                           ^ punctuation.definition.group.end.rust

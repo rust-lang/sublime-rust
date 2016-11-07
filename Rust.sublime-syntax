@@ -379,6 +379,13 @@ contexts:
         - include: strings
         - match: '(?=\S)'
           pop: true
+    - match: '\['
+      scope: punctuation.definition.group.begin.rust
+      push:
+        - match: '\]'
+          scope: punctuation.definition.group.end.rust
+          pop: true
+        - include: type-any-identifier
     - match: '(?=>|[^\s\$=<_+''(),&:[:alnum:]])'
       pop: true
     - match: '<'
