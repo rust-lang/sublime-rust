@@ -643,6 +643,18 @@ contexts:
       set: impl-body
     - match: \bwhere\b
       scope: keyword.other.rust
+    - match: \bfor\b
+      scope: keyword.other.rust
+      push:
+        - match: '(?=<)'
+          push: generic-angles
+        - include: basic-identifiers
+        - match: '&'
+          scope: keyword.operator.rust
+        - match: '''{{identifier}}(?!\'')\b'
+          scope: storage.modifier.lifetime.rust
+        - match: '(?=\S)'
+          pop: true
     - include: basic-identifiers
     - match: ':'
       scope: punctuation.separator.rust
@@ -709,6 +721,18 @@ contexts:
       set: fn-body
     - match: \bwhere\b
       scope: keyword.other.rust
+    - match: \bfor\b
+      scope: keyword.other.rust
+      push:
+        - match: '(?=<)'
+          push: generic-angles
+        - include: basic-identifiers
+        - match: '&'
+          scope: keyword.operator.rust
+        - match: '''{{identifier}}(?!\'')\b'
+          scope: storage.modifier.lifetime.rust
+        - match: '(?=\S)'
+          pop: true
     - include: basic-identifiers
     - match: ':'
       scope: punctuation.separator.rust
