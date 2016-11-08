@@ -966,8 +966,13 @@ impl<T> Iterator for Fibonacci<T>
 }
 
 pub const FOO: Option<[i32; 1]> = Some([1]);
+//             ^^^^^^ storage.type
+//                   ^ punctuation.definition.generic.begin.rust
 //                    ^ punctuation.definition.group.begin.rust
 //                           ^ punctuation.definition.group.end.rust
+//                            ^ punctuation.definition.generic.end.rust
+
+let n = a<b;
 
 pub struct Channel<T:Service> {
     pub rx: Receiver<T::In::Blah>,
