@@ -287,7 +287,7 @@ let xsl = &xs;
 
 type FnPointer = fn(i32) -> i32;
 //   ^^^^^^^^^ entity.name.type
-//               ^^ keyword.function.rust
+//               ^^ keyword.function
 //                 ^^^^^ meta.group
 //                  ^^^ storage.type
 //                       ^^ punctuation.separator
@@ -295,8 +295,8 @@ type FnPointer = fn(i32) -> i32;
 
 type GenFnPointer = Bar<fn(i32) -> i32>;
 //   ^^^^^^^^^^^^ entity.name.type
-//                  ^^^^^^^^^^^^^^^^^^^ meta.generic
-//                      ^^ keyword.other.rust
+//                  ^^^ storage.type
+//                      ^^ keyword.function
 //                        ^^^^^ meta.group
 //                         ^^^ storage.type
 //                              ^^ punctuation.separator
@@ -305,10 +305,10 @@ type GenFnPointer = Bar<fn(i32) -> i32>;
 
 type GenFnPointer2 = Bar<extern "C" fn()>;
 //   ^^^^^^^^^^^^^ entity.name.type
-//                   ^^^^^^^^^^^^^^^^^^^^ meta.generic
+//                   ^^^ storage.type
 //                       ^^^^^^ keyword.other
 //                              ^^^ string.quoted.double
-//                                  ^^ keyword.other.rust
+//                                  ^^ keyword.function
 //                                       ^ - meta.generic
 
 struct Nil;
@@ -774,8 +774,7 @@ macro_rules! forward_ref_binop [
 //                                        ^^ variable.other
 //                                           ^ meta.macro meta.group meta.block meta.impl meta.block punctuation.definition.block.begin
             type Output = <$t as $imp<$u>>::Output;
-//                        ^^^^^^^^^^^^^^^^ meta.generic
-//                                        ^^ meta.path
+//                        ^^^^^^^^^^^^^^^^^^^^^^^^ meta.type.type.rust
 
             #[inline]
 //          ^^^^^^^^^ comment.block.attribute

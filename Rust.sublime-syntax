@@ -71,6 +71,11 @@ contexts:
         1: storage.modifier.rust
         2: storage.type.type.rust
         3: entity.name.type.rust
+      push:
+        - meta_scope: meta.type.type.rust
+        - include: type-any-identifier
+        - match: ';'
+          pop: true
 
     - match: '\b(?:(pub)\s+)?(trait)\s+({{identifier}})\b'
       captures:
@@ -403,7 +408,7 @@ contexts:
       scope: storage.modifier.rust
     - match: \b(fn)\b(\()
       captures:
-        1: keyword.other.rust
+        1: keyword.function.rust
         2: meta.group.rust punctuation.definition.group.begin.rust
       push:
         - meta_content_scope: meta.group.rust
