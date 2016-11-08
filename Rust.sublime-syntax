@@ -544,6 +544,21 @@ contexts:
               push: enum-unnamed
             - match: '(?=\{)'
               push: enum-named
+            - match: '(?==)'
+              push: enum-number
+
+  enum-number:
+    - include: comments
+    - match: '(?=[,\}])'
+      pop: true
+    - match: '='
+      scope: keyword.operator.rust
+      push:
+        - meta_scope: meta.group.rust
+        - include: comments
+        - match: '(?=[,\}])'
+          pop: true
+        - include: statements
 
   enum-unnamed:
     - include: comments

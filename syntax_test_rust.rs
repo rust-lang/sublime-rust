@@ -332,11 +332,20 @@ enum OperatingSystem
     Bsd(String),
 //     ^ punctuation.definition.group.begin.rust
 //            ^ punctuation.definition.group.end.rust
-    Info { field: i32, value: str }
+    Info { field: i32, value: str },
 //       ^ meta.enum meta.block punctuation.definition.block.begin
 //                ^^^ storage.type
 //                            ^^^ storage.type
 //                                ^ meta.enum meta.block punctuation.definition.block.end
+    One = 0x01,
+//  ^^^ meta.enum
+//      ^ meta.enum keyword.operator
+//        ^^^^ meta.enum constant.numeric.integer
+//            ^ meta.enum meta.block
+    Two = 0x02
+//  ^^^ meta.enum
+//      ^ meta.enum keyword.operator
+//        ^^^^ meta.enum constant.numeric.integer
 }
 // <- meta.enum punctuation.definition.block.end
 
@@ -971,8 +980,6 @@ pub const FOO: Option<[i32; 1]> = Some([1]);
 //                    ^ punctuation.definition.group.begin.rust
 //                           ^ punctuation.definition.group.end.rust
 //                            ^ punctuation.definition.generic.end.rust
-
-let n = a<b;
 
 pub struct Channel<T:Service> {
     pub rx: Receiver<T::In::Blah>,
