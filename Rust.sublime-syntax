@@ -525,7 +525,6 @@ contexts:
         - match: '(?=\})'
           pop: true
         - match: '{{identifier}}'
-          scope: storage.type.enum.rust
           push:
             - include: comments
             - match: ',|(?=\})'
