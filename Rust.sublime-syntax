@@ -150,9 +150,6 @@ contexts:
     - include: strings
     - include: chars
 
-    - match: '\b[[:lower:]_][[:lower:][:digit:]_]*(?=\()'
-      scope: support.function.rust
-
     - match: '\b((?:format|print|println)!)\s*(\()'
       captures:
         1: support.macro.rust
