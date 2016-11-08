@@ -704,7 +704,7 @@ contexts:
     - match: '(?=\bwhere\b)'
       set: impl-where
     - match: '{{identifier}}'
-      scope: entity.name.impl.rust
+      scope: entity.name.type.impl.rust
     - match: '(?=<)'
       push: generic-angles
     - match: '&'

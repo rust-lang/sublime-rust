@@ -218,7 +218,7 @@ impl fmt::Display for PrintableStruct {
 //^^ keyword.impl.rust
 //   ^^^^^ meta.path
 //                ^^^ keyword.other
-//                    ^^^^^^^^^^^^^^^ entity.name.impl
+//                    ^^^^^^^^^^^^^^^ entity.name.type.impl
 //                                    ^ meta.block punctuation.definition.block.begin
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
@@ -678,8 +678,8 @@ impl <'a, T> GenVal<T> {
 //   ^ punctuation.definition.generic.begin
 //    ^^ storage.modifier.lifetime
 //         ^ punctuation.definition.generic.end
-//           ^^^^^^ entity.name.impl
-//                 ^^^ - entity.name.impl
+//           ^^^^^^ entity.name.type.impl
+//                 ^^^ - entity.name.type.impl
 //                 ^ punctuation.definition.generic.begin
 //                   ^ punctuation.definition.generic.end
     fn value(&self) -> &T { &self.0 }
@@ -704,7 +704,7 @@ impl<'a, T: MyTrait + OtherTrait> PrintInOption for T where
 //        ^ punctuation.separator
 //                  ^ keyword.operator
 //                                              ^^^ keyword.other
-//                                                  ^ entity.name.impl
+//                                                  ^ entity.name.type.impl
 //                                                    ^^^^^ keyword.other
     Option<T>: Debug {
 //^^^^^^^^^^^^^^^^^^^^ meta.impl
