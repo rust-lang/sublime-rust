@@ -27,9 +27,9 @@ contexts:
     - match: ';'
       scope: punctuation.terminator
 
-    - match: '''({{identifier}})\s*(:)'
+    - match: '(''{{identifier}})\s*(:)'
       captures:
-        1: entity.name.label.rust
+        1: entity.name.support.label.rust
         2: punctuation.separator.rust
 
     - match: '''{{identifier}}(?!\'')\b'

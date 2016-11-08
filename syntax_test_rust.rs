@@ -413,7 +413,7 @@ let big_n =
 //  ^ meta.block punctuation.definition.block.end
 
 'label_name: loop {
-// ^^^^^^^^ entity.name.label
+// ^^^^^^^^ entity.name.support.label
 //         ^ punctuation.separator
 //           ^^^^ keyword.control
 //                ^ meta.block punctuation.definition.block.begin
