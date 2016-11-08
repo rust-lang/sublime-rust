@@ -205,7 +205,7 @@ struct PrintableStruct(Box<i32>);
 //^^^^ storage.type.struct
 //     ^^^^^^^^^^^^^^^ entity.name.type.struct
 //                    ^ punctuation.definition.group.begin
-//                     ^^^^^^^^ meta.generic
+//                     ^^^^^^^^ meta.struct.rust
 //                        ^ punctuation.definition.generic.begin
 //                         ^^^ storage.type
 //                            ^ punctuation.definition.generic.end
@@ -733,8 +733,10 @@ fn collect_vec() {
 //                     ^^^^^ storage.type
 //                          ^ punctuation.definition.type.end
 //                                                            ^^^^^^^^ meta.generic
-//                                                             ^^^^^^ meta.generic meta.generic
+//                                                             ^^^ storage.type
+//                                                                ^ punctuation.definition.generic.begin
 //                                                                 ^ keyword.operator
+//                                                                  ^ punctuation.definition.generic.begin
     let _: Vec<(usize, usize)> = vec!();
 //                               ^^^^ support.macro
     let _: Vec<(usize, usize)> = vec!{};
@@ -918,6 +920,7 @@ impl<T> Iterator for Fibonacci<T>
 //         ^ punctuation.definition.generic.end.rust
 //           ^ keyword.operator.rust
 //            ^^ storage.modifier.lifetime.rust
+//                             ^ keyword.operator.rust
 {
     unimplemented!();
 }

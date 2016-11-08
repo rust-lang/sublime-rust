@@ -396,7 +396,7 @@ contexts:
     - include: type-any-identifier
     - match: ':'
       scope: punctuation.separator.rust
-    - match: '\+'
+    - match: '\+|='
       scope: keyword.operator.rust
 
   type-any-identifier:
@@ -421,6 +421,8 @@ contexts:
       scope: storage.modifier.lifetime.rust
     - match: '\b({{identifier}})\b::'
       scope: meta.path.rust
+    - match: '\b({{identifier}})\b'
+      scope: storage.type.rust
     - match: '(?=<)'
       push: generic-angles
     - match: '\('
@@ -733,7 +735,7 @@ contexts:
           scope: storage.modifier.lifetime.rust
         - match: '(?=\S)'
           pop: true
-    - include: basic-identifiers
+    - include: type-any-identifier
     - match: ':'
       scope: punctuation.separator.rust
 
@@ -811,7 +813,7 @@ contexts:
           scope: storage.modifier.lifetime.rust
         - match: '(?=\S)'
           pop: true
-    - include: basic-identifiers
+    - include: type-any-identifier
     - match: ':'
       scope: punctuation.separator.rust
     - match: ';'
@@ -1035,6 +1037,8 @@ contexts:
     - match: '\b(c_[[:lower:][:digit:]_]+|[[:lower:]_][[:lower:][:digit:]_]*_t)\b'
       scope: storage.type.rust
     - match: '\b_*[A-Z][a-zA-Z0-9_]*[a-z][a-zA-Z0-9_]*\b'
+      scope: storage.type.source.rust
+    - match: '\b{{int_suffixes}}*\b'
       scope: storage.type.source.rust
     - match: '(?={{identifier}}::)'
       push:
