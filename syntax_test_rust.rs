@@ -921,7 +921,48 @@ impl<T> Iterator for Fibonacci<T>
 //            ^^ storage.modifier.lifetime.rust
 //                             ^ keyword.operator.rust
 {
-    unimplemented!();
+    let fibby = |
+//      ^^^^^ entity.name.function
+//            ^ keyword.operator
+//              ^ punctuation.definition.parameters.begin
+        n: i32
+//      ^ variable.parameter
+//       ^ punctuation.separator
+//         ^^^ storage.type
+    | { unimplemented!() };
+//  ^ punctuation.definition.parameters.end
+    let fibby = |n| { unimplemented!() };
+//      ^^^^^ entity.name.function
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                ^ punctuation.definition.parameters.end
+    let fibby = |n: i32| { unimplemented!() };
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                ^ punctuation.separator
+//                     ^ punctuation.definition.parameters.end
+    let fibby = |n:i32| { unimplemented!() };
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                ^ punctuation.separator
+//                 ^^^ storage.type
+//                    ^ punctuation.definition.parameters.end
+    let fibby = |n /**/| { unimplemented!() };
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                 ^^^^ comment.block
+//                     ^ punctuation.definition.parameters.end
+    let fibby = |n /**/ : /**/ std::result::Result /**/| { unimplemented!() };
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                 ^^^^ comment.block
+//                      ^ punctuation.separator
+//                        ^^^^ comment.block
+//                             ^^^^^^^^^^^^^ meta.path
+//                                          ^^^^^^ storage.type
+//                                                 ^^^^ comment.block
+//                                                     ^ punctuation.definition.parameters.end
+    unimplemented!();    
 }
 
 pub const FOO: Option<[i32; 1]> = Some([1]);

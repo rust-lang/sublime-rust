@@ -277,6 +277,7 @@ contexts:
     - include: try-closure
 
   try-closure:
+    - include: comments
     - match: '\s*(?=\|)'
       set: closure
     # Exit the context if we didn't find a closure
@@ -310,20 +311,24 @@ contexts:
     # scope as soon as we hit something that it not a
     # valid part so the whole rest of the document isn't
     # highlighted using the params scope
-    - match: '(?=[};)\]\n])'
+    - include: comments
+    - match: '(?=[};)\]]|\blet\b)'
       pop: true
     - match: '\|'
       scope: punctuation.definition.parameters.end.rust
       pop: true
     - match: \bself\b
       scope: variable.parameter.rust
-    - match: '({{identifier}})\s*(?:(:(?!:))|(?=\||,))'
+    - match: '({{identifier}})\s*(:(?!:))?'
       captures:
         1: variable.parameter.rust
         2: punctuation.separator.rust
       push:
+        - include: comments
         - match: (?=,|\|)
           pop: true
+        - match: ':(?!:)'
+          scope: punctuation.separator.rust
         - include: type-any-identifier
     - match: '&'
       scope: keyword.operator.rust
