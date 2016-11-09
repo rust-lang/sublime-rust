@@ -23,7 +23,7 @@ instructions.
 Open the palette (`control+shift+P` or `command+shift+P`) in Sublime Text
 and select `Package Control: Install Package` and then select `Rust Enhanced` from
 the list. That's it.
-If you can't see `Rust Enhanced` try looking for `Rust`, we are changing names to `Rust Enhanced` but are waiting for [#5865](https://github.com/wbond/package_control_channel/pull/5865) to go through
+If you can't see `Rust Enhanced` its most likely because you're using Sublime Text 2.
 
 ## Features
 ### Go To Definition

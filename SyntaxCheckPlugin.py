@@ -16,7 +16,8 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
             file_name = os.path.abspath(view.file_name())
             file_dir = os.path.dirname(file_name)
             os.chdir(file_dir)
-            # shell=True is needed to stop the window popping up, although it looks like this is needed: http://stackoverflow.com/questions/3390762/how-do-i-eliminate-windows-consoles-from-spawned-processes-in-python-2-7
+            # shell=True is needed to stop the window popping up, although it looks like this is needed:
+            # http://stackoverflow.com/questions/3390762/how-do-i-eliminate-windows-consoles-from-spawned-processes-in-python-2-7
             # We only care about stderr
             cargo_command = self.cargo_rustc_command(file_name, settings)
             cargoRun = subprocess.Popen(cargo_command,
@@ -28,7 +29,8 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                 print(output[1])
                 return
 
-            view.erase_phantoms('buildErrorLine')
+            for view in view.window().views(): 
+                view.erase_phantoms('buildErrorLine')
 
             for line in output[1].split('\n'):
                 if line == '' or line[0] != '{':
@@ -37,7 +39,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                 # Can't show without spans
                 if len(info['spans']) == 0:
                     continue
-                self.add_error_phantom(view, info, settings)
+                self.add_error_phantom(view.window(), info)
 
     def cargo_rustc_command(self, file_name, settings):
         command = 'cargo rustc {target} -- -Zno-trans -Zunstable-options --error-format=json'
@@ -56,31 +58,19 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         return command.replace('{target}', target)
 
 
-    def add_error_phantom(self, view, info, settings):
+    def add_error_phantom(self, window, info):
         msg = info['message']
-        error_colour = settings.get('rust_syntax_error_color')
-        warning_colour = settings.get('rust_syntax_warning_color')
-        
-        print(error_colour)
-        print(warning_colour)
-        
-        if error_colour is None:
-            base_color = "#F00" # Error color
-        else:
-            base_color = error_colour
-        
+
+        base_color = "#F00" # Error color
         if info['level'] != "error":
             # Warning color
-            if warning_colour is None:
-                base_color = "#ff6600"
-            else:
-                base_color = warning_colour
-                
+            base_color = "#FF0"
 
-        view_filename = os.path.realpath(view.file_name())
         for span in info['spans']:
-            if view_filename != os.path.realpath(span['file_name']):
+            view = window.find_open_file(os.path.realpath(span['file_name']))
+            if not view:
                 continue
+
             color = base_color
             char = "^"
             if not span['is_primary']:
@@ -113,5 +103,3 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                     .format(color,  html.escape(msg, quote=False)),
                     sublime.LAYOUT_BELOW
                 )
-
-
