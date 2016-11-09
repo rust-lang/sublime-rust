@@ -39,7 +39,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                 # Can't show without spans
                 if len(info['spans']) == 0:
                     continue
-                self.add_error_phantom(view.window(), info)
+                self.add_error_phantom(view.window(), info, settings)
 
     def cargo_rustc_command(self, file_name, settings):
         command = 'cargo rustc {target} -- -Zno-trans -Zunstable-options --error-format=json'
@@ -58,13 +58,23 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         return command.replace('{target}', target)
 
 
-    def add_error_phantom(self, window, info):
+    def add_error_phantom(self, window, info, settings):
         msg = info['message']
-
-        base_color = "#F00" # Error color
+        error_colour = settings.get('rust_syntax_error_color')
+        warning_colour = settings.get('rust_syntax_warning_color')
+        
+        if error_colour is None:
+            base_color = "var(--redish)" # Error color
+        else:
+            base_color = error_colour
+        
         if info['level'] != "error":
             # Warning color
-            base_color = "#FF0"
+            if warning_colour is None:
+                base_color = "var(--yellowish)"
+            else:
+                base_color = warning_colour
+                
 
         for span in info['spans']:
             view = window.find_open_file(os.path.realpath(span['file_name']))
@@ -76,7 +86,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
             if not span['is_primary']:
                 # Non-primary spans are normally additional
                 # information to help understand the error.
-                color = "#0FF"
+                color = "var(--foreground)"
                 char = "-"
             # Sublime text is 0 based whilst the line/column info from
             # rust is 1 based.
