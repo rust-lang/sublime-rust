@@ -190,13 +190,6 @@ contexts:
 
     - include: basic-identifiers
 
-    - match: '#!?\['
-      push:
-        - meta_scope: comment.block.attribute.rust
-        - match: '\]'
-          pop: true
-        - include: strings
-
     - include: numbers
 
     - match: '(?=\{)'
@@ -770,6 +763,7 @@ contexts:
 
   comments:
     - include: block-comments
+    - include: attribute-comments
     - match: "//[!/]"
       push:
         - meta_scope: comment.line.documentation.rust
@@ -794,6 +788,14 @@ contexts:
         - match: \*/
           pop: true
         - include: block-comments
+
+  attribute-comments:
+    - match: '#!?\['
+      push:
+        - meta_scope: comment.block.attribute.rust
+        - match: '\]'
+          pop: true
+        - include: strings
 
   strings:
     - include: byte-string
