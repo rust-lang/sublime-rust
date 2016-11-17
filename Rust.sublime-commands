@@ -1,0 +1,6 @@
+[
+    { 
+        "caption": "Rust: Toggle Syntax Checking", 
+        "command": "toggle_rust_syntax_setting"
+    }
+]

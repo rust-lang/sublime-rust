@@ -41,6 +41,11 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                     continue
                 self.add_error_phantom(view.window(), info, settings)
 
+        # If the user has switched OFF the plugin, remove any phantom lines
+        elif not enabled and int(sublime.version()) >= 3118:
+            for view in view.window().views(): 
+                view.erase_phantoms('buildErrorLine')
+
     def cargo_rustc_command(self, file_name, settings):
         command = 'cargo rustc {target} -- -Zno-trans -Zunstable-options --error-format=json'
         target = ''
