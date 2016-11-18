@@ -9,10 +9,12 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
     def on_post_save_async(self, view):
         # Are we in rust scope and is it switched on?
         # We use phantoms which were added in 3118
+        if int(sublime.version()) < 3118:
+            return
+        
         settings = view.settings()
-        enabled = settings.get('rust_syntax_checking') and int(sublime.version()) >= 3118
-        #raise Exception(view.file_name())
-        if "source.rust" in view.scope_name(0) and enabled:
+        enabled = settings.get('rust_syntax_checking')
+        if enabled and "source.rust" in view.scope_name(0):
             file_name = os.path.abspath(view.file_name())
             file_dir = os.path.dirname(file_name)
             os.chdir(file_dir)
@@ -42,7 +44,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                 self.add_error_phantom(view.window(), info, settings)
 
         # If the user has switched OFF the plugin, remove any phantom lines
-        elif not enabled and int(sublime.version()) >= 3118:
+        elif not enabled:
             for view in view.window().views(): 
                 view.erase_phantoms('buildErrorLine')
 
