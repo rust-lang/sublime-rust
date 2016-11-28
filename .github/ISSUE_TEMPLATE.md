@@ -1,6 +1,5 @@
 ### Sublime Text Version
-E.g
-Sublime Text 3 (Build 3126)
+E.g Sublime Text 3 (Build 3126)
 
 ### Rust Enhanced Version
 In Sublime Text, go to `list packages` (ctrl|cmd + shift + p) and select Rust Enhanced to get the version
@@ -9,8 +8,6 @@ In Sublime Text, go to `list packages` (ctrl|cmd + shift + p) and select Rust En
 A good example is:
 OS Name	Microsoft Windows 10 Pro
 Version	10.0.14393 Build 14393
-
-### Screenshots are always welcome
 
 ### Expected behavior
 What should have happened?
