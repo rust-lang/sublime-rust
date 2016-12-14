@@ -30,6 +30,10 @@
             "name": "Release"
         },
         {
+            "shell_cmd": "cargo doc",
+            "name": "Document"
+        },
+        {
             "shell_cmd": "cargo clippy",
             "name": "Clippy"
         },
