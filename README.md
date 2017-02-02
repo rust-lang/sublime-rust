@@ -56,10 +56,11 @@ Example:
 ### Syntax Checking
 The sublime-rust package now comes with syntax checking.
 This relies on Cargo and Rust (>= 1.8.0) being installed and on your system path. Plus Sublime Text >= 3118.
-This feature is on by default, but you can adjust the the value of ```rust_syntax_checking``` within your settings (see Settings). Additionally, the colour of the warnings and errors can be changed from the default values (seen below).
+This feature is on by default, but can be controlled for general syntax checking and for checking within tests by adjusting the values of ```rust_syntax_checking``` and ```rust_syntax_checking_include_tests``` respectively within your settings (see Settings). Additionally, the colour of the warnings and errors can be changed from the default values (seen below).
 ```json
 {
     "rust_syntax_checking": true,
+    "rust_syntax_checking_include_tests": true,
     "rust_syntax_error_color": "#F00",
     "rust_syntax_warning_color":"#FF0"
 }
