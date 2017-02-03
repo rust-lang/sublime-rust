@@ -33,7 +33,8 @@ Rust Enhanced has the following build functions:
 - Cargo Test
 - Cargo Bench
 - Cargo Clean
-- Cargo release
+- Cargo Release
+- Cargo Document
 - Cargo Clippy
 - Rust
 - Rust Run
