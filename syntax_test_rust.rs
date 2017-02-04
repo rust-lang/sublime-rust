@@ -1,4 +1,4 @@
-// SYNTAX TEST "Packages/Rust/RustEnhanced.sublime-syntax"
+// SYNTAX TEST "Packages/Rust Enhanced/RustEnhanced.sublime-syntax"
 
 // Line comments
 // <- comment.line.double-slash
