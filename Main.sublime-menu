@@ -21,7 +21,7 @@
                             },
                             {
                                 "command": "open_file",
-                                "args": {"file": "${packages}/User/Rust Enhanced.sublime-settings"},
+                                "args": {"file": "${packages}/User/RustEnhanced.sublime-settings"},
                                 "caption": "Settings – User"
                             }
                         ]
