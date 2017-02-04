@@ -191,7 +191,7 @@ struct BasicStruct(i32);
 // ^^^^^^^^^^^^^^^^^^^^ meta.struct
 // <- storage.type.struct
 //^^^^ storage.type.struct
-//     ^^^^^^^^^^^ entity.name.struct
+//     ^^^^^^^^^^^ entity.name.type.struct
 //                ^ punctuation.definition.group.begin
 //                 ^^^ storage.type
 //                    ^ punctuation.definition.group.end
@@ -203,27 +203,27 @@ struct PrintableStruct(Box<i32>);
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.struct
 // <- storage.type.struct
 //^^^^ storage.type.struct
-//     ^^^^^^^^^^^^^^^ entity.name.struct
+//     ^^^^^^^^^^^^^^^ entity.name.type.struct
 //                    ^ punctuation.definition.group.begin
-//                     ^^^^^^^^ meta.generic
+//                     ^^^^^^^^ meta.struct.rust
 //                        ^ punctuation.definition.generic.begin
 //                         ^^^ storage.type
 //                            ^ punctuation.definition.generic.end
 //                             ^ punctuation.definition.group.end
 
 impl fmt::Display for PrintableStruct {
-// <- meta.impl
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
-// <- storage.type.impl
-//^^ storage.type.impl
+// <- meta.impl.rust
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl.rust
+// <- keyword.impl.rust
+//^^ keyword.impl.rust
 //   ^^^^^ meta.path
 //                ^^^ keyword.other
-//                    ^^^^^^^^^^^^^^^ entity.name.impl
+//                    ^^^^^^^^^^^^^^^ entity.name.type.impl
 //                                    ^ meta.block punctuation.definition.block.begin
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function
-//  ^^ storage.type.function
+//  ^^ keyword.function.rust
 //     ^^^ entity.name.function
 //        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function.parameters
 //        ^ punctuation.definition.parameters.begin
@@ -287,7 +287,7 @@ let xsl = &xs;
 
 type FnPointer = fn(i32) -> i32;
 //   ^^^^^^^^^ entity.name.type
-//               ^^ storage.type.function
+//               ^^ keyword.function
 //                 ^^^^^ meta.group
 //                  ^^^ storage.type
 //                       ^^ punctuation.separator
@@ -295,8 +295,8 @@ type FnPointer = fn(i32) -> i32;
 
 type GenFnPointer = Bar<fn(i32) -> i32>;
 //   ^^^^^^^^^^^^ entity.name.type
-//                  ^^^^^^^^^^^^^^^^^^^ meta.generic
-//                      ^^ storage.type.function
+//                  ^^^ storage.type
+//                      ^^ keyword.function
 //                        ^^^^^ meta.group
 //                         ^^^ storage.type
 //                              ^^ punctuation.separator
@@ -305,10 +305,10 @@ type GenFnPointer = Bar<fn(i32) -> i32>;
 
 type GenFnPointer2 = Bar<extern "C" fn()>;
 //   ^^^^^^^^^^^^^ entity.name.type
-//                   ^^^^^^^^^^^^^^^^^^^^ meta.generic
+//                   ^^^ storage.type
 //                       ^^^^^^ keyword.other
 //                              ^^^ string.quoted.double
-//                                  ^^ storage.type.function
+//                                  ^^ keyword.function
 //                                       ^ - meta.generic
 
 struct Nil;
@@ -323,21 +323,31 @@ struct Pair(i32, i32);
 enum OperatingSystem
 // <- storage.type.enum
 // ^^^^^^^^^^^^^^^^^ meta.enum
-//   ^^^^^^^^^^^^^^^ entity.name.enum
+//   ^^^^^^^^^^^^^^^ entity.name.type.enum
 {
 // <- meta.enum meta.block punctuation.definition.block.begin
     Osx,
     Windows,
     Linux,
     Bsd(String),
-    //  ^^^^^^ support.type
-    Info { field: i32, value: str }
-    //   ^ meta.block meta.block punctuation.definition.block.begin
-    //            ^^^ storage.type
-    //                        ^^^ storage.type
-    //                            ^ meta.block meta.block punctuation.definition.block.end
+//     ^ punctuation.definition.group.begin.rust
+//            ^ punctuation.definition.group.end.rust
+    Info { field: i32, value: str },
+//       ^ meta.enum meta.block punctuation.definition.block.begin
+//                ^^^ storage.type
+//                            ^^^ storage.type
+//                                ^ meta.enum meta.block punctuation.definition.block.end
+    One = 0x01,
+//  ^^^ meta.enum
+//      ^ meta.enum keyword.operator
+//        ^^^^ meta.enum constant.numeric.integer
+//            ^ meta.enum meta.block
+    Two = 0x02
+//  ^^^ meta.enum
+//      ^ meta.enum keyword.operator
+//        ^^^^ meta.enum constant.numeric.integer
 }
-// <- meta.enum meta.block punctuation.definition.block.end
+// <- meta.enum punctuation.definition.block.end
 
 const ZERO: u64 = 0;
 // <- storage.type
@@ -365,7 +375,7 @@ let z = {
 // <- meta.block punctuation.definition.block.end
 
 fn my_func(x: i32)
-// <- storage.type.function
+// <- keyword.function.rust
 // ^^^^^^^ entity.name.function
 //        ^^^^^^^^ meta.function.parameters
 //        ^ punctuation.definition.parameters.begin
@@ -412,7 +422,7 @@ let big_n =
 //  ^ meta.block punctuation.definition.block.end
 
 'label_name: loop {
-// ^^^^^^^^ entity.name.label
+// ^^^^^^^^ entity.name.support.label
 //         ^ punctuation.separator
 //           ^^^^ keyword.control
 //                ^ meta.block punctuation.definition.block.begin
@@ -492,7 +502,7 @@ while let BasicStruct(k) = j {
 // <- meta.block punctuation.definition.block.end
 
 fn foo<A>(i: u32, b: i64) -> u32 {
-// <- storage.type.function
+// <- keyword.function.rust
 // ^^^ entity.name.function
 //    ^ punctuation.definition.generic.begin
 //      ^ punctuation.definition.generic.end
@@ -522,7 +532,7 @@ match n {
 // Binding
 match my_func() {
 // ^^ keyword.control
-//    ^^^^^^^ support.function
+//    ^^^^^^^ source.rust
 //              ^ meta.block punctuation.definition.block.begin
     0 => println!("None"),
 //  ^ constant.numeric.integer.decimal
@@ -564,7 +574,7 @@ impl Point
 {
 // <- meta.impl meta.block punctuation.definition.block.begin
     fn new(x: i32, y: i32) -> Point
-    // <- storage.type.function
+    // <- keyword.function.rust
     // ^^^ entity.name.function
     {
     // <- meta.function meta.block
@@ -580,7 +590,7 @@ impl Point
 
 pub fn pub_function() -> bool
 // <- storage.modifier
-//  ^^ storage.type.function
+//  ^^ keyword.function.rust
 //     ^^^^^^^^^^^^ entity.name.function
 {
 // <- meta.function
@@ -653,7 +663,7 @@ pub mod my_mod {
 //^^^^^^^^^^^^^^ meta.module
 // <- storage.modifier
 //  ^^^ storage.type.module
-//      ^^^^^^ entity.name.module
+//      ^^^^^^ entity.name.type.module.rust
 //             ^ meta.block punctuation.definition.block.begin
 }
 // <- meta.module meta.block punctuation.definition.block.end
@@ -661,8 +671,8 @@ pub mod my_mod {
 struct Val (f64,);
 struct GenVal<T>(T,);
 //     ^^^^^^^^^ meta.generic
-//     ^^^^^^ entity.name.struct
-//           ^ punctuation.definition.generic.begin - entity.name.struct
+//     ^^^^^^ entity.name.type.struct
+//           ^ punctuation.definition.generic.begin - entity.name.type.struct
 //             ^ punctuation.definition.generic.end
 
 // impl of Val
@@ -677,8 +687,8 @@ impl <'a, T> GenVal<T> {
 //   ^ punctuation.definition.generic.begin
 //    ^^ storage.modifier.lifetime
 //         ^ punctuation.definition.generic.end
-//           ^^^^^^ entity.name.impl
-//                 ^^^ - entity.name.impl
+//           ^^^^^^ entity.name.type.impl
+//                 ^^^ - entity.name.type.impl
 //                 ^ punctuation.definition.generic.begin
 //                   ^ punctuation.definition.generic.end
     fn value(&self) -> &T { &self.0 }
@@ -703,7 +713,7 @@ impl<'a, T: MyTrait + OtherTrait> PrintInOption for T where
 //        ^ punctuation.separator
 //                  ^ keyword.operator
 //                                              ^^^ keyword.other
-//                                                  ^ entity.name.impl
+//                                                  ^ entity.name.type.impl
 //                                                    ^^^^^ keyword.other
     Option<T>: Debug {
 //^^^^^^^^^^^^^^^^^^^^ meta.impl
@@ -716,6 +726,7 @@ impl<'a, T: MyTrait + OtherTrait> PrintInOption for T where
 pub trait Animal {
 // <- storage.modifier
 //^^^^^^^^^^^^^^^^ meta.trait
+//        ^^^^^^ entity.name.type.trait.rust
 //               ^ meta.block punctuation.definition.block.begin
     fn noise(quiet: bool) {
         // Comment
@@ -731,8 +742,10 @@ fn collect_vec() {
 //                     ^^^^^ storage.type
 //                          ^ punctuation.definition.type.end
 //                                                            ^^^^^^^^ meta.generic
-//                                                             ^^^^^^ meta.generic meta.generic
+//                                                             ^^^ storage.type
+//                                                                ^ punctuation.definition.generic.begin
 //                                                                 ^ keyword.operator
+//                                                                  ^ punctuation.definition.generic.begin
     let _: Vec<(usize, usize)> = vec!();
 //                               ^^^^ support.macro
     let _: Vec<(usize, usize)> = vec!{};
@@ -755,7 +768,7 @@ macro_rules! forward_ref_binop [
 //                                                    ^^ keyword.operator
 //                                                       ^ meta.macro meta.group meta.block punctuation.definition.block.begin
         impl<'a, 'b> $imp<&'a $u> for &'b $t {
-//      ^^^^ storage.type.impl
+//      ^^^^ keyword.impl.rust
 //          ^^^^^^^^ meta.generic
 //           ^^ storage.modifier.lifetime
 //               ^^ storage.modifier.lifetime
@@ -770,13 +783,12 @@ macro_rules! forward_ref_binop [
 //                                        ^^ variable.other
 //                                           ^ meta.macro meta.group meta.block meta.impl meta.block punctuation.definition.block.begin
             type Output = <$t as $imp<$u>>::Output;
-//                        ^^^^^^^^^^^^^^^^ meta.generic
-//                                        ^^ meta.path
+//                        ^^^^^^^^^^^^^^^^^^^^^^^^ meta.type.type.rust
 
             #[inline]
 //          ^^^^^^^^^ comment.block.attribute
             fn $method(self, other: &'a $u) -> <$t as $imp<$u>>::Output {
-//          ^^ storage.type.function
+//          ^^ keyword.function.rust
 //             ^^^^^^^ variable.other
 //                     ^^^^ variable.language
 //                                  ^ keyword.operator
@@ -916,10 +928,60 @@ impl<T> Iterator for Fibonacci<T>
 //         ^ punctuation.definition.generic.end.rust
 //           ^ keyword.operator.rust
 //            ^^ storage.modifier.lifetime.rust
+//                             ^ keyword.operator.rust
 {
-    unimplemented!();
+    let fibby = |
+//      ^^^^^ entity.name.function
+//            ^ keyword.operator
+//              ^ punctuation.definition.parameters.begin
+        n: i32
+//      ^ variable.parameter
+//       ^ punctuation.separator
+//         ^^^ storage.type
+    | { unimplemented!() };
+//  ^ punctuation.definition.parameters.end
+    let fibby = |n| { unimplemented!() };
+//      ^^^^^ entity.name.function
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                ^ punctuation.definition.parameters.end
+    let fibby = |n: i32| { unimplemented!() };
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                ^ punctuation.separator
+//                     ^ punctuation.definition.parameters.end
+    let fibby = |n:i32| { unimplemented!() };
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                ^ punctuation.separator
+//                 ^^^ storage.type
+//                    ^ punctuation.definition.parameters.end
+    let fibby = |n /**/| { unimplemented!() };
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                 ^^^^ comment.block
+//                     ^ punctuation.definition.parameters.end
+    let fibby = |n /**/ : /**/ std::result::Result /**/| { unimplemented!() };
+//              ^ punctuation.definition.parameters.begin
+//               ^ variable.parameter
+//                 ^^^^ comment.block
+//                      ^ punctuation.separator
+//                        ^^^^ comment.block
+//                             ^^^^^^^^^^^^^ meta.path
+//                                          ^^^^^^ storage.type
+//                                                 ^^^^ comment.block
+//                                                     ^ punctuation.definition.parameters.end
+    unimplemented!();    
 }
 
 pub const FOO: Option<[i32; 1]> = Some([1]);
+//             ^^^^^^ storage.type
+//                   ^ punctuation.definition.generic.begin.rust
 //                    ^ punctuation.definition.group.begin.rust
 //                           ^ punctuation.definition.group.end.rust
+//                            ^ punctuation.definition.generic.end.rust
+
+pub struct Channel<T:Service> {
+    pub rx: Receiver<T::In::Blah>,
+    pub tx: Receiver<T::Out::Blah>,
+}
