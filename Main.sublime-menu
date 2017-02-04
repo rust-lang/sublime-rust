@@ -11,12 +11,12 @@
                 "children":
                 [
                     {
-                        "caption": "Rust",
+                        "caption": "RustEnhanced",
                         "children":
                         [
                             {
                                 "command": "open_file",
-                                "args": {"file": "${packages}/Rust/RustEnhanced.sublime-settings"},
+                                "args": {"file": "${packages}/RustEnhanced/RustEnhanced.sublime-settings"},
                                 "caption": "Settings – Default"
                             },
                             {
