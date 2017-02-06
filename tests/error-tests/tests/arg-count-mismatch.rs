@@ -11,7 +11,10 @@
 // error-pattern: parameters were supplied
 
 fn f(x: isize) { }
+// ^ERR defined here
 
 // children without spans, spans with no labels
 // Should display error (with link) and a note of expected type.
 fn main() { let i: (); i = f(); }
+// ^ERR expected 1 parameter
+// ^^ERR this function takes 1 parameter

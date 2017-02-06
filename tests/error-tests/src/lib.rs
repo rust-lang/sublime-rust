@@ -1,5 +1,3 @@
-xxx
-
 #[cfg(test)]
 mod tests {
     #[test]

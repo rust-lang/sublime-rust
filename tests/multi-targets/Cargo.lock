@@ -1,4 +1,4 @@
 [root]
-name = "error_tests"
+name = "multi-targets"
 version = "0.1.0"
 

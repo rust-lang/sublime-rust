@@ -8,15 +8,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![deny(unreachable_patterns)]
-
 fn main() {
-    let foo = Some(1);
-    match foo {
-        Some(_) => {/* ... */}
-        None => {/* ... */}
-        _ => {/* ... */} //~ ERROR unreachable pattern
-    }
+    let x = Some(1);
+    let Some(y) = x;
+        // ^ERR pattern `None` not covered
+        // ^^ERR refutable pattern in local binding
 }
-
-// Error with a link to web.
