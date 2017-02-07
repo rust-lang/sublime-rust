@@ -1,6 +1,9 @@
 {
     "name": "Rust Symbols",
-    "scope": "entity.name.function.source.rust",
-    "settings":  {"showInSymbolList": 1},
+    "scope": "entity.name.function.rust, entity.name.macro.rust, entity.name.struct.rust, entity.name.enum.rust, entity.name.module.rust, entity.name.type.rust, entity.name.trait.rust",
+    "settings": {
+        "showInSymbolList": 1,
+        "showInIndexedSymbolList": 1
+    },
     "uuid": "d3270dd1-4ccd-428e-8dda-d3d20ee9fc7e"
 }
