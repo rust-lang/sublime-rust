@@ -15,6 +15,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         settings = view.settings()
         enabled = settings.get('rust_syntax_checking')
         if enabled and "source.rust" in view.scope_name(0):
+            hide_warnings = settings.get('rust_syntax_hide_warnings')
             file_name = os.path.abspath(view.file_name())
             file_dir = os.path.dirname(file_name)
             os.chdir(file_dir)
@@ -40,6 +41,8 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                 info = json.loads(line)
                 # Can't show without spans
                 if len(info['spans']) == 0:
+                    continue
+                if info['level'] != "error" and hide_warnings:
                     continue
                 self.add_error_phantom(view.window(), info, settings)
 
