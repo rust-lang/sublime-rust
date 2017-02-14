@@ -49,7 +49,7 @@ Thanks to [urschrei](https://github.com/urschrei/)  we have Highlighting for:
 - total number of ignored tests > 0
 - total number of measured tests > 0
 
-Example:   
+Example:
 ![highlight_rust_test](https://cloud.githubusercontent.com/assets/936006/19247437/3cf6e056-8f23-11e6-9bbe-d8c542287db6.png)
 
 ### Syntax Checking
@@ -64,14 +64,10 @@ This feature is on by default, but you can adjust the the value of ```rust_synta
 }
 ```
 Here is an example:
-![testingrust](https://cloud.githubusercontent.com/assets/936006/18091147/938cb244-6ebf-11e6-9db1-b74e5bf4eebc.gif)
+![testingrust](https://cloud.githubusercontent.com/assets/43198/22944409/7780ab9a-f2a5-11e6-87ea-0e253d6c40f6.png)
 
-Projects with multiple build targets are supported too. If a cargo project has several build targets, it's possible to specify mapping of source file names to the target to enable proper cargo's build target selection during syntax checking.
-Syntax checking is accomplished by command:
-```bash
-    cargo rustc {target} -- <some options>
-```
-where `{target}` is an empty string by default (perfectly works for cargo projects with only one build target). However, one can specify a certain target by updating plugin settings with the next section:
+Projects with multiple build targets are supported too (--lib, --bin, --example, etc.). If a cargo project has several build targets, it will attempt to automatically detect the correct target.  In some rare cases, you may need to manually specify which target a file belongs to.  This can be done by adding a "projects" setting in `Rust.sublime-settings` with the following format:
+
 ```
     "projects": {
        // One entry per project. Keys are project names.
