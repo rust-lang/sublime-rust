@@ -136,6 +136,8 @@ class TestSyntaxCheck(unittest.TestCase):
             'error-tests/tests/E0005.rs',
             # unicode in JSON
             'error-tests/tests/test_unicode.rs',
+            # error in a cfg(test) section
+            'error-tests/src/lib.rs',
         ]
         for path in to_test:
             path = os.path.join('tests', path)
@@ -179,7 +181,6 @@ class TestSyntaxCheck(unittest.TestCase):
                 r_row, r_col = view.rowcol(region.end())
                 if r_row == msg_row and msg_content in content:
                     self.assertIn(msg_type_text, content)
-                    # print('SUCCESS %r' % msg_content)
                     break
             else:
                 raise AssertionError('Did not find expected message "%s:%s" on line %r for file %r' % (
