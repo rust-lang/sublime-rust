@@ -1,6 +1,7 @@
 {
     // Enable the syntax checking plugin, which will highlight any errors during build
     "rust_syntax_checking": true,
+    "rust_syntax_checking_include_tests": true,
     "rust_syntax_error_color": "#F00",
     "rust_syntax_warning_color":"#FF0"
 
