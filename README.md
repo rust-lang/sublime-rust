@@ -60,8 +60,9 @@ This feature is on by default, but you can adjust the the value of ```rust_synta
 ```json
 {
     "rust_syntax_checking": true,
+    "rust_syntax_hide_warnings": false,
     "rust_syntax_error_color": "#F00",
-    "rust_syntax_warning_color":"#FF0"
+    "rust_syntax_warning_color": "#FF0"
 }
 ```
 Here is an example:
