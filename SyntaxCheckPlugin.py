@@ -378,7 +378,8 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         def add_primary_message(view, region, message):
             parent_info['view'] = view
             parent_info['region'] = region
-            if info['code']:
+            # Not all codes have explanations (yet).
+            if info['code'] and info['code']['explanation']:
                 # TODO
                 # This could potentially be a link that opens a Sublime popup, or
                 # a new temp buffer with the contents of 'explanation'.
