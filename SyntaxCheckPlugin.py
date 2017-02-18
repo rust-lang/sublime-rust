@@ -287,6 +287,13 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         error_colour = settings.get('rust_syntax_error_color', 'var(--redish)')
         warning_colour = settings.get('rust_syntax_warning_color', 'var(--yellowish)')
 
+        # Include "notes" tied to errors, even if warnings are disabled.
+        if (info['level'] != 'error' and
+            settings.get('rust_syntax_hide_warnings', False) and
+            not parent_info
+           ):
+            return
+
         # TODO: Consider matching the colors used by rustc.
         # - error: red
         #     `bug` appears as "error: internal compiler error"

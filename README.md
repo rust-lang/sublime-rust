@@ -57,12 +57,14 @@ Example:
 ### Syntax Checking
 Rust Enhanced will automatically perform syntax checking each time you save a file.
 This relies on Cargo and Rust (>= 1.8.0) being installed and on your system path. Plus Sublime Text >= 3118.
+
 There are a variety of settings (see [Settings](#settings)) for controlling the syntax highlighting:
 
 | Setting | Default | Description |
 | :------ | :------ | :---------- |
 | `rust_syntax_checking` | `true` | Enable the on-save syntax checking. |
 | `rust_syntax_checking_include_tests` | `true` | Enable checking of test code within `#[cfg(test)]` sections. |
+| `rust_syntax_hide_warnings` | `false` | If true, will not display warning messages. |
 | `rust_syntax_error_color` | `"#F00"` | Color of error messages. |
 | `rust_syntax_warning_color` | `"#FF0"` | Color of warning messages. |
 
