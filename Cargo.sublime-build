@@ -41,5 +41,9 @@
             "shell_cmd": "cargo clippy",
             "name": "Clippy"
         },
+        {
+            "shell_cmd": "cargo script \"$file\"",
+            "name": "Script"
+        }
     ]
 }

@@ -30,6 +30,7 @@ If you can't see `Rust Enhanced` its most likely because you're using Sublime Te
 ### Build functionality
 Rust Enhanced has the following build functions:
 - Cargo Run
+- Cargo Script [Cargo Script is needed](https://github.com/DanielKeep/cargo-script)
 - Cargo Test
 - Cargo Bench
 - Cargo Clean
