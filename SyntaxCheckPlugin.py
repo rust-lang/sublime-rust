@@ -140,31 +140,28 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         output = self.run_cargo(['metadata', '--no-deps'])
         if not output:
             return []
-        # TODO: This is broken for crates using the "workspace" feature.  Each
-        # sub-crate appears as a separate entry in "packages".  This needs
-        # logic to match file_name with the appropriate sub-crate, which may
-        # not be straightforward.
-        package = output[0]['packages'][0]
-        root_path = os.path.dirname(package['manifest_path'])
-        targets = package['targets']
-        # targets is list of dictionaries:
-        # {'kind': ['lib'],
-        #  'name': 'target-name',
-        #  'src_path': 'path/to/lib.rs'}
-        # src_path may be absolute or relative, fix it.
-        for target in targets:
-            if not os.path.isabs(target['src_path']):
-                target['src_path'] = os.path.join(root_path, target['src_path'])
-            target['src_path'] = os.path.normpath(target['src_path'])
+        # Each "workspace" shows up as a separate package.
+        for package in output[0]['packages']:
+            root_path = os.path.dirname(package['manifest_path'])
+            targets = package['targets']
+            # targets is list of dictionaries:
+            # {'kind': ['lib'],
+            #  'name': 'target-name',
+            #  'src_path': 'path/to/lib.rs'}
+            # src_path may be absolute or relative, fix it.
+            for target in targets:
+                if not os.path.isabs(target['src_path']):
+                    target['src_path'] = os.path.join(root_path, target['src_path'])
+                target['src_path'] = os.path.normpath(target['src_path'])
 
-        # Try exact filename matches.
-        result = self._targets_exact_match(targets, file_name)
-        if result: return result
+            # Try exact filename matches.
+            result = self._targets_exact_match(targets, file_name)
+            if result: return result
 
-        # No exact match, try to find all targets with longest matching parent
-        # directory.
-        result = self._targets_longest_matches(targets, file_name)
-        if result: return result
+            # No exact match, try to find all targets with longest matching parent
+            # directory.
+            result = self._targets_longest_matches(targets, file_name)
+            if result: return result
 
         # TODO: Alternatively, could run rustc directly without cargo.
         # rustc -Zno-trans -Zunstable-options --error-format=json file_name

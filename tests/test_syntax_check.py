@@ -138,6 +138,11 @@ class TestSyntaxCheck(unittest.TestCase):
             'error-tests/tests/test_unicode.rs',
             # error in a cfg(test) section
             'error-tests/src/lib.rs',
+            # Workspace tests.
+            'workspace/workspace1/src/lib.rs',
+            'workspace/workspace1/src/anothermod/mod.rs',
+            'workspace/workspace2/src/lib.rs',
+            'workspace/workspace2/src/somemod.rs',
         ]
         for path in to_test:
             path = os.path.join('tests', path)
@@ -177,7 +182,11 @@ class TestSyntaxCheck(unittest.TestCase):
             }[msg_type]
             msg_content = m.group(3)
             for i, (region, content) in enumerate(phantoms):
-                content = content.replace('&nbsp;', ' ')
+                # python 3.4 can use html.unescape()
+                content = content.replace('&nbsp;', ' ')\
+                                 .replace('&amp;', '&')\
+                                 .replace('&lt;', '<')\
+                                 .replace('&gt;', '>')
                 r_row, r_col = view.rowcol(region.end())
                 if r_row == msg_row and msg_content in content:
                     self.assertIn(msg_type_text, content)

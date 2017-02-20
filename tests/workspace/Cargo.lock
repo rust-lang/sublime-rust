@@ -1,0 +1,8 @@
+[root]
+name = "workspace2"
+version = "0.1.0"
+
+[[package]]
+name = "workspace1"
+version = "0.1.0"
+
