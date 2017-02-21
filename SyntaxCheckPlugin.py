@@ -121,10 +121,9 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         for (target_src, target_args) in targets:
             args = ['rustc', target_args, '--',
                     '-Zno-trans', '-Zunstable-options', '--error-format=json']
-            if (settings.get('rust_syntax_checking_include_tests', True) and
-                '--test' not in target_args
-               ):
-                args.append('--test')
+            if settings.get('rust_syntax_checking_include_tests', True):
+                if not ('--test' in target_args or '--bench' in target_args):
+                    args.append('--test')
             yield (target_src, self.run_cargo(args))
 
     def determine_targets(self, settings, file_name):

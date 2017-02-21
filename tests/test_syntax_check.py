@@ -124,6 +124,7 @@ class TestSyntaxCheck(unittest.TestCase):
             'multi-targets/src/lmod1.rs',
             'multi-targets/src/altmain.rs',
             'multi-targets/tests/common/helpers.rs',
+            'error-tests/benches/bench_err.rs',
             # "children" without spans
             'error-tests/tests/arg-count-mismatch.rs',
             # "children" with spans
