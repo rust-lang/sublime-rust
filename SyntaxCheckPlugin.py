@@ -61,7 +61,9 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
             # duplicate messages for shared modules.
             self.this_view_found = False
             try:
+                cwd = os.getcwd()
                 self.hide_phantoms(view.window())
+                os.chdir(cwd)
 
                 # Keep track of regions used for highlighting, since Sublime
                 # requires it to be added in one shot.
@@ -94,6 +96,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         # http://stackoverflow.com/questions/3390762/how-do-i-eliminate-windows-consoles-from-spawned-processes-in-python-2-7
         cmd = ' '.join(['cargo']+args)
         print('Running %r' % cmd)
+        cwd = os.getcwd()
         cproc = subprocess.Popen(cmd,
             shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         output = cproc.communicate()
@@ -104,6 +107,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                 continue
             result.append(json.loads(line))
         # print(output)
+        os.chdir(cwd)
         if not result and cproc.returncode:
             print('Failed to run: %s' % cmd)
             print(output)
