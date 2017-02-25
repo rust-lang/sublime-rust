@@ -14,7 +14,7 @@
             "name": "Run",
             "windows":
             {
-                "cmd": ["$file_base_name.exe"]
+                "shell_cmd": "\"$file_base_name.exe\""
             }
         }
     ]
