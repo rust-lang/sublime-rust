@@ -43,8 +43,7 @@ class TestSyntaxCheck(unittest.TestCase):
                         break
                 else:
                     raise AssertionError('View never loaded.')
-                # Check the targets match expectation.
-                os.chdir(os.path.dirname(view.file_name()))
+                # Run the tests on this view.
                 f(view)
             except Exception as e:
                 q.put(e)
@@ -150,6 +149,7 @@ class TestSyntaxCheck(unittest.TestCase):
 
     def _test_messages(self, view):
         # Trigger the generation of messages.
+        cwd = os.path.dirname(view.file_name())
         e = plugin.SyntaxCheckPlugin.rustPluginSyntaxCheckEvent()
         phantoms = []
         regions = []
@@ -162,7 +162,7 @@ class TestSyntaxCheck(unittest.TestCase):
         e._add_phantom = collect_phantoms
         e._add_regions = collect_regions
         # Force Cargo to recompile.
-        e.run_cargo(['clean'])
+        e.run_cargo(['clean'], cwd=cwd)
         # os.utime(view.file_name())  1 second resolution is not enough
         e.on_post_save_async(view)
         pattern = '(\^+)(WARN|ERR|HELP|NOTE) (.+)'
