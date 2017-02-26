@@ -149,6 +149,7 @@ contexts:
       push: macro-block
 
     - include: comments
+    - include: attribute
     - include: strings
     - include: chars
 
@@ -189,14 +190,6 @@ contexts:
       scope: support.type.rust
 
     - include: basic-identifiers
-
-    - match: '#!?\['
-      push:
-        - meta_scope: comment.block.attribute.rust
-        - match: '\]'
-          pop: true
-        - include: strings
-
     - include: numbers
 
     - match: '(?=\{)'
@@ -236,6 +229,15 @@ contexts:
     - match: '\.\.\.|\.\.||[-=<>&|!~@?+*/%^''#$]|\b_\b'
       scope: keyword.operator.rust
 
+  attribute:
+    - match: '#!?\['
+      push:
+        # https://github.com/sublimehq/Packages/issues/709#issuecomment-266835130
+        - meta_scope: meta.annotation.rust 
+        - match: '\]'
+          pop: true
+        - include: strings
+
   block:
     - match: '\}'
       scope: meta.block.rust punctuation.definition.block.end.rust
@@ -249,6 +251,7 @@ contexts:
     - match: '(?=\})'
       pop: true
     - include: statements
+    - include: attribute
 
   group:
     - match: '\)'
@@ -494,6 +497,7 @@ contexts:
         - match: '(?=\})'
           pop: true
         - include: comments
+        - include: attribute
         - match: \bpub\b
           scope: storage.modifier.rust
         - match: '{{identifier}}(?=\s*:)'

@@ -1,4 +1,4 @@
-// SYNTAX TEST "Packages/Rust Enhanced/RustEnhanced.sublime-syntax"
+// SYNTAX TEST "Packages/sublime-rust/RustEnhanced.sublime-syntax"
 
 // Line comments
 // <- comment.line.double-slash
@@ -197,8 +197,8 @@ struct BasicStruct(i32);
 //                    ^ punctuation.definition.group.end
 
 #[derive(Debug)]
-// <- comment.block.attribute
-//^^^^^^^^^^^^^^ comment.block.attribute
+// <- meta.annotation.rust
+//^^^^^^^^^^^^^^ meta.annotation.rust
 struct PrintableStruct(Box<i32>);
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.struct
 // <- storage.type.struct
@@ -544,6 +544,29 @@ fn my_other_func(e: OperatingSystem) -> u32 {
 //                ^ punctuation.separator
 }
 
+// Test highlighting/scope with struct field attributes
+// https://github.com/rust-lang/sublime-rust/issues/120
+pub struct Claim {
+// ^^^^^^^^^ meta.struct
+    pub claim_id: String,
+//  ^^^ storage.modifier.rust
+    pub patient_id: String,
+    #[serde(skip_serializing_if="Option::is_none")]
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation.rust
+    pub referring: Option<String>,
+    #[serde(skip_serializing_if="Option::is_none")]
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation.rust
+    pub drug: Option<Vec<String>>,
+    #[serde(skip_serializing_if="Option::is_none")]
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation.rust
+    pub ndc: Option<Vec<String>>,
+    #[serde(skip_serializing_if="Option::is_none")]
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation.rust
+    pub rendering: Option<String>,
+    pub date: String,
+
+}
+
 struct Point
 // ^^^^^^^^^ meta.struct
 {
@@ -774,7 +797,7 @@ macro_rules! forward_ref_binop [
 //                                        ^^ meta.path
 
             #[inline]
-//          ^^^^^^^^^ comment.block.attribute
+//          ^^^^^^^^^ meta.annotation.rust
             fn $method(self, other: &'a $u) -> <$t as $imp<$u>>::Output {
 //          ^^ storage.type.function
 //             ^^^^^^^ variable.other
