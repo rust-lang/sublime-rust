@@ -1,6 +1,34 @@
 [
-    { 
-        "caption": "Rust: Toggle Syntax Checking", 
+    {
+        "caption": "Rust: Toggle Syntax Checking",
         "command": "toggle_rust_syntax_setting"
-    }
+    },
+    {
+        "caption": "Rust: Next Message",
+        "command": "rust_next_message"
+    },
+    {
+        "caption": "Rust: Prev Message",
+        "command": "rust_prev_message"
+    },
+    {
+        "caption": "Rust: Cancel Build",
+        "command": "rust_cancel"
+    },
+    {
+        "caption": "Rust: Set Cargo Target",
+        "command": "cargo_set_target"
+    },
+    {
+        "caption": "Rust: Set Cargo Build Profile",
+        "command": "cargo_set_profile"
+    },
+    {
+        "caption": "Rust: Set Cargo Target Triple",
+        "command": "cargo_set_triple"
+    },
+    {
+        "caption": "Rust: Set Cargo Toolchain",
+        "command": "cargo_set_toolchain"
+    },
 ]

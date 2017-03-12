@@ -1,0 +1,17 @@
+[
+    {"keys": ["f4"], "command": "rust_next_message", "context":
+        [
+            {"key": "selector", "operator":"equal", "operand": "source.rust"}
+        ]
+    },
+    {"keys": ["shift+f4"], "command": "rust_prev_message", "context":
+        [
+            {"key": "selector", "operator":"equal", "operand": "source.rust"}
+        ]
+    },
+    {"keys": ["ctrl+break"], "command": "rust_cancel", "context":
+        [
+            {"key": "selector", "operator":"equal", "operand": "source.rust"}
+        ]
+    },
+]

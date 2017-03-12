@@ -40,6 +40,12 @@
         </dict>
         <dict>
             <key>match</key>
+            <string>^warning:</string>
+            <key>name</key>
+            <string>variable.parameter</string>
+        </dict>
+        <dict>
+            <key>match</key>
             <string>^test result:</string>
             <key>name</key>
             <string>variable.parameter</string>

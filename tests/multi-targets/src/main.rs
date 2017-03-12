@@ -1,3 +1,4 @@
+
 extern crate multi_targets;
 
 use multi_targets::*;
