@@ -30,16 +30,16 @@ Ctrl-Shift-B / ⌘-Shift-B).  They are:
 
 Variant | Command | Description
 ------- | ------- | -----------
-(Default) | <code style="white-space: nowrap;">cargo build</code> | Builds the project.
-Run | <code style="white-space: nowrap;">cargo run</code> | Runs the binary.
-Run (with args)... | <code style="white-space: nowrap;">cargo run -- *args*</code> | Runs the binary with optional arguments you specify.
-Test | <code style="white-space: nowrap;">cargo test</code> | Runs unit and integration tests.
-Test (with args)... | <code style="white-space: nowrap;">cargo test -- *args*</code> | Runs the test with optional arguments you specify.
-Bench | <code style="white-space: nowrap;">cargo bench</code> | Runs benchmarks.
-Clean | <code style="white-space: nowrap;">cargo clean</code> | Removes all built files.
-Document | <code style="white-space: nowrap;">cargo doc</code> | Builds package documentation.
-Clippy | <code style="white-space: nowrap;">cargo clippy</code> | Runs [Clippy](https://github.com/Manishearth/rust-clippy).  Clippy must be installed, and currently requires the nightly toolchain.
-Script | <code style="white-space: nowrap;">cargo script $path</code> | Runs [Cargo Script](https://github.com/DanielKeep/cargo-script).  Cargo Script must be installed.  This is an addon that allows you to run a Rust source file like a script (without a Cargo.toml manifest).
+(Default) | <code>cargo&nbsp;build</code> | Builds the project.
+Run | <code>cargo&nbsp;run</code> | Runs the binary.
+Run (with args)... | <code>cargo&nbsp;run&nbsp;-&#8288;-&#8288;&nbsp;*args*</code> | Runs the binary with optional arguments you specify.
+Test | <code>cargo&nbsp;test</code> | Runs unit and integration tests.
+Test (with args)... | <code>cargo&nbsp;test&nbsp;-&#8288;-&#8288;&nbsp;*args*</code> | Runs the test with optional arguments you specify.
+Bench | <code>cargo&nbsp;bench</code> | Runs benchmarks.
+Clean | <code>cargo&nbsp;clean</code> | Removes all built files.
+Document | <code>cargo&nbsp;doc</code> | Builds package documentation.
+Clippy | <code>cargo&nbsp;clippy</code> | Runs [Clippy](https://github.com/Manishearth/rust-clippy).  Clippy must be installed, and currently requires the nightly toolchain.
+Script | <code>cargo&nbsp;script&nbsp;$path</code> | Runs [Cargo Script](https://github.com/DanielKeep/cargo-script).  Cargo Script must be installed.  This is an addon that allows you to run a Rust source file like a script (without a Cargo.toml manifest).
 
 ## Cargo Project Settings
 
