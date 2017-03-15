@@ -51,7 +51,6 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         if enabled and "source.rust" in view.scope_name(0):
             file_name = os.path.abspath(view.file_name())
             file_dir = os.path.dirname(file_name)
-            os.chdir(file_dir)
 
             view.set_status('rust-check', 'Rust syntax check running...')
             # This flag is used to terminate early. In situations where we
@@ -73,7 +72,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                     # print('-------------')
                     for info in infos:
                         # pprint(info)
-                        self.add_error_phantoms(view, info, settings, regions_by_view, target_src, {})
+                        self.add_error_phantoms(view, file_dir, info, settings, regions_by_view, target_src, {})
                     if self.this_view_found:
                         break
 
@@ -86,16 +85,24 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
             self.hide_phantoms(view.window())
         # print('done')
 
-    def run_cargo(self, args):
+    def run_cargo(self, args, cwd):
         """Args should be an array of arguments for cargo.
         Returns list of dictionaries of the parsed JSON output.
         """
-        # shell=True is needed to stop the window popping up, although it looks like this is needed:
-        # http://stackoverflow.com/questions/3390762/how-do-i-eliminate-windows-consoles-from-spawned-processes-in-python-2-7
+        # When sublime is launched from the dock in OSX, it does not have the user's environment set. So the $PATH env is reset.
+        # This means ~./cargo/bin won't be added (causing rustup to fail), we can manually add it back in here. [This is a hack, hopefully Sublime fixes this natively]
+        # fixes https://github.com/rust-lang/sublime-rust/issues/126
+        env = os.environ.copy() # copy so we don't modify the current processs' environment
+        normalised_cargo_path = os.path.normpath("~/.cargo/bin") + (";" if os.name == "nt" else ":")
+        env["PATH"] = normalised_cargo_path + env["PATH"]
+
         cmd = ' '.join(['cargo']+args)
         print('Running %r' % cmd)
+        # shell=True is needed to stop the window popping up, although it looks like this is needed:
+        # http://stackoverflow.com/questions/3390762/how-do-i-eliminate-windows-consoles-from-spawned-processes-in-python-2-7
         cproc = subprocess.Popen(cmd,
-            shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+            shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=env)
+
         output = cproc.communicate()
         output = output[0].decode('utf-8')  # ignore errors?
         result = []
@@ -117,10 +124,12 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
           Cargo target.
         * infos: A list of JSON dictionaries produced by Rust for that target.
         """
+        cwd = os.path.dirname(file_name)
         targets = self.determine_targets(settings, file_name)
         for (target_src, target_args) in targets:
             args = ['rustc', target_args, '--',
                     '-Zno-trans', '-Zunstable-options', '--error-format=json']
+
             if settings.get('rust_syntax_checking_include_tests', True):
                 if not ('--test' in target_args or '--bench' in target_args):
                     args.append('--test')
@@ -136,34 +145,32 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         if result: return result
 
         # Try a heuristic to detect the filename.
-        output = self.run_cargo(['metadata', '--no-deps'])
+        output = self.run_cargo(['metadata', '--no-deps'],
+                                cwd=os.path.dirname(file_name))
         if not output:
             return []
-        # TODO: This is broken for crates using the "workspace" feature.  Each
-        # sub-crate appears as a separate entry in "packages".  This needs
-        # logic to match file_name with the appropriate sub-crate, which may
-        # not be straightforward.
-        package = output[0]['packages'][0]
-        root_path = os.path.dirname(package['manifest_path'])
-        targets = package['targets']
-        # targets is list of dictionaries:
-        # {'kind': ['lib'],
-        #  'name': 'target-name',
-        #  'src_path': 'path/to/lib.rs'}
-        # src_path may be absolute or relative, fix it.
-        for target in targets:
-            if not os.path.isabs(target['src_path']):
-                target['src_path'] = os.path.join(root_path, target['src_path'])
-            target['src_path'] = os.path.normpath(target['src_path'])
+        # Each "workspace" shows up as a separate package.
+        for package in output[0]['packages']:
+            root_path = os.path.dirname(package['manifest_path'])
+            targets = package['targets']
+            # targets is list of dictionaries:
+            # {'kind': ['lib'],
+            #  'name': 'target-name',
+            #  'src_path': 'path/to/lib.rs'}
+            # src_path may be absolute or relative, fix it.
+            for target in targets:
+                if not os.path.isabs(target['src_path']):
+                    target['src_path'] = os.path.join(root_path, target['src_path'])
+                target['src_path'] = os.path.normpath(target['src_path'])
 
-        # Try exact filename matches.
-        result = self._targets_exact_match(targets, file_name)
-        if result: return result
+            # Try exact filename matches.
+            result = self._targets_exact_match(targets, file_name)
+            if result: return result
 
-        # No exact match, try to find all targets with longest matching parent
-        # directory.
-        result = self._targets_longest_matches(targets, file_name)
-        if result: return result
+            # No exact match, try to find all targets with longest matching parent
+            # directory.
+            result = self._targets_longest_matches(targets, file_name)
+            if result: return result
 
         # TODO: Alternatively, could run rustc directly without cargo.
         # rustc -Zno-trans -Zunstable-options --error-format=json file_name
@@ -266,13 +273,14 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
             view.erase_regions('rust-invalid')
             view.erase_regions('rust-info')
 
-    def add_error_phantoms(self, view_of_interest, info, settings,
+    def add_error_phantoms(self, view_of_interest, cwd, info, settings,
         regions_by_view, target_src_path, parent_info):
         """Add messages to Sublime views.
 
         - `view_of_interest`: This is the view that triggered the syntax
           check.  If we receive any messages for this view, then
           this_view_found is set.
+        - `cwd`: The directory where cargo is run.
         - `info`: Dictionary of messages from rustc.
         - `settings`: Sublime settings.
         - `regions_by_view`: Dictionary used to map view to highlight regions (see above).
@@ -285,6 +293,13 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         window = view_of_interest.window()
         error_colour = settings.get('rust_syntax_error_color', 'var(--redish)')
         warning_colour = settings.get('rust_syntax_warning_color', 'var(--yellowish)')
+
+        # Include "notes" tied to errors, even if warnings are disabled.
+        if (info['level'] != 'error' and
+            settings.get('rust_syntax_hide_warnings', False) and
+            not parent_info
+           ):
+            return
 
         # TODO: Consider matching the colors used by rustc.
         # - error: red
@@ -434,7 +449,8 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
                 span = find_span_r(span)
                 if span == None:
                     continue
-            view = window.find_open_file(os.path.realpath(span['file_name']))
+            span_path = os.path.realpath(os.path.join(cwd, span['file_name']))
+            view = window.find_open_file(span_path)
             if view:
                 # Sublime text is 0 based whilst the line/column info from
                 # rust is 1 based.
@@ -472,7 +488,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
 
         # Recurse into children (which typically hold notes).
         for child in info['children']:
-            self.add_error_phantoms(view_of_interest, child, settings, regions_by_view, target_src_path, parent_info)
+            self.add_error_phantoms(view_of_interest, cwd, child, settings, regions_by_view, target_src_path, parent_info)
 
     def draw_region_highlights(self, regions_by_view):
         for d in regions_by_view.values():

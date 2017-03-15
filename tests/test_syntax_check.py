@@ -43,8 +43,7 @@ class TestSyntaxCheck(unittest.TestCase):
                         break
                 else:
                     raise AssertionError('View never loaded.')
-                # Check the targets match expectation.
-                os.chdir(os.path.dirname(view.file_name()))
+                # Run the tests on this view.
                 f(view)
             except Exception as e:
                 q.put(e)
@@ -139,6 +138,11 @@ class TestSyntaxCheck(unittest.TestCase):
             'error-tests/tests/test_unicode.rs',
             # error in a cfg(test) section
             'error-tests/src/lib.rs',
+            # Workspace tests.
+            'workspace/workspace1/src/lib.rs',
+            'workspace/workspace1/src/anothermod/mod.rs',
+            'workspace/workspace2/src/lib.rs',
+            'workspace/workspace2/src/somemod.rs',
         ]
         for path in to_test:
             path = os.path.join('tests', path)
@@ -146,6 +150,7 @@ class TestSyntaxCheck(unittest.TestCase):
 
     def _test_messages(self, view):
         # Trigger the generation of messages.
+        cwd = os.path.dirname(view.file_name())
         e = plugin.SyntaxCheckPlugin.rustPluginSyntaxCheckEvent()
         phantoms = []
         regions = []
@@ -158,7 +163,7 @@ class TestSyntaxCheck(unittest.TestCase):
         e._add_phantom = collect_phantoms
         e._add_regions = collect_regions
         # Force Cargo to recompile.
-        e.run_cargo(['clean'])
+        e.run_cargo(['clean'], cwd=cwd)
         # os.utime(view.file_name())  1 second resolution is not enough
         e.on_post_save_async(view)
         pattern = '(\^+)(WARN|ERR|HELP|NOTE) (.+)'
@@ -178,7 +183,11 @@ class TestSyntaxCheck(unittest.TestCase):
             }[msg_type]
             msg_content = m.group(3)
             for i, (region, content) in enumerate(phantoms):
-                content = content.replace('&nbsp;', ' ')
+                # python 3.4 can use html.unescape()
+                content = content.replace('&nbsp;', ' ')\
+                                 .replace('&amp;', '&')\
+                                 .replace('&lt;', '<')\
+                                 .replace('&gt;', '>')
                 r_row, r_col = view.rowcol(region.end())
                 if r_row == msg_row and msg_content in content:
                     self.assertIn(msg_type_text, content)
