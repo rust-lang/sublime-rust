@@ -90,12 +90,19 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         """Args should be an array of arguments for cargo.
         Returns list of dictionaries of the parsed JSON output.
         """
-        # shell=True is needed to stop the window popping up, although it looks like this is needed:
-        # http://stackoverflow.com/questions/3390762/how-do-i-eliminate-windows-consoles-from-spawned-processes-in-python-2-7
+        # When sublime is launched from the dock in OSX, it does not have the user's environment set. So the $PATH env is reset.
+        # This means ~./cargo/bin won't be added (causing rustup to fail), we can manually add it back in here. [This is a hack, hopefully Sublime fixes this natively]
+        # fixes https://github.com/rust-lang/sublime-rust/issues/126
+        env = os.environ.copy() # copy so we don't modify the current processs' environment
+        normalised_cargo_path = os.path.normpath("~/.cargo/bin") + (";" if os.name == "nt" else ":")
+        env["PATH"] = normalised_cargo_path + env["PATH"]
+
         cmd = ' '.join(['cargo']+args)
         print('Running %r' % cmd)
+        # shell=True is needed to stop the window popping up, although it looks like this is needed:
+        # http://stackoverflow.com/questions/3390762/how-do-i-eliminate-windows-consoles-from-spawned-processes-in-python-2-7
         cproc = subprocess.Popen(cmd,
-            shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+            shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=env)
         output = cproc.communicate()
         output = output[0].decode('utf-8')  # ignore errors?
         result = []
