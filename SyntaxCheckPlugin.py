@@ -101,7 +101,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         print('Running %r' % cmd)
         # shell=True is needed to stop the window popping up, although it looks like this is needed:
         # http://stackoverflow.com/questions/3390762/how-do-i-eliminate-windows-consoles-from-spawned-processes-in-python-2-7
-        cproc = subprocess.Popen(cmd,
+        cproc = subprocess.Popen(cmd, cwd=cwd,
             shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=env)
 
         output = cproc.communicate()
