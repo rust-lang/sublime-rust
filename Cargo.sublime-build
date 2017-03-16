@@ -10,6 +10,10 @@
 
     "variants": [
         {
+            "shell_cmd": "cargo check",
+            "name": "Check"
+        },
+        {
             "shell_cmd": "cargo run",
             "name": "Run"
         },
