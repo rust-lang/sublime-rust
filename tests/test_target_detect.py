@@ -20,7 +20,10 @@ class TestTargetDetect(TestBase):
             ('src/altmain.rs', [('src/altmain.rs', '--bin otherbin')]),
             ('examples/ex1.rs', [('examples/ex1.rs', '--example ex1')]),
             ('examples/ex2.rs', [('examples/ex2.rs', '--example ex2')]),
-            ('examples/exlib.rs', [('examples/exlib.rs', '--example exlib')]),
+            # Unfortunately the fix for this missed the 1.16 deadline, wait
+            # for 1.17 to uncomment this.  See
+            # https://github.com/rust-lang/cargo/pull/3668
+            # ('examples/exlib.rs', [('examples/exlib.rs', '--example exlib')]),
             ('tests/test1.rs', [('tests/test1.rs', '--test test1')]),
             ('tests/test2.rs', [('tests/test2.rs', '--test test2')]),
             ('benches/bench1.rs', [('benches/bench1.rs', '--bench bench1')]),

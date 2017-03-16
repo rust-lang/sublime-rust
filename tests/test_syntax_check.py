@@ -24,6 +24,9 @@ class TestSyntaxCheck(TestBase):
         formatting of messages.  Hopefully these examples are relatively
         stable for now.
         """
+        self.rustc_version = util.get_rustc_version(sublime.active_window(),
+                                                    plugin_path)
+
         to_test = [
             'multi-targets/src/lib.rs',
             'multi-targets/src/lmod1.rs',
@@ -88,7 +91,7 @@ class TestSyntaxCheck(TestBase):
         e.on_post_save(view)
         # Wait for it to finish.
         self._get_rust_thread().join()
-        pattern = '(\^+)(WARN|ERR|HELP|NOTE) (.+)'
+        pattern = '(\^+)(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
         expected_messages = view.find_all(pattern)
         for emsg_r in expected_messages:
             row, col = view.rowcol(emsg_r.begin())
@@ -103,20 +106,24 @@ class TestSyntaxCheck(TestBase):
                 'NOTE': 'note',
                 'HELP': 'help',
             }[msg_type]
-            msg_content = m.group(3)
-            for i, (region, content) in enumerate(phantoms):
-                # python 3.4 can use html.unescape()
-                content = content.replace('&nbsp;', ' ')\
-                                 .replace('&amp;', '&')\
-                                 .replace('&lt;', '<')\
-                                 .replace('&gt;', '>')
-                r_row, r_col = view.rowcol(region.end())
-                if r_row == msg_row and msg_content in content:
-                    self.assertIn(msg_type_text, content)
-                    break
-            else:
-                raise AssertionError('Did not find expected message "%s:%s" on line %r for file %r' % (
-                    msg_type, msg_content, msg_row, view.file_name()))
-            del phantoms[i]
+            semver = m.group(3)
+            msg_content = m.group(4)
+            if not semver or \
+                    plugin.rust.semver.match(self.rustc_version, semver[1:-1]):
+                for i, (region, content) in enumerate(phantoms):
+                    # python 3.4 can use html.unescape()
+                    content = content.replace('&nbsp;', ' ')\
+                                     .replace('&amp;', '&')\
+                                     .replace('&lt;', '<')\
+                                     .replace('&gt;', '>')
+                    r_row, r_col = view.rowcol(region.end())
+                    print('Checking for %r in %r' % (msg_content, content))
+                    if r_row == msg_row and msg_content in content:
+                        self.assertIn(msg_type_text, content)
+                        break
+                else:
+                    raise AssertionError('Did not find expected message "%s:%s" on line %r for file %r' % (
+                        msg_type, msg_content, msg_row, view.file_name()))
+                del phantoms[i]
         if len(phantoms):
             raise AssertionError('Got extra phantoms for %r: %r' % (view.file_name(), phantoms))
