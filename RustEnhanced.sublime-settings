@@ -1,7 +1,18 @@
 {
-    // Enable the syntax checking plugin, which will highlight any errors during build
+    // Enable the on-save syntax checking plugin, which will highlight any
+    // build errors or warnings.
     "rust_syntax_checking": true,
+
+    // Enable checking of test code within #[cfg(test)] sections.
+    "rust_syntax_checking_include_tests": true,
+
+    // If true, will not display warning messages.
+    "rust_syntax_hide_warnings": false,
+
+    // Color of error messages.
     "rust_syntax_error_color": "#F00",
+
+    // Color of warning messages.
     "rust_syntax_warning_color":"#FF0"
 
     // If your cargo project has several build targets, it's possible to specify mapping of
