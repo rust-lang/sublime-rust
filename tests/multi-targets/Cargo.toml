@@ -1,0 +1,37 @@
+[package]
+name = "multi-targets"
+version = "0.1.0"
+build = "build.rs"
+
+[dependencies]
+
+[[bin]]
+name = "otherbin"
+path = "src/altmain.rs"
+
+[[bin]]
+name = "multi-targets"
+path = "src/main.rs"
+
+# If you specify an explicit bin, the Cargo will no automatically detect bins
+# in the bin/ directory.
+[[bin]]
+name = "bin1"
+path = "src/bin/bin1.rs"
+
+[[bin]]
+name = "bin2"
+path = "src/bin/bin2.rs"
+
+[[example]]
+name = "ex1"
+path = "examples/ex1.rs"
+
+[[example]]
+name = "ex2"
+path = "examples/ex2.rs"
+
+[[example]]
+name = "exlib"
+path = "examples/exlib.rs"
+crate-type = ["dylib"]

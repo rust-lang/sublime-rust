@@ -30,6 +30,7 @@ If you can't see `Rust Enhanced` its most likely because you're using Sublime Te
 ### Build functionality
 Rust Enhanced has the following build functions:
 - Cargo Run
+- Cargo Script [Cargo Script is needed](https://github.com/DanielKeep/cargo-script)
 - Cargo Test
 - Cargo Bench
 - Cargo Clean
@@ -50,29 +51,28 @@ Thanks to [urschrei](https://github.com/urschrei/)  we have Highlighting for:
 - total number of ignored tests > 0
 - total number of measured tests > 0
 
-Example:   
+Example:
 ![highlight_rust_test](https://cloud.githubusercontent.com/assets/936006/19247437/3cf6e056-8f23-11e6-9bbe-d8c542287db6.png)
 
 ### Syntax Checking
-The sublime-rust package now comes with syntax checking.
+Rust Enhanced will automatically perform syntax checking each time you save a file.
 This relies on Cargo and Rust (>= 1.8.0) being installed and on your system path. Plus Sublime Text >= 3118.
-This feature is on by default, but you can adjust the the value of ```rust_syntax_checking``` within your settings (see Settings). Additionally, the colour of the warnings and errors can be changed from the default values (seen below).
-```json
-{
-    "rust_syntax_checking": true,
-    "rust_syntax_error_color": "#F00",
-    "rust_syntax_warning_color":"#FF0"
-}
-```
-Here is an example:
-![testingrust](https://cloud.githubusercontent.com/assets/936006/18091147/938cb244-6ebf-11e6-9db1-b74e5bf4eebc.gif)
 
-Projects with multiple build targets are supported too. If a cargo project has several build targets, it's possible to specify mapping of source file names to the target to enable proper cargo's build target selection during syntax checking.
-Syntax checking is accomplished by command:
-```bash
-    cargo rustc {target} -- <some options>
-```
-where `{target}` is an empty string by default (perfectly works for cargo projects with only one build target). However, one can specify a certain target by updating plugin settings with the next section:
+There are a variety of settings (see [Settings](#settings)) for controlling the syntax highlighting:
+
+| Setting | Default | Description |
+| :------ | :------ | :---------- |
+| `rust_syntax_checking` | `true` | Enable the on-save syntax checking. |
+| `rust_syntax_checking_include_tests` | `true` | Enable checking of test code within `#[cfg(test)]` sections. |
+| `rust_syntax_hide_warnings` | `false` | If true, will not display warning messages. |
+| `rust_syntax_error_color` | `"#F00"` | Color of error messages. |
+| `rust_syntax_warning_color` | `"#FF0"` | Color of warning messages. |
+
+Here is an example:
+![testingrust](https://cloud.githubusercontent.com/assets/43198/22944409/7780ab9a-f2a5-11e6-87ea-0e253d6c40f6.png)
+
+Projects with multiple build targets are supported too (--lib, --bin, --example, etc.). If a cargo project has several build targets, it will attempt to automatically detect the correct target.  In some rare cases, you may need to manually specify which target a file belongs to.  This can be done by adding a "projects" setting in `Rust.sublime-settings` with the following format:
+
 ```
     "projects": {
        // One entry per project. Keys are project names.
