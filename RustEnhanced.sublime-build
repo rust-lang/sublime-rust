@@ -16,6 +16,10 @@
             }
         },
         {
+            "name": "Check",
+            "command": "check",
+        },
+        {
             "name": "Test",
             "command": "test",
         },

@@ -103,13 +103,23 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         td = target_detect.TargetDetector(self.window)
         targets = td.determine_targets(self.triggered_file_name)
         for (target_src, target_args) in targets:
-            cmd = ['cargo', 'rustc']
-            cmd.extend(target_args)
-            cmd.extend(['--', '-Zno-trans', '-Zunstable-options',
-                        '--error-format=json'])
-            if util.get_setting('rust_syntax_checking_include_tests', True):
-                if not ('--test' in target_args or '--bench' in target_args):
-                    cmd.append('--test')
+            method = util.get_setting('rust_syntax_checking_method', 'no-trans')
+            if method == 'check':
+                cmd = ['cargo', 'check', '--message-format=json']
+                cmd.extend(target_args)
+            else:
+                cmd = ['cargo', 'rustc']
+                cmd.extend(target_args)
+                cmd.extend(['--', '-Zno-trans', '-Zunstable-options',
+                            '--error-format=json'])
+                if util.get_setting('rust_syntax_checking_include_tests', True):
+                    if not ('--test' in target_args or '--bench' in target_args):
+                        # Including the test harness has a few drawbacks.
+                        # missing_docs lint is disabled (see
+                        # https://github.com/rust-lang/sublime-rust/issues/156)
+                        # It also disables the "main function not found" error for
+                        # binaries.
+                        cmd.append('--test')
             p = rust_proc.RustProc()
             self.current_target_src = target_src
             p.run(self.window, cmd, self.cwd, self)

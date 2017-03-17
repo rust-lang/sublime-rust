@@ -22,6 +22,15 @@ cargo_config = plugin.rust.cargo_config
 target_detect = plugin.rust.target_detect
 messages = plugin.rust.messages
 util = plugin.rust.util
+semver = plugin.rust.semver
+
+
+def unescape(s):
+    # python 3.4 can use html.unescape()
+    return s.replace('&nbsp;', ' ')\
+            .replace('&amp;', '&')\
+            .replace('&lt;', '<')\
+            .replace('&gt;', '>')
 
 
 class TestBase(unittest.TestCase):

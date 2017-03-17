@@ -59,6 +59,15 @@ CARGO_COMMANDS = {
         'allows_features': True,
         'allows_json': True,
     },
+    'check': {
+        'name': 'Check',
+        'command': 'check',
+        'allows_target': True,
+        'allows_target_triple': True,
+        'allows_release': True,
+        'allows_features': True,
+        'allows_json': True,
+    },
     'test': {
         'name': 'Test',
         'command': 'test',

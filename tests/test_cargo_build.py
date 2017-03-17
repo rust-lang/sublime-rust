@@ -2,12 +2,12 @@
 
 import fnmatch
 import os
+import re
 import sys
-import time
 
 from rust_test_common import *
 
-package_root = os.path.join(plugin_path,
+multi_target_root = os.path.join(plugin_path,
             'tests/multi-targets')
 
 
@@ -33,7 +33,7 @@ class TestCargoBuild(TestBase):
 
     def setUp(self):
         super(TestCargoBuild, self).setUp()
-        self._cargo_clean(package_root)
+        self._cargo_clean(multi_target_root)
 
     def test_regular_build(self):
         """Test plain Cargo build."""
@@ -42,7 +42,7 @@ class TestCargoBuild(TestBase):
 
     def _test_regular_build(self, view):
         self._run_build_wait()
-        path = os.path.join(package_root, exe('target/debug/multi-targets'))
+        path = os.path.join(multi_target_root, exe('target/debug/multi-targets'))
         self.assertTrue(os.path.exists(path))
 
     def test_build_with_target(self):
@@ -69,11 +69,11 @@ class TestCargoBuild(TestBase):
         ]
         window = view.window()
         for target, expected_files in targets:
-            self._cargo_clean(package_root)
+            self._cargo_clean(multi_target_root)
             window.run_command('cargo_set_target', {'variant': 'build',
                                                     'target': target})
             self._run_build_wait()
-            debug = os.path.join(package_root, 'target/debug')
+            debug = os.path.join(multi_target_root, 'target/debug')
             files = os.listdir(debug)
             files = files + [os.path.join('examples', x) for x in
                 os.listdir(os.path.join(debug, 'examples'))]
@@ -99,18 +99,18 @@ class TestCargoBuild(TestBase):
                                                  'profile': 'release'})
         self._run_build_wait()
         self.assertTrue(os.path.exists(
-            os.path.join(package_root, exe('target/release/multi-targets'))))
+            os.path.join(multi_target_root, exe('target/release/multi-targets'))))
         self.assertFalse(os.path.exists(
-            os.path.join(package_root, 'target/debug')))
+            os.path.join(multi_target_root, 'target/debug')))
 
-        self._cargo_clean(package_root)
+        self._cargo_clean(multi_target_root)
         window.run_command('cargo_set_profile', {'target': None,
                                                  'profile': 'dev'})
         self._run_build_wait()
         self.assertFalse(os.path.exists(
-            os.path.join(package_root, exe('target/release/multi-targets'))))
+            os.path.join(multi_target_root, exe('target/release/multi-targets'))))
         self.assertTrue(os.path.exists(
-            os.path.join(package_root, 'target/debug')))
+            os.path.join(multi_target_root, 'target/debug')))
 
     def test_target_triple(self):
         """Test target triple."""
@@ -218,6 +218,22 @@ class TestCargoBuild(TestBase):
         self.assertNotRegex(output, '(?m)^test sample_test1 \.\.\. ')
         self.assertRegex(output, '(?m)^test sample_test2 \.\.\. ok')
 
+    def test_check(self):
+        """Test "Check" variant."""
+        rustc_version = util.get_rustc_version(sublime.active_window(),
+                                               plugin_path)
+        if plugin.rust.semver.match(rustc_version, '<1.16.0'):
+            print('Skipping "Check" test, need rustc >= 1.16')
+            return
+        self._with_open_file('tests/error-tests/examples/err_ex.rs',
+            self._test_check)
+
+    def _test_check(self, view):
+        self._run_build_wait('check',
+            settings={'target': '--example err_ex'})
+        self._check_added_message(view.window(), view.file_name(),
+            r'not found in this scope')
+
     def test_bench(self):
         """Test "Bench" variant."""
         self._with_open_file('tests/multi-targets/benches/bench1.rs',
@@ -240,7 +256,8 @@ class TestCargoBuild(TestBase):
 
     def _test_clean(self, view):
         self._run_build_wait()
-        target = os.path.join(package_root, exe('target/debug/multi-targets'))
+        target = os.path.join(multi_target_root,
+            exe('target/debug/multi-targets'))
         self.assertTrue(os.path.exists(target))
         self._run_build_wait('clean')
         self.assertFalse(os.path.exists(target))
@@ -251,7 +268,7 @@ class TestCargoBuild(TestBase):
             self._test_document)
 
     def _test_document(self, view):
-        target = os.path.join(package_root,
+        target = os.path.join(multi_target_root,
                               'target/doc/multi_targets/index.html')
         self.assertFalse(os.path.exists(target))
         self._run_build_wait('doc')
@@ -260,7 +277,7 @@ class TestCargoBuild(TestBase):
     def test_clippy(self):
         """Test "Clippy" variant."""
         self._with_open_file('tests/multi-targets/src/lib.rs',
-            self._test_document)
+            self._test_clippy)
 
     def _test_clippy(self, view):
         window = view.window()
@@ -269,13 +286,16 @@ class TestCargoBuild(TestBase):
                                                    'toolchain': 'nightly'})
         self._run_build_wait('clippy')
         # This is a relatively simple test to verify Clippy has run.
+        self._check_added_message(window, view.file_name(), r'char_lit_as_u8')
+
+    def _check_added_message(self, window, filename, pattern):
         msgs = messages.WINDOW_MESSAGES[window.id()]
-        lib_msgs = msgs['paths'][os.path.join(package_root, 'src/lib.rs')]
-        for msg in lib_msgs:
-            if 'char_lit_as_u8' in msg['message']:
+        path_msgs = msgs['paths'][filename]
+        for msg in path_msgs:
+            if re.search(pattern, unescape(msg['message'])):
                 break
         else:
-            raise AssertionError('Failed to find char_lit_as_u8')
+            raise AssertionError('Failed to find %r' % pattern)
 
     def test_script(self):
         """Test "Script" variant."""

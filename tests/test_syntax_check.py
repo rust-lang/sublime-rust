@@ -20,6 +20,13 @@ class TestSyntaxCheck(TestBase):
             // ^ERR expected 1 parameter
             // ^^ERR this function takes 1 parameter
 
+        You can place restrictions on the message in parenthesis after the
+        level (comma separated).  This can be a semver check, or the word
+        "test" to indicate that this message only shows up in a cfg(test)
+        block.  Examples:
+            // ^ERR(<1.16.0) error msg before 1.16
+            // ^^ERR(>=1.16.0,test) error msg after 1.16, test block only
+
         These tests are somewhat fragile, as new versions of Rust change the
         formatting of messages.  Hopefully these examples are relatively
         stable for now.
@@ -78,12 +85,18 @@ class TestSyntaxCheck(TestBase):
         m._sublime_add_phantom = collect_phantoms
         m._sublime_add_regions = collect_regions
         try:
-            self._test_messages2(view, phantoms, regions)
+            for method in ('no-trans', 'check'):
+                if method == 'check' and \
+                        semver.match(self.rustc_version, '<1.16.0'):
+                    print('Skipping check, need rust >= 1.16.')
+                    return
+                with AlteredSetting('rust_syntax_checking_method', method):
+                    self._test_messages2(view, phantoms, regions, method)
         finally:
             m._sublime_add_phantom = orig_add_phantom
             m._sublime_add_regions = orig_add_regions
 
-    def _test_messages2(self, view, phantoms, regions):
+    def _test_messages2(self, view, phantoms, regions, method):
         e = plugin.SyntaxCheckPlugin.RustSyntaxCheckEvent()
         # Force Cargo to recompile.
         self._cargo_clean(view)
@@ -93,6 +106,22 @@ class TestSyntaxCheck(TestBase):
         self._get_rust_thread().join()
         pattern = '(\^+)(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
         expected_messages = view.find_all(pattern)
+
+        def restriction_check(restrictions):
+            if not restrictions:
+                return True
+            checks = restrictions[1:-1].split(',')
+            for check in checks:
+                if check == 'test':
+                    if method == 'check':
+                        # 'cargo check' currently does not handle cfg(test)
+                        # blocks.
+                        return False
+                else:
+                    if not semver.match(self.rustc_version, check):
+                        return False
+            return True
+
         for emsg_r in expected_messages:
             row, col = view.rowcol(emsg_r.begin())
             text = view.substr(emsg_r)
@@ -106,16 +135,11 @@ class TestSyntaxCheck(TestBase):
                 'NOTE': 'note',
                 'HELP': 'help',
             }[msg_type]
-            semver = m.group(3)
+            restrictions = m.group(3)
             msg_content = m.group(4)
-            if not semver or \
-                    plugin.rust.semver.match(self.rustc_version, semver[1:-1]):
+            if restriction_check(restrictions):
                 for i, (region, content) in enumerate(phantoms):
-                    # python 3.4 can use html.unescape()
-                    content = content.replace('&nbsp;', ' ')\
-                                     .replace('&amp;', '&')\
-                                     .replace('&lt;', '<')\
-                                     .replace('&gt;', '>')
+                    content = unescape(content)
                     r_row, r_col = view.rowcol(region.end())
                     print('Checking for %r in %r' % (msg_content, content))
                     if r_row == msg_row and msg_content in content:

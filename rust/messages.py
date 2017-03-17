@@ -345,7 +345,7 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
 
     - `window`: Sublime Window object.
     - `cwd`: Directory where cargo/rustc was run.
-    - `info`: Dictionary of messages from rustc.
+    - `info`: Dictionary of messages from rustc or cargo.
     - `target_path`: Absolute path to the top-level source file of the target
       (lib.rs, main.rs, etc.).  May be None if it is not known.
     - `msg_cb`: Function called for each message (if not None).  Parameters
@@ -358,6 +358,14 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
           - `message`: Text of the message.
           - `level`: Rust level ('error', 'warning', 'note', etc.)
     """
+    # cargo check emits in a slightly different format.
+    if 'reason' in info:
+        if info['reason'] == 'compiler-message':
+            info = info['message']
+        else:
+            # cargo may emit various other messages, like
+            # 'compiler-artifact' or 'build-script-executed'.
+            return
     _add_rust_messages(window, cwd, info, target_path, msg_cb, {})
 
 
