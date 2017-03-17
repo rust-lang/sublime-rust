@@ -6,6 +6,7 @@ import collections
 import html
 import itertools
 import os
+import re
 import webbrowser
 from pprint import pprint
 
@@ -23,6 +24,9 @@ from . import util
 # - `is_main`
 # - `message`
 WINDOW_MESSAGES = {}
+
+
+LINK_PATTERN = r'https?://[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-zA-Z]{2,6}\b[-a-zA-Z0-9@:%_+.~#?&/=]*'
 
 
 def clear_messages(window):
@@ -50,18 +54,23 @@ def add_message(window, path, level, span, is_main, message):
     try:
         messages_by_path = WINDOW_MESSAGES[wid]['paths']
     except KeyError:
+        # This is an OrderedDict to handle next/prev message.
         messages_by_path = collections.OrderedDict()
         WINDOW_MESSAGES[wid] = {
             'paths': messages_by_path,
             'msg_index': (-1, -1)
         }
     messages = messages_by_path.setdefault(path, [])
-    messages.append({
+    to_add = {
         'level': level,
         'span': span,
         'is_main': is_main,
         'message': message,
-    })
+    }
+    if to_add in messages:
+        # Don't add duplicates.
+        return
+    messages.append(to_add)
     view = window.find_open_file(path)
     if view:
         _show_phantom(view, level, span, message)
@@ -483,6 +492,8 @@ def _add_rust_messages(window, cwd, info, target_path,
         # (doesn't line up perfectly), not sure why.
         escaped_message = html.escape(message, quote=False).\
             replace('\n', '<br>').replace(' ', '&nbsp;')
+        escaped_message = re.sub(LINK_PATTERN, r'<a href="\g<0>">\g<0></a>',
+            escaped_message)
         content = msg_template.format(
             cls=cls,
             level=info['level'],

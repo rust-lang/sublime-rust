@@ -220,16 +220,13 @@ class CargoSettings(object):
             return working_dir
 
     def _find_cargo_manifest(self, cwd):
-        while True:
-            path = os.path.join(cwd, 'Cargo.toml')
-            if os.path.exists(path):
-                self.manifest_dir = cwd
-                self.manifest_path = path
-                return True
-            parent = os.path.dirname(cwd)
-            if parent == cwd:
-                return False
-            cwd = parent
+        path = util.find_cargo_manifest(cwd)
+        if path:
+            self.manifest_path = path
+            self.manifest_dir = os.path.dirname(path)
+            return True
+        else:
+            return False
 
     def _active_view_is_rust(self):
         view = self.window.active_view()

@@ -62,11 +62,26 @@ class TestSyntaxCheck(TestBase):
             'workspace/workspace2/src/lib.rs',
             'workspace/workspace2/src/somemod.rs',
         ]
+        methods = ['no-trans']
+        if semver.match(self.rustc_version, '>=1.16.0'):
+            methods.append('check')
+        else:
+            print('Skipping check, need rust >= 1.16.')
         for path in to_test:
             path = os.path.join('tests', path)
-            self._with_open_file(path, self._test_messages)
+            self._with_open_file(path, self._test_messages,
+                methods=methods)
 
-    def _test_messages(self, view):
+    def test_clippy_messages(self):
+        """Test clippy messages."""
+        to_test = [
+            'tests/error-tests/examples/clippy_ex.rs',
+            'tests/multi-targets/src/lib.rs',
+        ]
+        for path in to_test:
+            self._with_open_file(path, self._test_messages, methods=['clippy'])
+
+    def _test_messages(self, view, methods=None):
         # Trigger the generation of messages.
         phantoms = []
         regions = []
@@ -85,11 +100,7 @@ class TestSyntaxCheck(TestBase):
         m._sublime_add_phantom = collect_phantoms
         m._sublime_add_regions = collect_regions
         try:
-            for method in ('no-trans', 'check'):
-                if method == 'check' and \
-                        semver.match(self.rustc_version, '<1.16.0'):
-                    print('Skipping check, need rust >= 1.16.')
-                    return
+            for method in methods:
                 with AlteredSetting('rust_syntax_checking_method', method):
                     self._test_messages2(view, phantoms, regions, method)
         finally:
@@ -115,7 +126,11 @@ class TestSyntaxCheck(TestBase):
                 if check == 'test':
                     if method == 'check':
                         # 'cargo check' currently does not handle cfg(test)
-                        # blocks.
+                        # blocks (see
+                        # https://github.com/rust-lang/cargo/issues/3431)
+                        return False
+                elif check == 'clippy':
+                    if method != 'clippy':
                         return False
                 else:
                     if not semver.match(self.rustc_version, check):
@@ -141,7 +156,6 @@ class TestSyntaxCheck(TestBase):
                 for i, (region, content) in enumerate(phantoms):
                     content = unescape(content)
                     r_row, r_col = view.rowcol(region.end())
-                    print('Checking for %r in %r' % (msg_content, content))
                     if r_row == msg_row and msg_content in content:
                         self.assertIn(msg_type_text, content)
                         break

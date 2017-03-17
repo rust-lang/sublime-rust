@@ -276,7 +276,7 @@ class TestCargoBuild(TestBase):
 
     def test_clippy(self):
         """Test "Clippy" variant."""
-        self._with_open_file('tests/multi-targets/src/lib.rs',
+        self._with_open_file('tests/error-tests/examples/clippy_ex.rs',
             self._test_clippy)
 
     def _test_clippy(self, view):

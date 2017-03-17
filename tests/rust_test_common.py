@@ -72,7 +72,7 @@ class TestBase(unittest.TestCase):
         kwargs['command'] = command
         window.run_command('cargo_exec', kwargs)
 
-    def _with_open_file(self, filename, f):
+    def _with_open_file(self, filename, f, **kwargs):
         """Opens filename (relative to the plugin) in a new view, calls
         f(view) to perform the tests.
         """
@@ -95,7 +95,7 @@ class TestBase(unittest.TestCase):
                         break
                 else:
                     raise AssertionError('View never loaded.')
-                f(view)
+                f(view, **kwargs)
             except Exception as e:
                 q.put(e)
             else:

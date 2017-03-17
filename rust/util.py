@@ -4,6 +4,7 @@ import sublime
 import textwrap
 import threading
 import time
+import os
 
 
 def index_with(l, cb):
@@ -67,3 +68,18 @@ def get_rustc_version(window, cwd):
     # rustc 1.16.0-beta.2 (bc15d5281 2017-02-16)
     # rustc 1.17.0-nightly (306035c21 2017-02-18)
     return output.split()[1]
+
+
+def find_cargo_manifest(path):
+    """Find the Cargo.toml file in the given path, or any of its parents.
+
+    :Returns: The path where Cargo.toml is found, or None.
+    """
+    while True:
+        manifest = os.path.join(path, 'Cargo.toml')
+        if os.path.exists(manifest):
+            return manifest
+        parent = os.path.dirname(path)
+        if parent == path:
+            return None
+        path = parent
