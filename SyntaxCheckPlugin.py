@@ -109,15 +109,21 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
 
         :raises rust_proc.ProcessTerminatedError: Check was canceled.
         """
+        method = util.get_setting('rust_syntax_checking_method', 'no-trans')
+        if method == 'clippy':
+            cmd = ['cargo', '+nightly', 'clippy', '--message-format=json']
+            p = rust_proc.RustProc()
+            p.run(self.window, cmd, self.cwd, self)
+            p.wait()
+            return
+
+        # "no-trans" or "check" methods.
         td = target_detect.TargetDetector(self.window)
         targets = td.determine_targets(self.triggered_file_name)
         for (target_src, target_args) in targets:
-            method = util.get_setting('rust_syntax_checking_method', 'no-trans')
             if method == 'check':
                 cmd = ['cargo', 'check', '--message-format=json']
                 cmd.extend(target_args)
-            elif method == 'clippy':
-                cmd = ['cargo', '+nightly', 'clippy', '--message-format=json']
             else:
                 cmd = ['cargo', 'rustc']
                 cmd.extend(target_args)
