@@ -321,6 +321,19 @@ class CargoSettings(object):
         if cmd_info.get('allows_json'):
             result.append('--message-format=json')
 
+        # features
+        if cmd_info.get('allows_features', False):
+            v = get('no_default_features', False)
+            if v:
+                result.append('--no-default-features')
+            v = get('features', None)
+            if v:
+                if v.upper() == 'ALL':
+                    result.append('--all-features')
+                else:
+                    result.append('--features')
+                    result.append(v)
+
         # Add path from current active view (mainly for "cargo script").
         if cmd_info.get('wants_view_path', False):
             if not self._active_view_is_rust():

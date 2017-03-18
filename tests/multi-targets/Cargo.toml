@@ -7,6 +7,10 @@ build = "build.rs"
 
 [features]
 nightly = []
+default = ["feat1"]
+feat1 = []
+feat2 = []
+feat3 = []
 
 [[bin]]
 name = "otherbin"
@@ -26,6 +30,10 @@ path = "src/bin/bin1.rs"
 [[bin]]
 name = "bin2"
 path = "src/bin/bin2.rs"
+
+[[bin]]
+name = "feats"
+path = "src/bin/feats.rs"
 
 [[example]]
 name = "ex1"

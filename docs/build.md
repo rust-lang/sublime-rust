@@ -59,6 +59,7 @@ Command | Description
 Rust: Set Cargo Target | Set the Cargo target (`--lib`, `--example foo`, etc.) for each build variant.  The "Automatic Detection" option will attempt to determine which target to use based on the current active view in Sublime (a test file will use `--test` or a binary will use `--bin`, etc.).
 Rust: Set Cargo Build Profile | Set whether or not to use the `--release` flag.
 Rust: Set Cargo Target Triple | Set the target triple (such as `x86_64-apple-darwin`).
+Rust: Set Cargo Features | Set the Cargo build features to use.
 Rust: Set Cargo Toolchain | Set the Rust toolchain to use (`nightly`, `beta`, etc.).  Use the Targets > "All Targets" to set globally.
 
 Caution: If you have not created a `sublime-project` file, then any changes
@@ -117,6 +118,8 @@ Setting Name | Description
 `target_triple` | If set, uses the `--target` flag with the given value.
 `toolchain` | The Rust toolchain to use (such as `nightly` or `beta`).
 `target` | The Cargo target (such as `"--bin myprog"`).  Applies to `variants` only.  Can be `"auto"` (see "Set Cargo Target" above).
+`no_default_features` | If True, sets the `--no-default-features` flag.
+`features` | A string with a space separated list of features to pass to the `--features` flag.  Set to "ALL" to pass the `--all-features` flag.
 `extra_cargo_args` | Extra arguments passed to Cargo (before the `--` flags separator).
 `extra_run_args` | Extra arguments passed to Cargo (after the `--` flags separator).
 

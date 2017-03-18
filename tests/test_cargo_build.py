@@ -63,7 +63,7 @@ class TestCargoBuild(TestBase):
                                'libmulti_targets.rlib']),
             # I'm actually uncertain why Cargo builds all bins here.
             ('--test test1', [exe('bin1'), exe('bin2'), exe('multi-targets'),
-                              exe('otherbin'),
+                              exe('otherbin'), exe('feats'),
                               'libmulti_targets.rlib', 'test1-*']),
             # bench requires nightly
         ]
@@ -307,3 +307,44 @@ class TestCargoBuild(TestBase):
         self._run_build_wait('script')
         output = self._get_build_output(window)
         self.assertRegex(output, '(?m)^Hello Mystery$')
+
+    def test_features(self):
+        """Test feature selection."""
+        self._with_open_file('tests/multi-targets/src/bin/feats.rs',
+            self._test_features)
+
+    def _test_features(self, view):
+        window = view.window()
+        window.run_command('cargo_set_target', {'variant': 'run',
+                                                'target': '--bin feats'})
+        self._run_build_wait('run')
+        output = self._get_build_output(window)
+        self.assertRegex(output, '(?m)^feats: feat1$')
+
+        window.run_command('cargo_set_features', {'target': None,
+                                                  'no_default_features': True,
+                                                  'features': ''})
+        self._run_build_wait('run')
+        output = self._get_build_output(window)
+        self.assertRegex(output, '(?m)^feats: $')
+
+        window.run_command('cargo_set_features', {'target': None,
+                                                  'no_default_features': False,
+                                                  'features': 'feat3'})
+        self._run_build_wait('run')
+        output = self._get_build_output(window)
+        self.assertRegex(output, '(?m)^feats: feat1 feat3$')
+
+        window.run_command('cargo_set_features', {'target': None,
+                                                  'no_default_features': True,
+                                                  'features': 'feat2 feat3'})
+        self._run_build_wait('run')
+        output = self._get_build_output(window)
+        self.assertRegex(output, '(?m)^feats: feat2 feat3$')
+
+        window.run_command('cargo_set_features', {'target': None,
+                                                  'no_default_features': True,
+                                                  'features': 'ALL'})
+        self._run_build_wait('run')
+        output = self._get_build_output(window)
+        self.assertRegex(output, '(?m)^feats: feat1 feat2 feat3$')

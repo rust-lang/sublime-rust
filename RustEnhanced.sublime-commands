@@ -31,4 +31,8 @@
         "caption": "Rust: Set Cargo Toolchain",
         "command": "cargo_set_toolchain"
     },
+    {
+        "caption": "Rust: Set Cargo Features",
+        "command": "cargo_set_features"
+    },
 ]

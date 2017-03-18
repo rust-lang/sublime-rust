@@ -83,7 +83,7 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
         item_info = getattr(self, 'items_' + q)()
         if not isinstance(item_info, dict):
             item_info = {'items': item_info}
-        items = item_info['items']
+
         f_selected = getattr(self, 'selected_' + q, None)
 
         def make_choice(value):
@@ -94,34 +94,45 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
                     self._sequence.extend(next)
             self.show_next_question()
 
-        def wrapper(index):
-            if index != -1:
-                chosen = items[index][1]
-                RECENT_CHOICES[q] = chosen
-                make_choice(chosen)
-
         if q in self.input:
             make_choice(self.input[q])
-        elif item_info.get('skip_if_one', False) and len(items) == 1:
-            wrapper(0)
         else:
-            # If the user manually edits the config and enters custom values
-            # then it won't show up in the list (because it is not an exact
-            # match).  Add it so that it is a valid choice (assuming the user
-            # entered a valid value).
-            if 'default' in item_info:
-                default_index = index_with(items,
-                    lambda x: x[1] == item_info['default'])
-                if default_index == -1:
-                    items.append((item_info['default'], item_info['default']))
-            # Determine the default selection.
-            # Use the default provided by the items_ method, else
-            # use the most recently used value.
-            default = index_with(items,
-                lambda x: x[1] == item_info.get('default',
-                    RECENT_CHOICES.get(q, '_NO_DEFAULT_SENTINEL_')))
-            display_items = [x[0] for x in items]
-            self.window.show_quick_panel(display_items, wrapper, 0, default)
+            if 'items' in item_info:
+                def wrapper(index):
+                    if index != -1:
+                        chosen = item_info['items'][index][1]
+                        RECENT_CHOICES[q] = chosen
+                        make_choice(chosen)
+
+                items = item_info['items']
+                if item_info.get('skip_if_one', False) and len(items) == 1:
+                    wrapper(0)
+                else:
+                    # If the user manually edits the config and enters custom
+                    # values then it won't show up in the list (because it is
+                    # not an exact match).  Add it so that it is a valid
+                    # choice (assuming the user entered a valid value).
+                    if 'default' in item_info:
+                        default_index = index_with(items,
+                            lambda x: x[1] == item_info['default'])
+                        if default_index == -1:
+                            items.append((item_info['default'],
+                                          item_info['default']))
+                    # Determine the default selection.
+                    # Use the default provided by the items_ method, else
+                    # use the most recently used value.
+                    default = index_with(items,
+                        lambda x: x[1] == item_info.get('default',
+                            RECENT_CHOICES.get(q, '_NO_DEFAULT_SENTINEL_')))
+                    display_items = [x[0] for x in items]
+                    self.window.show_quick_panel(display_items, wrapper, 0,
+                                                 default)
+            elif 'caption' in item_info:
+                self.window.show_input_panel(item_info['caption'],
+                                             item_info.get('default', ''),
+                                             make_choice, None, None)
+            else:
+                raise ValueError(item_info)
 
     def items_package(self):
         # path/to/package: package_info
@@ -365,3 +376,53 @@ class CargoSetToolchain(CargoConfigBase):
                                           self.choices['toolchain'])
         else:
             raise AssertionError(self.choices['which'])
+
+
+class CargoSetFeatures(CargoConfigBase):
+
+    sequence = ['package', 'target', 'no_default_features', 'features']
+
+    def items_no_default_features(self):
+        current = self.settings.get_with_target(self.choices['package'],
+                                                self.choices['target'],
+                                                'no_default_features', False)
+        items = [
+            ('Include default features.', False),
+            ('Do not include default features.', True)
+        ]
+        return {
+            'items': items,
+            'default': current,
+        }
+
+    def items_features(self):
+        features = self.settings.get_with_target(self.choices['package'],
+                                                 self.choices['target'],
+                                                 'features', None)
+        if features is None:
+            package_path = self.choices['package']
+            available_features = self.packages[package_path].get('features', {})
+            items = list(available_features.keys())
+            # Remove the "default" entry.
+            if 'default' in items:
+                del items[items.index('default')]
+                if not self.choices['no_default_features']:
+                    # Don't show default features, (they are already included).
+                    for ft in available_features['default']:
+                        if ft in items:
+                            del items[items.index(ft)]
+            features = ' '.join(items)
+        return {
+            'caption': 'Choose features (space separated, use "ALL" to use all features)',
+            'default': features,
+        }
+
+    def done(self):
+        self.settings.set_with_target(self.choices['package'],
+                                      self.choices['target'],
+                                      'no_default_features',
+                                      self.choices['no_default_features'])
+        self.settings.set_with_target(self.choices['package'],
+                                      self.choices['target'],
+                                      'features',
+                                      self.choices['features'])
