@@ -67,16 +67,18 @@ class CargoExecThread(rust_thread.RustThread):
             self.settings.load()
         except cargo_settings.LoadSettingsError:
             return
-        cmd = self.settings.get_command(self.command_info,
-                                        self.initial_settings)
-        if not cmd:
+        cmd_info = self.settings.get_command(self.command_info,
+                                             self.initial_settings)
+        if not cmd_info:
             return
         messages.clear_messages(self.window)
         p = rust_proc.RustProc()
         listener = opanel.OutputListener(self.window,
                                          self.settings.manifest_dir)
         try:
-            p.run(self.window, cmd, self.settings.manifest_dir, listener)
+            p.run(self.window, cmd_info['command'],
+                  self.settings.manifest_dir, listener,
+                  env=cmd_info['env'])
             p.wait()
         except rust_proc.ProcessTerminatedError:
             return

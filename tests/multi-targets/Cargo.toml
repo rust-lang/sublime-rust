@@ -35,6 +35,10 @@ path = "src/bin/bin2.rs"
 name = "feats"
 path = "src/bin/feats.rs"
 
+[[bin]]
+name = "penv"
+path = "src/bin/penv.rs"
+
 [[example]]
 name = "ex1"
 path = "examples/ex1.rs"

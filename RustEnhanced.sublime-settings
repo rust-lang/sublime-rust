@@ -13,7 +13,14 @@
     "rust_syntax_error_color": "#F00",
 
     // Color of warning messages.
-    "rust_syntax_warning_color":"#FF0"
+    "rust_syntax_warning_color":"#FF0",
+
+    // Specify environment variables to add when running Cargo.
+    // "rust_env": {"PATH": "$PATH:$HOME/.cargo/bin"}
+
+    // If true, will use the environment from the user's login shell when
+    // running Cargo.
+    "rust_include_shell_env": true,
 
     // If your cargo project has several build targets, it's possible to specify mapping of
     // source code filenames to the target names to enable syntax checking.

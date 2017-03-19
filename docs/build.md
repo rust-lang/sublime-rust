@@ -122,6 +122,7 @@ Setting Name | Description
 `features` | A string with a space separated list of features to pass to the `--features` flag.  Set to "ALL" to pass the `--all-features` flag.
 `extra_cargo_args` | Extra arguments passed to Cargo (before the `--` flags separator).
 `extra_run_args` | Extra arguments passed to Cargo (after the `--` flags separator).
+`env` | Object of environment variables to add when running Cargo.
 
 The extra args settings support standard Sublime variable expansion (see
 [Build System

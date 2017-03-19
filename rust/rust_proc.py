@@ -10,12 +10,16 @@ import subprocess
 import sys
 import threading
 import time
+import shellenv
 
 from . import util
 
 # Map Sublime window ID to RustProc.
 PROCS = {}
 PROCS_LOCK = threading.Lock()
+
+# Environment (as s dict) from the user's login shell.
+USER_SHELL_ENV = None
 
 
 class ProcessTerminatedError(Exception):
@@ -135,13 +139,14 @@ class RustProc(object):
     # The thread used for reading output.
     _stdout_thread = None
 
-    def run(self, window, cmd, cwd, listener):
+    def run(self, window, cmd, cwd, listener, env=None):
         """Run the process.
 
         :param window: Sublime window.
         :param cmd: The command to run (list of strings).
         :param cwd: The directory where to run the command.
         :param listener: `ProcListener` to receive the output.
+        :param env: Dictionary of environment variables to add.
 
         :raises ProcessTermiantedError: Process was terminated by another
             thread.
@@ -164,23 +169,26 @@ class RustProc(object):
         with PROCS_LOCK:
             PROCS[window.id()] = self
         listener.on_begin(self)
-        # This is similar to how Sublime 'exec' works.
-        # XXX: TODO:
-        # - Allow user to specify 'env', and merge into environment.
-        # - Allow user to specify 'path', like '$PATH;C:\\new\path'
+
+        # Configure the environment.
+        self.env = os.environ.copy()
+        if util.get_setting('rust_include_shell_env', True):
+            global USER_SHELL_ENV
+            if USER_SHELL_ENV is None:
+                USER_SHELL_ENV = shellenv.get_env()[1]
+            self.env.update(USER_SHELL_ENV)
+
+        rust_env = util.get_setting('rust_env')
+        if rust_env:
+            for k, v in rust_env.items():
+                rust_env[k] = os.path.expandvars(v)
+            self.env.update(rust_env)
+
+        if env:
+            self.env.update(env)
 
         # XXX: Debug config.
         util.debug('Rust running: %s', self.cmd)
-
-        self.env = os.environ.copy()
-        if sys.platform == 'darwin':
-            # Because setting a global PATH on OS X is tricky, hard-code this.
-            # TODO: Grab this from settings.
-            cargo_dir = os.path.expanduser('~/.cargo/bin')
-            if cargo_dir not in self.env.get('PATH', '') \
-                    and os.path.exists(cargo_dir):
-                self.env['PATH'] = cargo_dir + os.pathsep + \
-                    self.env.get('PATH', '')
 
         if sys.platform == 'win32':
             # Prevent a console window from popping up.

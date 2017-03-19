@@ -259,7 +259,12 @@ class CargoSettings(object):
                                     cwd=cwd)[0]
 
     def get_command(self, cmd_info, initial_settings={}):
-        """Generates the command arguments for running Cargo."""
+        """Generates the command arguments for running Cargo.
+
+        :Returns: A dictionary with the keys:
+            - `command`: The command to run as a list of strings.
+            - `env`: Dictionary of environment variables (or None).
+        """
         command = cmd_info['command']
         result = ['cargo']
         pdata = self.project_data.get('settings', {})\
@@ -359,4 +364,17 @@ class CargoSettings(object):
             result.append('--')
             result.extend(shlex.split(extra_run_args))
 
-        return result
+        # Compute the environment.
+        env = pdata.get('defaults', {}).get('env', {})
+        env.update(vdata.get('env', {}))
+        env.update(pdata.get('targets', {}).get(target, {}).get('env', {}))
+        env.update(initial_settings.get('env', {}))
+        for k, v in env.items():
+            env[k] = os.path.expandvars(v)
+        if not env:
+            env = None
+
+        return {
+            'command': result,
+            'env': env,
+        }

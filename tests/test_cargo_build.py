@@ -63,7 +63,7 @@ class TestCargoBuild(TestBase):
                                'libmulti_targets.rlib']),
             # I'm actually uncertain why Cargo builds all bins here.
             ('--test test1', [exe('bin1'), exe('bin2'), exe('multi-targets'),
-                              exe('otherbin'), exe('feats'),
+                              exe('otherbin'), exe('feats'), exe('penv'),
                               'libmulti_targets.rlib', 'test1-*']),
             # bench requires nightly
         ]
@@ -125,7 +125,8 @@ class TestCargoBuild(TestBase):
                                                 'target_triple': 'a-b-c'})
         settings = cargo_settings.CargoSettings(window)
         settings.load()
-        cmd = settings.get_command(cargo_settings.CARGO_COMMANDS['build'])
+        cmd_info = cargo_settings.CARGO_COMMANDS['build']
+        cmd = settings.get_command(cmd_info)['command']
         self.assertEqual(cmd, ['cargo', 'build', '--target', 'a-b-c',
                                '--message-format=json'])
 
@@ -142,7 +143,8 @@ class TestCargoBuild(TestBase):
                                                    'toolchain': 'nightly'})
         settings = cargo_settings.CargoSettings(window)
         settings.load()
-        cmd = settings.get_command(cargo_settings.CARGO_COMMANDS['build'])
+        cmd_info = cargo_settings.CARGO_COMMANDS['build']
+        cmd = settings.get_command(cmd_info)['command']
         self.assertEqual(cmd, ['cargo', '+nightly', 'build',
                                '--message-format=json'])
 
@@ -151,7 +153,8 @@ class TestCargoBuild(TestBase):
                                                    'variant': 'build',
                                                    'toolchain': None})
         settings.load()
-        cmd = settings.get_command(cargo_settings.CARGO_COMMANDS['build'])
+        cmd_info = cargo_settings.CARGO_COMMANDS['build']
+        cmd = settings.get_command(cmd_info)['command']
         self.assertEqual(cmd, ['cargo', 'build',
                                '--message-format=json'])
 
@@ -162,7 +165,7 @@ class TestCargoBuild(TestBase):
         window.run_command('cargo_set_target', {'variant': 'build',
                                                 'target': '--bin bin1'})
         settings.load()
-        cmd = settings.get_command(cargo_settings.CARGO_COMMANDS['build'])
+        cmd = settings.get_command(cmd_info)['command']
         self.assertEqual(cmd, ['cargo', '+nightly', 'build', '--bin', 'bin1',
                                '--message-format=json'])
 
@@ -348,3 +351,34 @@ class TestCargoBuild(TestBase):
         self._run_build_wait('run')
         output = self._get_build_output(window)
         self.assertRegex(output, '(?m)^feats: feat1 feat2 feat3$')
+
+    def test_rust_env(self):
+        """Test setting rust_env."""
+        self._with_open_file('tests/multi-targets/src/bin/penv.rs',
+            self._test_rust_env)
+
+    def _test_rust_env(self, view):
+        window = view.window()
+        with AlteredSetting('rust_env', {'RUST_TEST_ENV': '1234567890'}):
+            window.run_command('cargo_set_target', {'variant': 'run',
+                                                    'target': '--bin penv'})
+            self._run_build_wait('run')
+            output = self._get_build_output(window)
+            self.assertRegex(output, '(?m)^RUST_TEST_ENV=1234567890$')
+
+    def test_build_env(self):
+        """Test setting build environment variables."""
+        self._with_open_file('tests/multi-targets/src/bin/penv.rs',
+            self._test_build_env)
+
+    def _test_build_env(self, view):
+        window = view.window()
+        settings = cargo_settings.CargoSettings(window)
+        settings.load()
+        settings.set_with_target(multi_target_root, '--bin penv', 'env',
+            {'RUST_BUILD_ENV_TEST': 'abcdef'})
+        window.run_command('cargo_set_target', {'variant': 'run',
+                                                'target': '--bin penv'})
+        self._run_build_wait('run')
+        output = self._get_build_output(window)
+        self.assertRegex(output, '(?m)^RUST_BUILD_ENV_TEST=abcdef$')
