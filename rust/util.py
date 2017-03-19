@@ -75,6 +75,7 @@ def find_cargo_manifest(path):
 
     :Returns: The path where Cargo.toml is found, or None.
     """
+    path = os.path.normpath(path)
     while True:
         manifest = os.path.join(path, 'Cargo.toml')
         if os.path.exists(manifest):

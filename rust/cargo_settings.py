@@ -164,6 +164,7 @@ class CargoSettings(object):
                 Any changes to the Cargo build settings will be lost if you close the window."""))
 
     def get_with_target(self, path, target, key, default=None):
+        path = os.path.normpath(path)
         pdata = self.project_data.get('settings', {})\
                                  .get('cargo_build', {})\
                                  .get('paths', {})\
@@ -175,6 +176,7 @@ class CargoSettings(object):
         return d.get(key, default)
 
     def get_with_variant(self, path, variant, key, default=None):
+        path = os.path.normpath(path)
         vdata = self.project_data.get('settings', {})\
                                  .get('cargo_build', {})\
                                  .get('paths', {})\
@@ -184,6 +186,7 @@ class CargoSettings(object):
         return vdata.get(key, default)
 
     def set_with_target(self, path, target, key, value):
+        path = os.path.normpath(path)
         pdata = self.project_data.setdefault('settings', {})\
                                  .setdefault('cargo_build', {})\
                                  .setdefault('paths', {})\
@@ -196,6 +199,7 @@ class CargoSettings(object):
         self.window.set_project_data(self.project_data)
 
     def set_with_variant(self, path, variant, key, value):
+        path = os.path.normpath(path)
         vdata = self.project_data.setdefault('settings', {})\
                                  .setdefault('cargo_build', {})\
                                  .setdefault('paths', {})\
