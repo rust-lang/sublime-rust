@@ -103,6 +103,8 @@ class TestSyntaxCheck(TestBase):
             for method in methods:
                 with AlteredSetting('rust_syntax_checking_method', method):
                     self._test_messages2(view, phantoms, regions, method)
+                phantoms.clear()
+                regions.clear()
         finally:
             m._sublime_add_phantom = orig_add_phantom
             m._sublime_add_regions = orig_add_regions

@@ -49,9 +49,11 @@ class TestBase(unittest.TestCase):
         self.settings = sublime.load_settings('RustEnhanced.sublime-settings')
         self._orig_show_panel = self.settings.get('show_panel_on_build')
         self.settings.set('show_panel_on_build', False)
+        plugin.cargo_build.ON_LOAD_MESSAGES_ENABLED = False
 
     def tearDown(self):
         self.settings.set('show_panel_on_build', self._orig_show_panel)
+        plugin.cargo_build.ON_LOAD_MESSAGES_ENABLED = True
 
     def _get_rust_thread(self):
         """Waits for a rust thread to get started and returns it."""
@@ -115,9 +117,11 @@ class TestBase(unittest.TestCase):
             path = os.path.dirname(view_or_path.file_name())
         else:
             path = view_or_path
-        rust_proc.check_output(sublime.active_window(),
+        window = sublime.active_window()
+        rust_proc.check_output(window,
                                'cargo clean'.split(),
                                path)
+        messages.clear_messages(window)
 
 
 class AlteredSetting(object):

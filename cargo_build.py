@@ -84,6 +84,11 @@ class CargoExecThread(rust_thread.RustThread):
             return
 
 
+# This is used by the test code.  Due to the async nature of the on_load event,
+# it can cause problems with the rapid loading of views.
+ON_LOAD_MESSAGES_ENABLED = True
+
+
 class CargoEventListener(sublime_plugin.EventListener):
 
     """Every time a new file is loaded, check if is a Rust file with messages,
@@ -91,7 +96,7 @@ class CargoEventListener(sublime_plugin.EventListener):
     """
 
     def on_load(self, view):
-        if 'source.rust' in view.scope_name(0):
+        if ON_LOAD_MESSAGES_ENABLED and 'source.rust' in view.scope_name(0):
             # For some reason, view.window() returns None here.
             # Use set_timeout to give it time to attach to a window.
             sublime.set_timeout(
