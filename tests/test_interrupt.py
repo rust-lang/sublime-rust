@@ -96,7 +96,7 @@ class TestInterrupt(TestBase):
         window = view.window()
         self._run_build()
         self._wait_for_start()
-        t = rust_thread.THREADS[view.window().id()]
+        t = self._get_rust_thread()
         self._wrap_terminate(t)
         window.run_command('rust_cancel')
         # Sleep long enough to make sure the build didn't continue running.
@@ -133,7 +133,7 @@ class TestInterrupt(TestBase):
         window = view.window()
         self._run_build()
         self._wait_for_start()
-        build_t = rust_thread.THREADS[window.id()]
+        build_t = self._get_rust_thread()
         self._wrap_terminate(build_t)
         # Start a syntax check, it should not be allowed to proceed.
         check_t = plugin.SyntaxCheckPlugin.RustSyntaxCheckThread(view)
@@ -159,8 +159,9 @@ class TestInterrupt(TestBase):
         check_t.start()
         self._wait_for_start()
         # Should silently kill the syntax check thread.
+        v = sublime.active_window().active_view()
         self._run_build()
-        build_t = rust_thread.THREADS[window.id()]
+        build_t = self._get_rust_thread()
         self._wrap_terminate(build_t)
         time.sleep(4)
         self.assertEqual(self.terminated, [check_t])
@@ -182,7 +183,7 @@ class TestInterrupt(TestBase):
         # Doing this immediately afterwards should cancel the syntax check
         # before it gets a chance to do much.
         self._run_build()
-        build_t = rust_thread.THREADS[window.id()]
+        build_t = self._get_rust_thread()
         self._wrap_terminate(build_t)
         time.sleep(4)
         self.assertEqual(self._files(),
@@ -210,7 +211,7 @@ class TestInterrupt(TestBase):
             window = view.window()
             self._run_build()
             self._wait_for_start()
-            build_t = rust_thread.THREADS[window.id()]
+            build_t = self._get_rust_thread()
             self._wrap_terminate(build_t)
             # Start a second build.
             self._run_build()
