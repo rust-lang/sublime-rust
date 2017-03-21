@@ -5,6 +5,10 @@
 
     "variants": [
         {
+            "name": "Automatic",
+            "command": "auto",
+        },
+        {
             "name": "Run",
             "command": "run",
         },

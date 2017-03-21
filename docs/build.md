@@ -31,6 +31,7 @@ Ctrl-Shift-B / ⌘-Shift-B).  They are:
 Variant | Command | Description
 ------- | ------- | -----------
 (Default) | <code>cargo&nbsp;build</code> | Builds the project.
+Automatic | | Automatically detect the command to run based on the currently active view (tests do `test`, binaries and examples do `run`, libraries do `build`, benches do `bench`).
 Run | <code>cargo&nbsp;run</code> | Runs the binary.
 Run (with args)... | <code>cargo&nbsp;run&nbsp;-&#8288;-&#8288;&nbsp;*args*</code> | Runs the binary with optional arguments you specify.
 Test | <code>cargo&nbsp;test</code> | Runs unit and integration tests.

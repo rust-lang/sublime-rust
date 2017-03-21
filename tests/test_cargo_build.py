@@ -386,3 +386,58 @@ class TestCargoBuild(TestBase):
         self._run_build_wait('run')
         output = self._get_build_output(window)
         self.assertRegex(output, '(?m)^RUST_BUILD_ENV_TEST=abcdef$')
+
+    def test_auto_build(self):
+        """Test "auto" build."""
+        tests = [
+            # This should probably automatically use nightly?
+            ('benches/bench1.rs', r'may not be used on the stable release channel'),
+            ('examples/ex1.rs', r'(?m)^ex1$'),
+            ('src/bin/bin1.rs', r'(?m)^bin1$'),
+            ('src/altmain.rs', r'(?m)^altmain$'),
+            ('src/lib.rs', r'\[Running: cargo build --lib'),
+            ('src/lmod1.rs', r'\[Running: cargo build --lib'),
+            ('src/main.rs', r'(?m)^Hello$'),
+            ('tests/test1.rs', r'(?m)^test sample_test1 \.\.\. ok$'),
+        ]
+        for path, pattern in tests:
+            self._with_open_file('tests/multi-targets/' + path,
+                self._test_auto_build, pattern=pattern)
+
+    def _test_auto_build(self, view, pattern=None):
+        window = view.window()
+        self._run_build_wait('auto')
+        output = self._get_build_output(window)
+        self.assertRegex(output, pattern)
+
+    def test_ambiguous_auto_build(self):
+        """Test "auto" build with indeterminate target."""
+        self._with_open_file('tests/multi-targets/tests/common/helpers.rs',
+            self._test_ambiguous_auto_build)
+
+    def _test_ambiguous_auto_build(self, view):
+        window = view.window()
+        sqp = window.__class__.show_quick_panel
+        window.__class__.show_quick_panel = self._quick_panel
+        try:
+            self._test_ambiguous_auto_build2(view)
+        finally:
+            window.__class__.show_quick_panel = sqp
+
+    def _quick_panel(self, items, on_done, flags=0,
+                     selected_index=-1, on_highlighted=None):
+        self.assertEqual(items, self.quick_panel_items)
+        on_done(self.quick_panel_index)
+
+    def _test_ambiguous_auto_build2(self, view):
+        window = view.window()
+        self.quick_panel_items = ['--test test1', '--test test2']
+        self.quick_panel_index = 0
+        self._run_build_wait('auto')
+        output = self._get_build_output(window)
+        self.assertRegex(output, r'\[Running: cargo test --test test1 ')
+
+        self.quick_panel_index = 1
+        self._run_build_wait('auto')
+        output = self._get_build_output(window)
+        self.assertRegex(output, r'\[Running: cargo test --test test2 ')

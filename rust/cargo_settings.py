@@ -22,6 +22,15 @@ import shlex
 from . import util, target_detect
 
 CARGO_COMMANDS = {
+    'auto': {
+        'name': 'Automatic',
+        'command': 'auto',
+        'allows_target': True,
+        'allows_target_triple': True,
+        'allows_release': True,
+        'allows_features': True,
+        'allows_json': True,
+    },
     'build': {
         'name': 'Build',
         'command': 'build',

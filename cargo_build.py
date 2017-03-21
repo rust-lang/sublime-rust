@@ -4,7 +4,7 @@ import functools
 import sublime
 import sublime_plugin
 from .rust import (rust_proc, rust_thread, opanel, util, messages,
-                   cargo_settings)
+                   cargo_settings, target_detect)
 from .rust.cargo_config import *
 
 # Maps command to an input string. Used to pre-populate the input panel with
@@ -43,15 +43,62 @@ class CargoExecCommand(sublime_plugin.WindowCommand):
     def run(self, command=None, command_info=None, settings=None):
         if command is None:
             return self.window.run_command('build', {'select': True})
-        self.command = command
-        self.command_info = cargo_settings.CARGO_COMMANDS\
-            .get(command, {}).copy()
-        if command_info:
-            self.command_info.update(command_info)
         self.initial_settings = settings if settings else {}
         self.settings = cargo_settings.CargoSettings(self.window)
         self.settings.load()
-        self._determine_working_path(self._run_check_for_args)
+        if command == 'auto':
+            self._detect_auto_build()
+        else:
+            self.command = command
+            self.command_info = cargo_settings.CARGO_COMMANDS\
+                .get(command, {}).copy()
+            if command_info:
+                self.command_info.update(command_info)
+            self._determine_working_path(self._run_check_for_args)
+
+    def _detect_auto_build(self):
+        """Handle the "auto" build variant, which automatically picks a build
+        command based on the current view."""
+        if not util.active_view_is_rust():
+            sublime.error_message(util.multiline_fix("""
+                Error: Could not determine what to build.
+
+                Open a Rust source file as the active Sublime view.
+            """))
+            return
+        td = target_detect.TargetDetector(self.window)
+        view = self.window.active_view()
+        targets = td.determine_targets(view.file_name())
+        if len(targets) == 0:
+            sublime.error_message(util.multiline_fix("""
+                Error: Could not determine what to build.
+
+                Try using one of the explicit build variants.
+            """))
+            return
+
+        elif len(targets) == 1:
+            self._auto_choice_made(targets, 0)
+
+        else:
+            # Can't determine a single target, let the user choose one.
+            display_items = [' '.join(x[1]) for x in targets]
+            on_done = functools.partial(self._auto_choice_made, targets)
+            self.window.show_quick_panel(display_items, on_done)
+
+    def _auto_choice_made(self, targets, index):
+        if index != -1:
+            src_path, cmd_line = targets[index]
+            actions = {
+                '--bin': 'run',
+                '--example': 'run',
+                '--lib': 'build',
+                '--bench': 'bench',
+                '--test': 'test',
+            }
+            cmd = actions[cmd_line[0]]
+            self.initial_settings['target'] = ' '.join(cmd_line)
+            self.run(command=cmd, settings=self.initial_settings)
 
     def _determine_working_path(self, on_done):
         """Determine where Cargo should be run.

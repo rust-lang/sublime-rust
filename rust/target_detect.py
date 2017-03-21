@@ -153,7 +153,7 @@ class TargetDetector(object):
                 break
             path_match = p
         # If the match is both --bin and --lib in the same directory,
-        # just do --lib.
+        # just do --bin.
         if found_bin and found_lib:
             result = [x for x in result if x[1][0] != '--bin']
         return result
