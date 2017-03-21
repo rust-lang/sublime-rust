@@ -36,6 +36,10 @@
         "command": "cargo_set_features"
     },
     {
+        "caption": "Rust: Set Default Path",
+        "command": "cargo_set_default_path"
+    },
+    {
         "caption": "Rust: Create New Cargo Build Variant",
         "command": "cargo_create_new_build"
     }

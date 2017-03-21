@@ -56,6 +56,7 @@ are:
 
 Command | Description
 ------- | -----------
+Rust: Set Default Path | Set the default Cargo package to build.  If not specified, then it will detect it from the current view, or display a panel to choose from.
 Rust: Set Cargo Target | Set the Cargo target (`--lib`, `--example foo`, etc.) for each build variant.  The "Automatic Detection" option will attempt to determine which target to use based on the current active view in Sublime (a test file will use `--test` or a binary will use `--bin`, etc.).
 Rust: Set Cargo Build Profile | Set whether or not to use the `--release` flag.
 Rust: Set Cargo Target Triple | Set the target triple (such as `x86_64-apple-darwin`).
@@ -89,7 +90,7 @@ An example of a `sublime-project` file:
     "settings": {
         "cargo_build": {
             "paths": {
-                "path/to/package": {
+                "/path/to/package": {
                     "defaults": {
                         "release": true
                     },
@@ -117,7 +118,7 @@ The available settings are:
 
 Setting Name | Description
 ------------ | -----------
-`working_dir` | The directory where to run Cargo.  If not specified, attempts to detect from the active view, or displays a panel to choose a Cargo package.
+`working_dir` | The directory where to run Cargo.  If not specified, uses the value from `default_path`, otherwise attempts to detect from the active view, or displays a panel to choose a Cargo package.
 `script_path` | Path to a `.rs` script, used by `cargo script` if you want to hard-code a specific script to run.
 `release` | If true, uses the `--release` flag.
 `target_triple` | If set, uses the `--target` flag with the given value.

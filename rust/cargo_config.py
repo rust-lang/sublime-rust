@@ -62,6 +62,9 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
     # If True, the command wants the 'package' choice to fetch metadata from
     # Cargo.
     package_wants_metadata = True
+    # If True, the 'package' choice will automatically use the manifest
+    # from the active view if it is available.
+    package_allows_active_view_shortcut = True
     # This is a dictionary populated by the `items_package` method.
     # Key is the path to a package, the value is the metadata from Cargo.
     # This is used by other questions (like `items_target`) to get more
@@ -153,16 +156,18 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
                 raise ValueError(item_info)
 
     def items_package(self):
-        # If there is a manifest under the current view, use that by default.
         view = self.window.active_view()
-        if view.file_name():
+        if self.package_allows_active_view_shortcut and view.file_name():
+            # If there is a manifest under the current view, use that by
+            # default.
             manifest_dir = util.find_cargo_manifest(view.file_name())
             if manifest_dir:
                 if self.package_wants_metadata:
                     metadata = get_cargo_metadata(self.window, manifest_dir)
                     if metadata:
                         for package in metadata['packages']:
-                            package_dir = os.path.dirname(package['manifest_path'])
+                            package_dir = os.path.dirname(
+                                package['manifest_path'])
                             if package_dir == manifest_dir:
                                 self.packages = {
                                     manifest_dir: package
@@ -491,6 +496,24 @@ class CargoSetFeatures(CargoConfigBase):
                                       self.choices['target'],
                                       'features',
                                       self.choices['features'])
+
+
+class CargoSetDefaultPath(CargoConfigBase):
+
+    sequence = ['package']
+    package_allows_active_view_shortcut = False
+
+    def items_package(self):
+        result = super(CargoSetDefaultPath, self).items_package()
+        items = result['items']
+        items.insert(0, (['No Default',
+            'Build will attempt to detect from the current view, or pop up a selection panel.'],
+             None))
+        result['default'] = self.settings.get('default_path')
+        return result
+
+    def done(self):
+        self.settings.set('default_path', self.choices['package'])
 
 
 class CargoCreateNewBuild(CargoConfigBase):

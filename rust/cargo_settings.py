@@ -129,6 +129,16 @@ class CargoSettings(object):
                 Rust Enhanced Warning: This window does not have an associated sublime-project file.
                 Any changes to the Cargo build settings will be lost if you close the window."""))
 
+    def get(self, key, default=None):
+        return self.project_data.get('settings', {})\
+                                .get('cargo_build', {})\
+                                .get(key, default)
+
+    def set(self, key, value):
+        self.project_data.setdefault('settings', {})\
+                         .setdefault('cargo_build', {})[key] = value
+        self.window.set_project_data(self.project_data)
+
     def get_with_target(self, path, target, key, default=None):
         path = os.path.normpath(path)
         pdata = self.project_data.get('settings', {})\

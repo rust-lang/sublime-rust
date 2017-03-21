@@ -63,10 +63,20 @@ class CargoExecCommand(sublime_plugin.WindowCommand):
             self.working_dir = working_dir
             self.settings_path = working_dir
             return on_done()
+
         script_path = self.initial_settings.get('script_path')
         if script_path:
             self.working_dir = os.path.dirname(script_path)
             self.settings_path = script_path
+            return on_done()
+
+        default_path = self.settings.get('default_path')
+        if default_path:
+            self.settings_path = default_path
+            if os.path.isfile(default_path):
+                self.working_dir = os.path.dirname(default_path)
+            else:
+                self.working_dir = default_path
             return on_done()
 
         if self.command_info.get('requires_manifest', True):
