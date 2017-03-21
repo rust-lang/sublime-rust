@@ -35,4 +35,8 @@
         "caption": "Rust: Set Cargo Features",
         "command": "cargo_set_features"
     },
+    {
+        "caption": "Rust: Create New Cargo Build Variant",
+        "command": "cargo_create_new_build"
+    }
 ]

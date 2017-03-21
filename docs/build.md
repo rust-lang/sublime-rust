@@ -67,13 +67,16 @@ you make will be lost if you close the Sublime window.
 
 ### Settings
 
-Settings are stored in your `sublime-project` file under the `"settings"` key.
-Settings are organized per Cargo package.  The top-level keys for each package are:
+Settings are stored in your `sublime-project` file under `"cargo_build"` in
+the `"settings"` key. Settings are organized per Cargo package in the
+`"paths"` object.  Paths can either be directories to a Cargo package, or the
+path to a Rust source file (when used with `cargo script`).  The top-level
+keys for each package are:
 
 Key | Description
 --- | -----------
 `"defaults"` | Default settings used if not set per target or variant.
-`"targets"` | Settings per target.
+`"targets"` | Settings per target (such as `"--lib"` or `"--bin foo"`).
 `"variants"` | Settings per build variant.
 
 An example of a `sublime-project` file:
@@ -114,6 +117,8 @@ The available settings are:
 
 Setting Name | Description
 ------------ | -----------
+`working_dir` | The directory where to run Cargo.  If not specified, attempts to detect from the active view, or displays a panel to choose a Cargo package.
+`script_path` | Path to a `.rs` script, used by `cargo script` if you want to hard-code a specific script to run.
 `release` | If true, uses the `--release` flag.
 `target_triple` | If set, uses the `--target` flag with the given value.
 `toolchain` | The Rust toolchain to use (such as `nightly` or `beta`).
@@ -136,8 +141,32 @@ folders).
 
 If you have multiple Cargo projects in your Sublime window, the build system
 will use the currently active view to attempt to determine which project to
-build.
+build.  Otherwise it will show an input panel to select a package.
 
-## Custom Variants (Advanced)
+## Custom Build Variants (Advanced)
 
-TODO
+You can define your own build system that takes advantage of the Cargo
+settings.  This is useful if you want to quickly switch between different
+configurations, or to add support for Cargo commands that are not already included.
+
+The build variants are stored in your `.sublime-project` file.  To assist you
+in configuring a build variant, there is a Sublime command called `"Rust:
+Create New Cargo Build Variant"` which you can access from the Command
+Palette.  It will ask a series of questions, and when it is done it will
+automatically add the new build variant to your `.sublime-project` file.  Then
+use the "Build With..." command (Ctrl-Shift-B / ⌘-Shift-B) to select and
+execute your new variant.  The command will also copy over the stock build
+variants so you do not need to switch between build systems.
+
+You can manually edit your `.sublime-project` file to change the settings.  The settings described above are under the `"settings"` key.  Additionally, there is a `"command_info"` key which describes the features the command supports.  The available values are:
+
+Setting Name | Default | Description
+------------ | ------- | -----------
+`allows_target` |  False | If True, the command accepts cargo filters for determining which target to build (`--lib`, `--bin foo`, `--example bar`, etc.).  Can also be a sequence of strings like `["bin", "example"]` to specify a subset of targets it supports.
+`allows_target_triple` |  False | If True, the command accepts triples like `--target x86_64-apple-darwin`.
+`allows_release` |  False | If True, allows `--release` flag.
+`allows_features` |  False | If True, allows feature flags.
+`allows_json` |  False | If True, allows `--message-format=json` flag.
+`requires_manifest` | True | If True, the command must be run in a directory with a `Cargo.toml` manifest.
+`requires_view_path` |  False | If True, then the active view must be a Rust source file, and the path to that file will be passed into Cargo (used mainly by `cargo script`).
+`wants_run_args` |  False | If True, it will ask for extra args to pass to the executable (after the `--` flag separator).

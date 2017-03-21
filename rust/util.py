@@ -76,11 +76,33 @@ def find_cargo_manifest(path):
     :Returns: The path where Cargo.toml is found, or None.
     """
     path = os.path.normpath(path)
+    if os.path.isfile(path):
+        path = os.path.dirname(path)
     while True:
         manifest = os.path.join(path, 'Cargo.toml')
         if os.path.exists(manifest):
-            return manifest
+            return path
         parent = os.path.dirname(path)
         if parent == path:
             return None
         path = parent
+
+
+def active_view_is_rust(window=None, view=None):
+    """Determine if the current view is a Rust source file.
+
+    :param window: The Sublime window (defaults to active window).
+    :param view: The view to check (defaults to active view).
+
+    :Returns: True if it is a Rust source file, False if not.
+    """
+    if view is None:
+        if window is None:
+            window = sublime.active_window()
+        view = window.active_view()
+    if not view:
+        return False
+    # Require it to be saved to disk.
+    if not view.file_name():
+        return False
+    return 'source.rust' in view.scope_name(0)

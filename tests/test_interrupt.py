@@ -130,7 +130,6 @@ class TestInterrupt(TestBase):
 
     def _test_syntax_check_while_build(self, view):
         self._cargo_clean(view)
-        window = view.window()
         self._run_build()
         self._wait_for_start()
         build_t = self._get_rust_thread()
@@ -153,13 +152,11 @@ class TestInterrupt(TestBase):
 
     def _test_build_while_syntax_check(self, view):
         self._cargo_clean(view)
-        window = view.window()
         check_t = plugin.SyntaxCheckPlugin.RustSyntaxCheckThread(view)
         self._wrap_terminate(check_t)
         check_t.start()
         self._wait_for_start()
         # Should silently kill the syntax check thread.
-        v = sublime.active_window().active_view()
         self._run_build()
         build_t = self._get_rust_thread()
         self._wrap_terminate(build_t)
@@ -177,7 +174,6 @@ class TestInterrupt(TestBase):
 
     def _test_build_with_save(self, view):
         self._cargo_clean(view)
-        window = view.window()
         # Trigger on_save for syntax checking.
         view.run_command('save')
         # Doing this immediately afterwards should cancel the syntax check
@@ -208,7 +204,6 @@ class TestInterrupt(TestBase):
         sublime.ok_cancel_dialog = ok_cancel_dialog
         try:
             self._cargo_clean(view)
-            window = view.window()
             self._run_build()
             self._wait_for_start()
             build_t = self._get_rust_thread()

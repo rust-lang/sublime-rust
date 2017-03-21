@@ -43,7 +43,7 @@ class RustSyntaxCheckEvent(sublime_plugin.EventListener):
             return
 
         enabled = util.get_setting('rust_syntax_checking', True)
-        if enabled and 'source.rust' in view.scope_name(0):
+        if enabled and util.active_view_is_rust(view=view):
             t = RustSyntaxCheckThread(view)
             t.start()
         elif not enabled:
@@ -80,14 +80,12 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         if util.get_setting('rust_syntax_checking_method') == 'clippy':
             # Clippy must run in the same directory as Cargo.toml.
             # See https://github.com/Manishearth/rust-clippy/issues/1515
-            cwd = util.find_cargo_manifest(
-                os.path.dirname(self.triggered_file_name))
-            if cwd is None:
+            self.cwd = util.find_cargo_manifest(self.triggered_file_name)
+            if self.cwd is None:
                 print('Rust Enhanced skipping on-save syntax check.')
                 print('Failed to find Cargo.toml from %r' % self.triggered_file_name)
                 print('Clippy requires a Cargo.toml to exist.')
                 return
-            self.cwd = os.path.dirname(cwd)
         else:
             self.cwd = os.path.dirname(self.triggered_file_name)
 

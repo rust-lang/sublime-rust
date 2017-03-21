@@ -126,7 +126,8 @@ class TestCargoBuild(TestBase):
         settings = cargo_settings.CargoSettings(window)
         settings.load()
         cmd_info = cargo_settings.CARGO_COMMANDS['build']
-        cmd = settings.get_command(cmd_info)['command']
+        manifest_dir = util.find_cargo_manifest(view.file_name())
+        cmd = settings.get_command(cmd_info, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', 'build', '--target', 'a-b-c',
                                '--message-format=json'])
 
@@ -144,7 +145,8 @@ class TestCargoBuild(TestBase):
         settings = cargo_settings.CargoSettings(window)
         settings.load()
         cmd_info = cargo_settings.CARGO_COMMANDS['build']
-        cmd = settings.get_command(cmd_info)['command']
+        manifest_dir = util.find_cargo_manifest(view.file_name())
+        cmd = settings.get_command(cmd_info, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', '+nightly', 'build',
                                '--message-format=json'])
 
@@ -154,7 +156,8 @@ class TestCargoBuild(TestBase):
                                                    'toolchain': None})
         settings.load()
         cmd_info = cargo_settings.CARGO_COMMANDS['build']
-        cmd = settings.get_command(cmd_info)['command']
+        manifest_dir = util.find_cargo_manifest(view.file_name())
+        cmd = settings.get_command(cmd_info, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', 'build',
                                '--message-format=json'])
 
@@ -165,7 +168,8 @@ class TestCargoBuild(TestBase):
         window.run_command('cargo_set_target', {'variant': 'build',
                                                 'target': '--bin bin1'})
         settings.load()
-        cmd = settings.get_command(cmd_info)['command']
+        manifest_dir = util.find_cargo_manifest(view.file_name())
+        cmd = settings.get_command(cmd_info, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', '+nightly', 'build', '--bin', 'bin1',
                                '--message-format=json'])
 
