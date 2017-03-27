@@ -552,16 +552,18 @@ pub struct Claim {
 //  ^^^ storage.modifier.rust
     pub patient_id: String,
     #[serde(skip_serializing_if="Option::is_none")]
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation.rust
+//                               ^^^^^^^^^^^^^^^ string.quoted.double
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation
     pub referring: Option<String>,
     #[serde(skip_serializing_if="Option::is_none")]
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation.rust
+//    ^^^^^ support.function
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation
     pub drug: Option<Vec<String>>,
     #[serde(skip_serializing_if="Option::is_none")]
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation.rust
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation
     pub ndc: Option<Vec<String>>,
     #[serde(skip_serializing_if="Option::is_none")]
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation.rust
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation
     pub rendering: Option<String>,
     pub date: String,
 
