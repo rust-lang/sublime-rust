@@ -211,6 +211,19 @@ struct PrintableStruct(Box<i32>);
 //                            ^ punctuation.definition.generic.end
 //                             ^ punctuation.definition.group.end
 
+
+// fixes https://github.com/rust-lang/sublime-rust/issues/144
+fn factory() -> Box<Fn(i32) -> i32> {
+// <- storage.type.function
+// ^^^^^^^ entity.name.function 
+//                  ^^^^^^^^^^^^^^ meta.generic
+//                      ^^ storage.type 
+//                              ^^ storage.type   
+//                          ^^ punctuation.separator.generic
+
+    Box::new(|x| x + 1)
+}
+
 impl fmt::Display for PrintableStruct {
 // <- meta.impl
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl

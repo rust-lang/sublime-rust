@@ -360,6 +360,10 @@ contexts:
 
   generic-angles:
     - meta_scope: meta.generic.rust
+    # -> to cover https://doc.rust-lang.org/std/boxed/trait.FnBox.html
+    - match: '->'
+      scope: punctuation.separator.generic.rust
+      push: generic-angles-contents
     - match: '>'
       scope: punctuation.definition.generic.end.rust
       pop: true
