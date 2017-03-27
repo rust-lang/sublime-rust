@@ -333,7 +333,6 @@ contexts:
       scope: storage.modifier.rust
     - match: '''{{identifier}}(?!\'')\b'
       scope: storage.modifier.lifetime.rust
-    - match: '(?=\()'
 
 
   closure-return:
