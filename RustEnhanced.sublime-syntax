@@ -310,6 +310,8 @@ contexts:
     # scope as soon as we hit something that it not a
     # valid part so the whole rest of the document isn't
     # highlighted using the params scope
+    - match: '(?=\()'
+      push: group
     - match: '(?=[};)\]\n])'
       pop: true
     - match: '\|'
@@ -331,6 +333,8 @@ contexts:
       scope: storage.modifier.rust
     - match: '''{{identifier}}(?!\'')\b'
       scope: storage.modifier.lifetime.rust
+    - match: '(?=\()'
+
 
   closure-return:
     - meta_content_scope: meta.function.closure.rust
