@@ -334,7 +334,6 @@ contexts:
     - match: '''{{identifier}}(?!\'')\b'
       scope: storage.modifier.lifetime.rust
 
-
   closure-return:
     - meta_content_scope: meta.function.closure.rust
     - include: return-type
