@@ -5,6 +5,7 @@ It is assumed a thread only ever has one process running at a time.
 
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -266,6 +267,7 @@ class RustProc(object):
         return rc
 
     def _read_stdout(self):
+        decode_json = True
         while True:
             line = self.proc.stdout.readline()
             if not line:
@@ -276,14 +278,14 @@ class RustProc(object):
                 line = line.decode('utf-8')
             except:
                 self.listener.on_error(self,
-                    'Error decoding UTF-8: %r' % line)
+                    '[Error decoding UTF-8: %r]' % line)
                 continue
-            if line.startswith('{'):
+            if decode_json and line.startswith('{'):
                 try:
                     result = json.loads(line)
                 except:
                     self.listener.on_error(self,
-                        'Error loading JSON from rust:\n%r' % line)
+                        '[Error loading JSON from rust: %r]' % line)
                 else:
                     try:
                         self.listener.on_json(self, result)
@@ -291,6 +293,10 @@ class RustProc(object):
                         self._cleanup()
                         raise
             else:
+                if re.match('^\s*Finished', line):
+                    # If using "cargo run", we don't want to capture lines
+                    # starting with open bracket.
+                    decode_json = False
                 # Sublime always uses \n internally.
                 line = line.replace('\r\n', '\n')
                 self.listener.on_data(self, line)
