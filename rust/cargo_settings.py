@@ -48,6 +48,7 @@ CARGO_COMMANDS = {
         'allows_release': True,
         'allows_features': True,
         'allows_json': True,
+        'json_stop_pattern': '^\s*Running ',
     },
     'check': {
         'name': 'Check',

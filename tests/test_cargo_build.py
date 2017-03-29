@@ -194,11 +194,12 @@ class TestCargoBuild(TestBase):
 
     def _test_run_with_args(self, view):
         window = view.window()
+        # Curly braces to ensure it is not captured as JSON.
         self._run_build_wait('run',
-            settings={'extra_run_args': 'this is a test',
+            settings={'extra_run_args': '{this is a test}',
                       'target': '--bin bin2'})
         output = self._get_build_output(window)
-        self.assertRegex(output, '(?m)^this is a test$')
+        self.assertRegex(output, '(?m)^{this is a test}$')
 
     def test_test(self):
         """Test "Test" variant."""

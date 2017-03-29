@@ -140,7 +140,8 @@ class RustProc(object):
     # The thread used for reading output.
     _stdout_thread = None
 
-    def run(self, window, cmd, cwd, listener, env=None):
+    def run(self, window, cmd, cwd, listener, env=None,
+            decode_json=True, json_stop_pattern=None):
         """Run the process.
 
         :param window: Sublime window.
@@ -148,6 +149,12 @@ class RustProc(object):
         :param cwd: The directory where to run the command.
         :param listener: `ProcListener` to receive the output.
         :param env: Dictionary of environment variables to add.
+        :param decode_json: If True, will check for lines starting with `{` to
+            decode as a JSON message.
+        :param json_stop_pattern: Regular expression used to detect when it
+            should stop looking for JSON messages.  This is used by `cargo
+            run` so that it does not capture output from the user's program
+            that might start with an open curly brace.
 
         :raises ProcessTermiantedError: Process was terminated by another
             thread.
@@ -157,6 +164,8 @@ class RustProc(object):
         self.listener = listener
         self.start_time = time.time()
         self.window = window
+        self.decode_json = decode_json
+        self.json_stop_pattern = json_stop_pattern
 
         from . import rust_thread
         try:
@@ -267,7 +276,6 @@ class RustProc(object):
         return rc
 
     def _read_stdout(self):
-        decode_json = True
         while True:
             line = self.proc.stdout.readline()
             if not line:
@@ -280,7 +288,7 @@ class RustProc(object):
                 self.listener.on_error(self,
                     '[Error decoding UTF-8: %r]' % line)
                 continue
-            if decode_json and line.startswith('{'):
+            if self.decode_json and line.startswith('{'):
                 try:
                     result = json.loads(line)
                 except:
@@ -293,10 +301,11 @@ class RustProc(object):
                         self._cleanup()
                         raise
             else:
-                if re.match('^\s*Finished', line):
-                    # If using "cargo run", we don't want to capture lines
-                    # starting with open bracket.
-                    decode_json = False
+                print('Checking pattern %r to line %r' % (self.json_stop_pattern, line))
+                if self.json_stop_pattern and \
+                        re.match(self.json_stop_pattern, line):
+                    # Stop looking for JSON open curly bracket.
+                    self.decode_json = False
                 # Sublime always uses \n internally.
                 line = line.replace('\r\n', '\n')
                 self.listener.on_data(self, line)

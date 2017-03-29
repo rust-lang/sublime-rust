@@ -185,18 +185,21 @@ class CargoExecThread(rust_thread.RustThread):
         self.working_dir = working_dir
 
     def run(self):
-        cmd_info = self.settings.get_command(self.command_info,
-                                             self.settings_path,
-                                             self.initial_settings)
-        if not cmd_info:
+        cmd = self.settings.get_command(self.command_info,
+                                        self.settings_path,
+                                        self.initial_settings)
+        if not cmd:
             return
         messages.clear_messages(self.window)
         p = rust_proc.RustProc()
         listener = opanel.OutputListener(self.window, self.working_dir)
+        print('command_info=%r' % self.command_info)
         try:
-            p.run(self.window, cmd_info['command'],
+            p.run(self.window, cmd['command'],
                   self.working_dir, listener,
-                  env=cmd_info['env'])
+                  env=cmd['env'],
+                  decode_json=self.command_info.get('allows_json', False),
+                  json_stop_pattern=self.command_info.get('json_stop_pattern'))
             p.wait()
         except rust_proc.ProcessTerminatedError:
             return

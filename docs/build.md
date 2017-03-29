@@ -169,6 +169,7 @@ Setting Name | Default | Description
 `allows_release` |  False | If True, allows `--release` flag.
 `allows_features` |  False | If True, allows feature flags.
 `allows_json` |  False | If True, allows `--message-format=json` flag.
+`json_stop_pattern` | None | A regular expression matched against Cargo's output to detect when it should stop looking for JSON messages (used by `cargo run` to stop looking for JSON messages once compilation is finished).
 `requires_manifest` | True | If True, the command must be run in a directory with a `Cargo.toml` manifest.
 `requires_view_path` |  False | If True, then the active view must be a Rust source file, and the path to that file will be passed into Cargo (used mainly by `cargo script`).
 `wants_run_args` |  False | If True, it will ask for extra args to pass to the executable (after the `--` flag separator).
