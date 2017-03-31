@@ -301,7 +301,6 @@ class RustProc(object):
                         self._cleanup()
                         raise
             else:
-                print('Checking pattern %r to line %r' % (self.json_stop_pattern, line))
                 if self.json_stop_pattern and \
                         re.match(self.json_stop_pattern, line):
                     # Stop looking for JSON open curly bracket.

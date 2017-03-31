@@ -193,7 +193,6 @@ class CargoExecThread(rust_thread.RustThread):
         messages.clear_messages(self.window)
         p = rust_proc.RustProc()
         listener = opanel.OutputListener(self.window, self.working_dir)
-        print('command_info=%r' % self.command_info)
         try:
             p.run(self.window, cmd['command'],
                   self.working_dir, listener,
