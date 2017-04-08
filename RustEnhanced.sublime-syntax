@@ -234,8 +234,8 @@ contexts:
       push:
         # https://github.com/sublimehq/Packages/issues/709#issuecomment-266835130
         - meta_scope: meta.annotation.rust 
-        - match: '\]'
         - include: statements
+        - match: '\]'
           pop: true
 
   block:
