@@ -259,6 +259,28 @@ impl fmt::Display for PrintableStruct {
 //                ^^^^ string.quoted.double
 //                 ^^ constant.other.placeholder
 //                            ^ punctuation.definition.group.end
+        write!(get_writer(), "{}", "{}")
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function
+//      ^^^^^^ support.macro
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.group
+//             ^^^^^^^^^^ support.function
+//                           ^^^^ string.quoted.double
+//                            ^^ constant.other.placeholder
+//                                 ^^^^ string.quoted.double
+//            ^ punctuation.definition.group.begin
+//                                     ^ punctuation.definition.group.end
+        writeln!(w)
+// ^^^^^^^^^^^^^^^^ meta.function
+//      ^^^^^^^^ support.macro
+//              ^^^ meta.group
+//              ^ punctuation.definition.group.begin
+//                ^ punctuation.definition.group.end
+        println!()
+// ^^^^^^^^^^^^^^^ meta.function
+//      ^^^^^^^^ support.macro
+//              ^^ meta.group
+//              ^ punctuation.definition.group.begin
+//               ^ punctuation.definition.group.end
     }
 // ^^ meta.function meta.block
 //  ^ punctuation.definition.block.end

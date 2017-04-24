@@ -173,7 +173,7 @@ contexts:
         1: support.macro.rust
         2: meta.group.rust punctuation.definition.group.begin.rust
       push:
-        - meta_content_scope: meta.group.rust
+        - meta_scope: meta.group.rust
         - include: comments
         - match: ','
           set:
@@ -182,6 +182,7 @@ contexts:
             - include: format-raw-string
             - match: '(?=\S)'
               set: group-tail
+        - include: group-tail
 
     - match: '\b[[:lower:]_][[:lower:][:digit:]_]*!(?=\s*(\(|\{|\[))'
       scope: support.macro.rust
