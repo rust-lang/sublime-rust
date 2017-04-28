@@ -10,6 +10,11 @@ from rust_test_common import *
 
 class TestSyntaxCheck(TestBase):
 
+    def setUp(self):
+        super(TestSyntaxCheck, self).setUp()
+        self.rustc_version = util.get_rustc_version(sublime.active_window(),
+                                                    plugin_path)
+
     def test_messages(self):
         """Test message generation.
 
@@ -31,9 +36,6 @@ class TestSyntaxCheck(TestBase):
         formatting of messages.  Hopefully these examples are relatively
         stable for now.
         """
-        self.rustc_version = util.get_rustc_version(sublime.active_window(),
-                                                    plugin_path)
-
         to_test = [
             'multi-targets/src/lib.rs',
             'multi-targets/src/lmod1.rs',
@@ -76,7 +78,6 @@ class TestSyntaxCheck(TestBase):
         """Test clippy messages."""
         to_test = [
             'tests/error-tests/examples/clippy_ex.rs',
-            'tests/multi-targets/src/lib.rs',
         ]
         for path in to_test:
             self._with_open_file(path, self._test_messages, methods=['clippy'])
@@ -130,9 +131,6 @@ class TestSyntaxCheck(TestBase):
                         # 'cargo check' currently does not handle cfg(test)
                         # blocks (see
                         # https://github.com/rust-lang/cargo/issues/3431)
-                        return False
-                elif check == 'clippy':
-                    if method != 'clippy':
                         return False
                 else:
                     if not semver.match(self.rustc_version, check):

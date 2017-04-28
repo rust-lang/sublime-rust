@@ -7,4 +7,4 @@ pub fn libf1() {
 fn unused() {
 }
 // ^WARN function is never used
-// ^^NOTE(clippy) #[warn(dead_code)]
+// ^^NOTE(>=1.17.0) #[warn(dead_code)]
