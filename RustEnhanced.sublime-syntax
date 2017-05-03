@@ -233,10 +233,10 @@ contexts:
     - match: '#!?\['
       push:
         # https://github.com/sublimehq/Packages/issues/709#issuecomment-266835130
-        - meta_scope: meta.annotation.rust 
+        - meta_scope: meta.annotation.rust
         - match: '\]'
-        - include: statements
           pop: true
+        - include: statements
 
   block:
     - match: '\}'
