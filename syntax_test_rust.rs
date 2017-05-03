@@ -215,10 +215,10 @@ struct PrintableStruct(Box<i32>);
 // fixes https://github.com/rust-lang/sublime-rust/issues/144
 fn factory() -> Box<Fn(i32) -> i32> {
 // <- storage.type.function
-// ^^^^^^^ entity.name.function 
+// ^^^^^^^ entity.name.function
 //                  ^^^^^^^^^^^^^^ meta.generic
-//                      ^^ storage.type 
-//                              ^^ storage.type   
+//                      ^^ storage.type
+//                              ^^ storage.type
 //                          ^^ punctuation.separator.generic
 
     Box::new(|x| x + 1)
@@ -902,7 +902,7 @@ pub fn next_lex2</* block */T/* comments */:/* everywhere */
     /* help */ PartialOrd // Possibly too many comments
 //  ^^^^^^^^^^ comment.block.rust
 //                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ comment.line.double-slash.rust
-> (   
+> (
     /* block2 */ data2: &mut [T]  // line
 //  ^^^^^^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.block.rust
 //                                ^^^^^^^ source.rust meta.function.rust meta.function.parameters.rust comment.line.double-slash.rust
@@ -967,3 +967,33 @@ impl<T> Iterator for Fibonacci<T>
 pub const FOO: Option<[i32; 1]> = Some([1]);
 //                    ^ punctuation.definition.group.begin.rust
 //                           ^ punctuation.definition.group.end.rust
+
+pub fn macro_tests() {
+    println!();
+//  ^^^^^^^^ support.macro.rust
+    println!("Example");
+//  ^^^^^^^^ support.macro.rust
+//          ^ punctuation.definition.group.begin
+//           ^^^^^^^^^ string.quoted.double.rust
+//                    ^ punctuation.definition.group.end
+    println!("Example {} {message}", "test", message="hi");
+//                    ^^ constant.other.placeholder.rust
+//                       ^^^^^^^^^ constant.other.placeholder.rust
+    panic!();
+//  ^^^^^^ support.macro.rust
+    panic!("Example");
+//  ^^^^^^ support.macro.rust
+//        ^ punctuation.definition.group.begin
+//         ^^^^^^^^^ string.quoted.double.rust
+//                  ^ punctuation.definition.group.end
+    panic!("Example {} {message}", "test", message="hi");
+//                  ^^ constant.other.placeholder.rust
+//                     ^^^^^^^^^ constant.other.placeholder.rust
+    format_args!("invalid type: {}, expected {}", unexp, exp);
+//  ^^^^^^^^^^^^ support.macro.rust
+//                              ^^ constant.other.placeholder.rust
+//                                           ^^ constant.other.placeholder.rust
+    unreachable!("{:?}", e);
+//  ^^^^^^^^^^^^ support.macro.rust
+//                ^^^^ constant.other.placeholder.rust
+}

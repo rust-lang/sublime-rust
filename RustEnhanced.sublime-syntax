@@ -156,7 +156,7 @@ contexts:
     - match: '\b[[:lower:]_][[:lower:][:digit:]_]*(?=\()'
       scope: support.function.rust
 
-    - match: '\b((?:format|print|println)!)\s*(\()'
+    - match: '\b((?:format|print|println|panic|format_args|unreachable)!)\s*(\()'
       captures:
         1: support.macro.rust
         2: meta.group.rust punctuation.definition.group.begin.rust
@@ -233,7 +233,7 @@ contexts:
     - match: '#!?\['
       push:
         # https://github.com/sublimehq/Packages/issues/709#issuecomment-266835130
-        - meta_scope: meta.annotation.rust 
+        - meta_scope: meta.annotation.rust
         - include: statements
         - match: '\]'
           pop: true
