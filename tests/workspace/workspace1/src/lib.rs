@@ -1,8 +1,8 @@
 mod anothermod;
 
-struct S {
+/*BEGIN*/struct S {
     recursive: S
-}
-// ^ERR recursive type has infinite size
-// ^^ERR recursive type
-// ^^^HELP insert indirection
+}/*END*/
+// ~ERR recursive type has infinite size
+// ~ERR recursive type
+// ~HELP insert indirection

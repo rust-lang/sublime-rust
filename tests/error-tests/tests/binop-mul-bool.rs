@@ -11,5 +11,5 @@
 // error-pattern:`*` cannot be applied to type `bool`
 
 fn main() { let x = true * false; }
-// ^ERR binary operation
-// ^^NOTE an implementation of
+//                  ^^^^ERR binary operation
+//                  ^^^^NOTE an implementation of

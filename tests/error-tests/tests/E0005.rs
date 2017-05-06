@@ -11,6 +11,6 @@
 fn main() {
     let x = Some(1);
     let Some(y) = x;
-        // ^ERR pattern `None` not covered
-        // ^^ERR refutable pattern in local binding
+//      ^^^^^^^ERR pattern `None` not covered
+//      ^^^^^^^ERR refutable pattern in local binding
 }

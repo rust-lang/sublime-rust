@@ -19,18 +19,31 @@ class TestSyntaxCheck(TestBase):
         """Test message generation.
 
         Each of the listed files has comments that annotate where a message
-        should appear. The carets in front indicate the number of lines above
-        the comment where the last line of the message is.  This allows for
-        multiple messages to be on the same line.  For example:
-            // ^ERR expected 1 parameter
-            // ^^ERR this function takes 1 parameter
+        should appear.  Single-line messages use carets to specify where the
+        message should appear on the previous line.  Use multiple comments if
+        there are multiple messages.  Example:
+
+            //     ^^^^ERR binary operation
+            //     ^^^^NOTE an implementation of
+
+        Multi-line messages use a marker to indicate where it starts and ends,
+        and then comment lines below starting with ~ specify the messages that
+        should appear for that region.  Example:
+
+            /*BEGIN*/struct S {
+                recursive: S
+            }/*END*/
+            // ~ERR recursive type has infinite size
+            // ~ERR recursive type
+            // ~HELP insert indirection
 
         You can place restrictions on the message in parenthesis after the
         level (comma separated).  This can be a semver check, or the word
         "test" to indicate that this message only shows up in a cfg(test)
         block.  Examples:
-            // ^ERR(<1.16.0) error msg before 1.16
-            // ^^ERR(>=1.16.0,test) error msg after 1.16, test block only
+
+            // ^^^ERR(<1.16.0) error msg before 1.16
+            // ^^^ERR(>=1.16.0,test) error msg after 1.16, test block only
 
         These tests are somewhat fragile, as new versions of Rust change the
         formatting of messages.  Hopefully these examples are relatively
@@ -85,7 +98,7 @@ class TestSyntaxCheck(TestBase):
     def _test_messages(self, view, methods=None):
         # Trigger the generation of messages.
         phantoms = []
-        regions = []
+        view_regions = []
 
         def collect_phantoms(v, key, region, content, layout, on_navigate):
             if v == view:
@@ -93,7 +106,7 @@ class TestSyntaxCheck(TestBase):
 
         def collect_regions(v, key, regions, scope, icon, flags):
             if v == view:
-                regions.extend(regions)
+                view_regions.extend(regions)
 
         m = plugin.rust.messages
         orig_add_phantom = m._sublime_add_phantom
@@ -103,9 +116,9 @@ class TestSyntaxCheck(TestBase):
         try:
             for method in methods:
                 with AlteredSetting('rust_syntax_checking_method', method):
-                    self._test_messages2(view, phantoms, regions, method)
+                    self._test_messages2(view, phantoms, view_regions, method)
                 phantoms.clear()
-                regions.clear()
+                view_regions.clear()
         finally:
             m._sublime_add_phantom = orig_add_phantom
             m._sublime_add_regions = orig_add_regions
@@ -118,8 +131,7 @@ class TestSyntaxCheck(TestBase):
         e.on_post_save(view)
         # Wait for it to finish.
         self._get_rust_thread().join()
-        pattern = '(\^+)(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
-        expected_messages = view.find_all(pattern)
+        expected_messages = self._collect_expected_regions(view)
 
         def restriction_check(restrictions):
             if not restrictions:
@@ -137,31 +149,119 @@ class TestSyntaxCheck(TestBase):
                         return False
             return True
 
-        for emsg_r in expected_messages:
-            row, col = view.rowcol(emsg_r.begin())
-            text = view.substr(emsg_r)
-            m = re.match(pattern, text)
-            line_offset = len(m.group(1))
-            msg_row = row - line_offset
-            msg_type = m.group(2)
-            msg_type_text = {
-                'WARN': 'warning',
-                'ERR': 'error',
-                'NOTE': 'note',
-                'HELP': 'help',
-            }[msg_type]
-            restrictions = m.group(3)
-            msg_content = m.group(4)
-            if restriction_check(restrictions):
+        # Check phantoms.
+        for emsg_info in expected_messages:
+            if restriction_check(emsg_info['restrictions']):
                 for i, (region, content) in enumerate(phantoms):
                     content = unescape(content)
-                    r_row, r_col = view.rowcol(region.end())
-                    if r_row == msg_row and msg_content in content:
-                        self.assertIn(msg_type_text, content)
+                    # Phantom regions only apply to the last row.
+                    r_row, _ = view.rowcol(region.end())
+                    emsg_row, _ = view.rowcol(emsg_info['end'])
+                    if r_row == emsg_row and emsg_info['message'] in content:
+                        self.assertIn(emsg_info['level_text'], content)
                         break
                 else:
-                    raise AssertionError('Did not find expected message "%s:%s" on line %r for file %r' % (
-                        msg_type, msg_content, msg_row, view.file_name()))
+                    raise AssertionError('Did not find expected message "%s:%s" for region %r:%r for file %r' % (
+                        emsg_info['level'], emsg_info['message'],
+                        emsg_info['begin'], emsg_info['end'],
+                        view.file_name()))
                 del phantoms[i]
         if len(phantoms):
-            raise AssertionError('Got extra phantoms for %r: %r' % (view.file_name(), phantoms))
+            raise AssertionError('Got extra phantoms for %r: %r' % (
+                view.file_name(), phantoms))
+
+        # Check regions.
+        found_regions = set()
+        region_set = {(r.begin(), r.end()) for r in regions}
+
+        for emsg_info in expected_messages:
+            if restriction_check(emsg_info['restrictions']):
+                r = (emsg_info['begin'], emsg_info['end'])
+                if r in region_set:
+                    found_regions.add(r)
+                else:
+                    raise AssertionError('Did not find expected region %r,%r for file %r' % (
+                        emsg_info['begin'], emsg_info['end'], view.file_name()))
+        if len(region_set) != len(found_regions):
+            extra_regions = region_set - found_regions
+            raise AssertionError('Got extra regions for %r: %r' % (
+                view.file_name(), extra_regions))
+
+    def _collect_expected_regions(self, view):
+        """Scans through the view looking for the markup that tells us where
+        error messages should appear.
+
+        Returns a list of dictionaries with info about each message.
+        """
+        result = []
+        msg_level_text = {
+            'WARN': 'warning',
+            'ERR': 'error',
+            'NOTE': 'note',
+            'HELP': 'help',
+        }
+        # Multi-line spans.
+        region_map = {}  # Map the last row number to a (begin,end) region.
+        pattern = r'(?s)/\*BEGIN\*/(.*?)/\*END\*/'
+        regions = view.find_all(pattern)
+        for region in regions:
+            row = view.rowcol(region.end())[0]
+            region_map[row] = (region.begin() + 9, region.end() - 7)
+
+        pattern = r'// *~(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
+        regions = view.find_all(pattern)
+        last_line = None  # Used to handle multiple messages on the same line.
+        last_line_offset = 1
+        for region in regions:
+            text = view.substr(region)
+            m = re.match(pattern, text)
+            row = view.rowcol(region.begin())[0]
+            if row - 1 == last_line:
+                last_line = row
+                row -= last_line_offset
+                last_line_offset += 1
+            else:
+                last_line = row
+                last_line_offset = 1
+            try:
+                actual_region = region_map[row - 1]
+            except KeyError:
+                raise AssertionError('Invalid test:  %r did not have region on row %r' % (
+                    view.file_name(), row - 1))
+            result.append({
+                'begin': actual_region[0],
+                'end': actual_region[1],
+                'level': m.group(1),
+                'level_text': msg_level_text[m.group(1)],
+                'restrictions': m.group(2),
+                'message': m.group(3)
+            })
+
+        # Single-line spans.
+        last_line = None
+        last_line_offset = 1
+        pattern = r'//( *)(\^+)(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
+        regions = view.find_all(pattern)
+        for region in regions:
+            text = view.substr(region)
+            m = re.match(pattern, text)
+            row, col = view.rowcol(region.begin())
+            if row - 1 == last_line:
+                last_line = row
+                row -= last_line_offset
+                last_line_offset += 1
+            else:
+                last_line = row
+                last_line_offset = 1
+            begin = view.text_point(row - 1, col + 2 + len(m.group(1)))
+            end = begin + len(m.group(2))
+            result.append({
+                'begin': begin,
+                'end': end,
+                'level': m.group(3),
+                'level_text': msg_level_text[m.group(3)],
+                'restrictions': m.group(4),
+                'message': m.group(5)
+            })
+
+        return result

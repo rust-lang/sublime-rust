@@ -11,12 +11,12 @@
 // error-pattern: unreachable statement
 
 #![deny(unreachable_code)]
-// ^NOTE lint level defined here
+//      ^^^^^^^^^^^^^^^^NOTE lint level defined here
 
 fn main() {
     return;
     println!("Paul is dead");
-    // ^ERR unreachable statement
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^ERR unreachable statement
 }
 
 // This is a test of macro expansion, should print error on println!
