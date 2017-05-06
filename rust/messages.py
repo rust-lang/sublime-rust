@@ -93,6 +93,8 @@ def draw_all_region_highlights(window):
 
 
 def _draw_region_highlights(view, messages):
+    if util.get_setting('rust_region_style', 'outline') == 'none':
+        return
     error_regions = []
     info_regions = []
     error_region_set = set()
@@ -123,6 +125,8 @@ def _draw_region_highlights(view, messages):
 
 
 def _show_phantom(view, level, span, message):
+    if util.get_setting('rust_phantom_style', 'normal') == 'none':
+        return
     region = _span_to_region(view, span)
     # For some reason, with LAYOUT_BELOW, if you have a multi-line
     # region, the phantom is only displayed under the first line.  I

@@ -68,6 +68,8 @@ There are a variety of settings (see [Settings](#settings)) for controlling the 
 | `rust_syntax_hide_warnings` | `false` | If true, will not display warning messages. |
 | `rust_syntax_error_color` | `"#F00"` | Color of error messages. |
 | `rust_syntax_warning_color` | `"#FF0"` | Color of warning messages. |
+| `rust_phantom_style` | `"normal"` | How to display inline messages.  Either `normal` or `none`. |
+| `rust_region_style` | `"outline"` | How to highlight messages.  Either `outline` or `none`. |
 
 Here is an example:
 ![testingrust](https://cloud.githubusercontent.com/assets/43198/22944409/7780ab9a-f2a5-11e6-87ea-0e253d6c40f6.png)

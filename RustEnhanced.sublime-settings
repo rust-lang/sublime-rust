@@ -22,6 +22,16 @@
     // running Cargo.
     "rust_include_shell_env": true,
 
+    // For errors/warnings, how to show the inline message.
+    // "normal" - Shows the message inline.
+    // "none" - Do not show the message inline.
+    "rust_phantom_style": "normal",
+
+    // For errors/warnings, how to highlight the region of the error.
+    // "outline" - Outlines the region.
+    // "none" - No outlining.
+    "rust_region_style": "outline",
+
     // If your cargo project has several build targets, it's possible to specify mapping of
     // source code filenames to the target names to enable syntax checking.
     // "projects": {
