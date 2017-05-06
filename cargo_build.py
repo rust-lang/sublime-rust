@@ -193,11 +193,13 @@ class CargoExecThread(rust_thread.RustThread):
         messages.clear_messages(self.window)
         p = rust_proc.RustProc()
         listener = opanel.OutputListener(self.window, self.working_dir)
+        decode_json = util.get_setting('show_errors_inline', True) and \
+            self.command_info.get('allows_json', False)
         try:
             p.run(self.window, cmd['command'],
                   self.working_dir, listener,
                   env=cmd['env'],
-                  decode_json=self.command_info.get('allows_json', False),
+                  decode_json=decode_json,
                   json_stop_pattern=self.command_info.get('json_stop_pattern'))
             p.wait()
         except rust_proc.ProcessTerminatedError:

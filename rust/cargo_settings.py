@@ -260,7 +260,8 @@ class CargoSettings(object):
             if v:
                 result.append('--release')
 
-        if cmd_info.get('allows_json', False):
+        if cmd_info.get('allows_json', False) and \
+                util.get_setting('show_errors_inline', True):
             result.append('--message-format=json')
 
         # features
