@@ -33,7 +33,7 @@ def clear_messages(window):
     WINDOW_MESSAGES.pop(window.id(), None)
     for view in window.views():
         view.erase_phantoms('rust-syntax-phantom')
-        view.erase_regions('rust-invalid')
+        view.erase_regions('rust-error')
         view.erase_regions('rust-info')
 
 
