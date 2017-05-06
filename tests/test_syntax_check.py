@@ -71,6 +71,7 @@ class TestSyntaxCheck(TestBase):
             'error-tests/tests/cast-to-unsized-trait-object-suggestion.rs',
             # error in a cfg(test) section
             'error-tests/src/lib.rs',
+            'error-tests/tests/macro-expansion.rs',
             # Workspace tests.
             'workspace/workspace1/src/lib.rs',
             'workspace/workspace1/src/anothermod/mod.rs',

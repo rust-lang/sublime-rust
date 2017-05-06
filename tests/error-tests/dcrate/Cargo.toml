@@ -1,0 +1,5 @@
+[package]
+name = "dcrate"
+version = "0.1.0"
+
+[dependencies]

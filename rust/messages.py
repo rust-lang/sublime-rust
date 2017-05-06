@@ -546,16 +546,14 @@ def _add_rust_messages(window, cwd, info, target_path,
         is_primary = span['is_primary']
 
         if 'macros>' in span['file_name']:
-            # Rust gives the chain of expansions for the macro, which we
-            # don't really care about.  We want to find the site where the
-            # macro was invoked.
+            # Rust gives the chain of expansions for the macro, which we don't
+            # really care about.  We want to find the site where the macro was
+            # invoked.  I'm not entirely confident this is the best way to do
+            # this, but it seems to work.  This is roughly emulating what is
+            # done in librustc_errors/emitter.rs fix_multispan_in_std_macros.
             def find_span_r(span):
-                if 'macros>' in span['file_name']:
-                    if span['expansion']:
-                        return find_span_r(span['expansion']['span'])
-                    else:
-                        # XXX: Is this possible?
-                        return None
+                if span['expansion']:
+                    return find_span_r(span['expansion']['span'])
                 else:
                     return span
             span = find_span_r(span)
