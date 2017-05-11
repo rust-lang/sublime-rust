@@ -26,7 +26,7 @@ from . import util
 WINDOW_MESSAGES = {}
 
 
-LINK_PATTERN = r'https?://[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-zA-Z]{2,6}\b[-a-zA-Z0-9@:%_+.~#?&/=]*'
+LINK_PATTERN = r'(https?://[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-zA-Z]{2,6}\b[-a-zA-Z0-9@:%_+.~#?&/=]*)'
 
 
 def clear_messages(window):
@@ -494,10 +494,15 @@ def _add_rust_messages(window, cwd, info, target_path,
         # Rust performs some pretty-printing for things like suggestions,
         # attempt to retain some of the formatting.  This isn't perfect
         # (doesn't line up perfectly), not sure why.
-        escaped_message = html.escape(message, quote=False).\
-            replace('\n', '<br>').replace(' ', '&nbsp;')
-        escaped_message = re.sub(LINK_PATTERN, r'<a href="\g<0>">\g<0></a>',
-            escaped_message)
+        def escape_and_link(i_txt):
+            i, txt = i_txt
+            if i % 2:
+                return '<a href="%s">%s</a>' % (txt, txt)
+            else:
+                return html.escape(txt, quote=False).\
+                    replace('\n', '<br>').replace(' ', '&nbsp;')
+        parts = re.split(LINK_PATTERN, message)
+        escaped_message = ''.join(map(escape_and_link, enumerate(parts)))
         content = msg_template.format(
             cls=cls,
             level=info['level'],
