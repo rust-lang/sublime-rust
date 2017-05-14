@@ -16,31 +16,11 @@
         "command": "rust_cancel"
     },
     {
-        "caption": "Rust: Set Cargo Target",
-        "command": "cargo_set_target"
-    },
-    {
-        "caption": "Rust: Set Cargo Build Profile",
-        "command": "cargo_set_profile"
-    },
-    {
-        "caption": "Rust: Set Cargo Target Triple",
-        "command": "cargo_set_triple"
-    },
-    {
-        "caption": "Rust: Set Cargo Toolchain",
-        "command": "cargo_set_toolchain"
-    },
-    {
-        "caption": "Rust: Set Cargo Features",
-        "command": "cargo_set_features"
-    },
-    {
-        "caption": "Rust: Set Default Path",
-        "command": "cargo_set_default_path"
-    },
-    {
         "caption": "Rust: Create New Cargo Build Variant",
         "command": "cargo_create_new_build"
-    }
+    },
+    {
+        "caption": "Rust: Configure Cargo Build",
+        "command": "cargo_configure"
+    },
 ]

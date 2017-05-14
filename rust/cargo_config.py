@@ -34,11 +34,13 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
       `(display_string, value)`.
     - `default`: The default value (optional).
     - `skip_if_one`: Skip this question if there is only 1 item.
+    - `caption`: Instead of `items`, this is a string displayed with
+      `show_input_panel` to allow the user to enter arbitrary text.
 
     `items_` methods can also just return the 'items' list.
 
     An optional method `selected_`+name will be called when a choice is made.
-    This method can return a list of questions to be asked.
+    This method can return a list of questions to be asked immediately.
 
     The `done` method is called once all questions have been asked.
 
@@ -49,27 +51,36 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
 
     # CargoSettings object.
     settings = None
+
     # Dictionary of choices passed into the command, instead of using
     # interactive UI.
     input = None
 
     # Sequence of questions to ask.
     sequence = None
+
     # Current question being asked.
     sequence_index = 0
+
     # Dictionary of selections made during the interactive process.
     choices = None
+
     # If True, the command wants the 'package' choice to fetch metadata from
     # Cargo.
     package_wants_metadata = True
+
     # If True, the 'package' choice will automatically use the manifest
     # from the active view if it is available.
     package_allows_active_view_shortcut = True
+
     # This is a dictionary populated by the `items_package` method.
     # Key is the path to a package, the value is the metadata from Cargo.
     # This is used by other questions (like `items_target`) to get more
     # information about the chosen package.
     packages = None
+
+    # Name of what is being configured.
+    config_name = ""
 
     def run(self, **kwargs):
         self.choices = {}
@@ -103,6 +114,7 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
 
         f_selected = getattr(self, 'selected_' + q, None)
 
+        # Called with the result of what the user selected.
         def make_choice(value):
             self.choices[q] = value
             if f_selected:
@@ -258,7 +270,64 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
         return result
 
     def filter_variant(self, x):
+        """Subclasses override this to filter variants from the variant list."""
         return True
+
+    def items_which(self):
+        # This is a bit of a hack so that when called programmatically you
+        # don't have to specify 'which'.
+        if 'variant' in self.input:
+            self.input['which'] = 'variant'
+        elif 'target' in self.input:
+            self.input['which'] = 'target'
+
+        return [
+            (['Configure %s for all build commands.' % self.config_name,
+              ''], 'default'),
+            (['Configure %s for a Build Variant.' % self.config_name,
+              'cargo build, cargo run, cargo test, etc.'], 'variant'),
+            (['Configure %s for a Target.' % self.config_name,
+              '--bin, --example, --test, etc.'], 'target')
+        ]
+
+    def selected_which(self, which):
+        if which == 'default':
+            self.choices['target'] = None
+            return
+        elif which == 'variant':
+            return ['variant']
+        elif which == 'target':
+            return ['target']
+        else:
+            raise AssertionError(which)
+
+    def get_setting(self, name, default=None):
+        """Retrieve a setting, honoring the "which" selection."""
+        if self.choices['which'] == 'variant':
+            return self.settings.get_with_variant(self.choices['package'],
+                                                  self.choices['variant'],
+                                                  name, default=default)
+        elif self.choices['which'] in ('default', 'target'):
+            return self.settings.get_with_target(self.choices['package'],
+                                                 self.choices['target'],
+                                                 name, default=default)
+        else:
+            raise AssertionError(self.choices['which'])
+
+    def set_setting(self, name, value):
+        """Set a setting, honoring the "which" selection."""
+        if self.choices['which'] == 'variant':
+            self.settings.set_with_variant(self.choices['package'],
+                                           self.choices['variant'],
+                                           name,
+                                           value)
+        elif self.choices['which'] in ('default', 'target'):
+            self.settings.set_with_target(self.choices['package'],
+                                          self.choices['target'],
+                                          name,
+                                          value)
+        else:
+            raise AssertionError(self.choices['which'])
 
 
 class CargoConfigPackage(CargoConfigBase):
@@ -266,6 +335,7 @@ class CargoConfigPackage(CargoConfigBase):
     """This is a fake command used by cargo_build to reuse the code to choose
     a Cargo package."""
 
+    config_name = 'Package'
     sequence = ['package']
     package_wants_metadata = False
 
@@ -279,12 +349,11 @@ class CargoConfigPackage(CargoConfigBase):
 
 class CargoSetProfile(CargoConfigBase):
 
-    sequence = ['package', 'target', 'profile']
+    config_name = 'Profile'
+    sequence = ['package', 'which', 'profile']
 
     def items_profile(self):
-        default = self.settings.get_with_target(self.choices['package'],
-                                                self.choices['target'],
-                                                'release', False)
+        default = self.get_setting('release', False)
         if default:
             default = 'release'
         else:
@@ -295,15 +364,13 @@ class CargoSetProfile(CargoConfigBase):
                 'default': default}
 
     def done(self):
-        self.settings.set_with_target(self.choices['package'],
-                                      self.choices['target'],
-                                      'release',
-                                      self.choices['profile'] == 'release')
+        self.set_setting('release', self.choices['profile'] == 'release')
 
 
 class CargoSetTarget(CargoConfigBase):
 
-    sequence = ['variant', 'package', 'target']
+    config_name = 'Target'
+    sequence = ['package', 'variant', 'target']
 
     def filter_variant(self, info):
         return info.get('allows_target', False)
@@ -328,7 +395,8 @@ class CargoSetTarget(CargoConfigBase):
 
 class CargoSetTriple(CargoConfigBase):
 
-    sequence = ['package', 'target', 'target_triple']
+    config_name = 'Triple'
+    sequence = ['package', 'which', 'target_triple']
 
     def items_target_triple(self):
         # Could check if rustup is not installed, to run
@@ -337,9 +405,7 @@ class CargoSetTriple(CargoConfigBase):
         triples = rust_proc.check_output(self.window,
             'rustup target list'.split(), self.choices['package'])\
             .splitlines()
-        current = self.settings.get_with_target(self.choices['package'],
-                                                self.choices['target'],
-                                                'target_triple')
+        current = self.get_setting('target_triple')
         result = [('Use Default', None)]
         for triple in triples:
             if triple.endswith(' (default)'):
@@ -357,43 +423,18 @@ class CargoSetTriple(CargoConfigBase):
         }
 
     def done(self):
-        self.settings.set_with_target(self.choices['package'],
-                                      self.choices['target'],
-                                      'target_triple',
-                                      self.choices['target_triple'])
+        self.set_setting('target_triple', self.choices['target_triple'])
 
 
 class CargoSetToolchain(CargoConfigBase):
 
-    sequence = ['which']
-
-    def items_which(self):
-        return [
-            ('Set Toolchain for Build Variant', 'variant'),
-            ('Set Toolchain for Targets', 'target')
-        ]
-
-    def selected_which(self, which):
-        if which == 'variant':
-            return ['package', 'variant', 'toolchain']
-        elif which == 'target':
-            return ['package', 'target', 'toolchain']
-        else:
-            raise AssertionError(which)
+    config_name = 'Toolchain'
+    sequence = ['package', 'which', 'toolchain']
 
     def items_toolchain(self):
         items = [('Use Default Toolchain', None)]
         toolchains = self._toolchain_list()
-        if self.choices['which'] == 'variant':
-            current = self.settings.get_with_variant(self.choices['package'],
-                                                     self.choices['variant'],
-                                                     'toolchain')
-        elif self.choices['which'] == 'target':
-            current = self.settings.get_with_target(self.choices['package'],
-                                                    self.choices['target'],
-                                                    'toolchain')
-        else:
-            raise AssertionError(self.choices['which'])
+        current = self.get_setting('toolchain')
         items.extend([(x, x) for x in toolchains])
         return {
             'items': items,
@@ -434,28 +475,16 @@ class CargoSetToolchain(CargoConfigBase):
         return result
 
     def done(self):
-        if self.choices['which'] == 'variant':
-            self.settings.set_with_variant(self.choices['package'],
-                                           self.choices['variant'],
-                                           'toolchain',
-                                           self.choices['toolchain'])
-        elif self.choices['which'] == 'target':
-            self.settings.set_with_target(self.choices['package'],
-                                          self.choices['target'],
-                                          'toolchain',
-                                          self.choices['toolchain'])
-        else:
-            raise AssertionError(self.choices['which'])
+        self.set_setting('toolchain', self.choices['toolchain'])
 
 
 class CargoSetFeatures(CargoConfigBase):
 
-    sequence = ['package', 'target', 'no_default_features', 'features']
+    config_name = 'Features'
+    sequence = ['package', 'which', 'no_default_features', 'features']
 
     def items_no_default_features(self):
-        current = self.settings.get_with_target(self.choices['package'],
-                                                self.choices['target'],
-                                                'no_default_features', False)
+        current = self.get_setting('no_default_features', False)
         items = [
             ('Include default features.', False),
             ('Do not include default features.', True)
@@ -466,10 +495,9 @@ class CargoSetFeatures(CargoConfigBase):
         }
 
     def items_features(self):
-        features = self.settings.get_with_target(self.choices['package'],
-                                                 self.choices['target'],
-                                                 'features', None)
+        features = self.get_setting('features', None)
         if features is None:
+            # Detect available features from the manifest.
             package_path = self.choices['package']
             available_features = self.packages[package_path].get('features', {})
             items = list(available_features.keys())
@@ -488,18 +516,14 @@ class CargoSetFeatures(CargoConfigBase):
         }
 
     def done(self):
-        self.settings.set_with_target(self.choices['package'],
-                                      self.choices['target'],
-                                      'no_default_features',
-                                      self.choices['no_default_features'])
-        self.settings.set_with_target(self.choices['package'],
-                                      self.choices['target'],
-                                      'features',
-                                      self.choices['features'])
+        self.set_setting('no_default_features',
+                         self.choices['no_default_features'])
+        self.set_setting('features', self.choices['features'])
 
 
 class CargoSetDefaultPath(CargoConfigBase):
 
+    config_name = 'Default Path'
     sequence = ['package']
     package_allows_active_view_shortcut = False
 
@@ -516,11 +540,168 @@ class CargoSetDefaultPath(CargoConfigBase):
         self.settings.set('default_path', self.choices['package'])
 
 
+class CargoSetEnvironmentEditor(CargoConfigBase):
+
+    config_name = 'Environment'
+    sequence = ['package', 'which']
+
+    def done(self):
+        view = self.window.new_file()
+        view.set_scratch(True)
+        default = self.get_setting('env')
+        template = util.multiline_fix("""
+               // Enter environment variables here in JSON syntax.
+               // Close this view when done to commit the settings.
+               """)
+        if 'contents' in self.input:
+            # Used when parsing fails to attempt to edit again.
+            template = self.input['contents']
+        elif default:
+            template += sublime.encode_value(default, True)
+        else:
+            template += util.multiline_fix("""
+                {
+                    // "RUST_BACKTRACE": 1
+                }
+                """)
+        # Unfortunately Sublime indents on 'insert'
+        view.settings().set('auto_indent', False)
+        view.run_command('insert', {'characters': template})
+        view.settings().set('auto_indent', True)
+        view.set_syntax_file('Packages/JavaScript/JSON.sublime-syntax')
+        view.settings().set('rust_environment_editor', True)
+        view.settings().set('rust_environment_editor_settings', {
+            'package': self.choices['package'],
+            'which': self.choices['which'],
+            'variant': self.choices.get('variant'),
+            'target': self.choices.get('target'),
+        })
+
+
+class CargoSetEnvironment(CargoConfigBase):
+
+    """Special command that should not be run interactively.  Used by the
+    on-close callback to actually set the environment."""
+
+    config_name = 'Environment'
+    sequence = ['package', 'which', 'env']
+
+    def items_env(self):
+        return []
+
+    def done(self):
+        self.set_setting('env', self.choices['env'])
+
+
+class EnvironmentSaveHandler(sublime_plugin.EventListener):
+
+    """Handler for when the view is closed on the environment editor."""
+
+    def on_pre_close(self, view):
+        if not view.settings().get('rust_environment_editor'):
+            return
+        settings = view.settings().get('rust_environment_editor_settings')
+
+        contents = view.substr(sublime.Region(0, view.size()))
+        try:
+            result = sublime.decode_value(contents)
+        except:
+            sublime.error_message('Value was not valid JSON, try again.')
+            view.window().run_command('cargo_set_environment_editor', {
+                'package': settings['package'],
+                'which': settings['which'],
+                'variant': settings['variant'],
+                'target': settings['target'],
+                'contents': contents,
+            })
+            return
+
+        view.window().run_command('cargo_set_environment', {
+            'package': settings['package'],
+            'which': settings['which'],
+            'variant': settings['variant'],
+            'target': settings['target'],
+            'env': result,
+        })
+
+
+class CargoSetArguments(CargoConfigBase):
+
+    config_name = 'Extra Command-line Arguments'
+    sequence = ['package', 'which', 'before_after', 'args']
+
+    def items_before_after(self):
+        return [
+            ('Enter extra Cargo arguments (before -- separator)', 'extra_cargo_args'),
+            ('Enter extra Cargo arguments (after -- separator)', 'extra_run_args'),
+        ]
+
+    def items_args(self):
+        current = self.get_setting(self.choices['before_after'], '')
+        return {
+            'caption': 'Enter the extra Cargo args',
+            'default': current,
+        }
+
+    def done(self):
+        self.set_setting(self.choices['before_after'],
+                         self.choices['args'])
+
+
+class CargoConfigure(CargoConfigBase):
+
+    sequence = ['config_option']
+
+    def items_config_option(self):
+        return [
+            (['Set Target', '--bin, --lib, --example, etc.'], 'target'),
+            (['Set Profile', '--release flag'], 'profile'),
+            (['Set Target Triple', '--target flag'], 'triple'),
+            (['Set Rust Toolchain', 'nightly vs stable, etc.'], 'toolchain'),
+            (['Set Features', 'Cargo build features with --features'], 'features'),
+            (['Set Environment Variables', ''], 'environment'),
+            (['Set Extra Cargo Arguments', ''], 'args'),
+            (['Set Default Package/Path', ''], 'package'),
+        ]
+
+    def selected_config_option(self, which):
+        if which == 'target':
+            CargoSetTarget(self.window).run()
+        elif which == 'profile':
+            CargoSetProfile(self.window).run()
+        elif which == 'triple':
+            CargoSetTriple(self.window).run()
+        elif which == 'toolchain':
+            CargoSetToolchain(self.window).run()
+        elif which == 'features':
+            CargoSetFeatures(self.window).run()
+        elif which == 'environment':
+            CargoSetEnvironmentEditor(self.window).run()
+        elif which == 'args':
+            CargoSetArguments(self.window).run()
+        elif which == 'package':
+            CargoSetDefaultPath(self.window).run()
+        else:
+            raise AssertionError(which)
+
+    def selected_which(self, which):
+        if which == 'variant':
+            return ['package', 'variant', 'toolchain']
+        elif which == 'target':
+            return ['package', 'target', 'toolchain']
+        else:
+            raise AssertionError(which)
+
+    def done(self):
+        pass
+
+
 class CargoCreateNewBuild(CargoConfigBase):
 
     """Command to create a new build variant, stored in the user's
     `.sublime-project` file."""
 
+    config_name = 'New Build'
     sequence = ['command']
 
     def items_command(self):
