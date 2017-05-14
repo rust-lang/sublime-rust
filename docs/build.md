@@ -25,8 +25,8 @@ Previous Result | Shift-F4 | Tools > Build Results > Previous Result | Go to the
 ## Build Variants
 
 When you select the RustEnhanced build system in Sublime, there are a few
-variants that you can select with Tools > Build With... (
-Ctrl-Shift-B / ⌘-Shift-B).  They are:
+variants that you can select with Tools > Build With...
+(Ctrl-Shift-B / ⌘-Shift-B).  They are:
 
 Variant | Command | Description
 ------- | ------- | -----------
@@ -49,20 +49,27 @@ You can customize how Cargo is run with settings stored in your
 `--example foo`, etc.), for specific variants ("Build", "Run", "Test", etc.),
 or globally.
 
-### Setting Commands
+### Configure Command
 
-There are several Sublime commands to help you configure the Cargo settings.
-They can be accessed from the Command Palette (Ctrl-Shift-P / ⌘-Shift-P). They
-are:
+To help you configure the Cargo build settings, run the `Rust: Configure Cargo
+Build` command from Sublime's Command Palette (Ctrl-Shift-P / ⌘-Shift-P).
+This will ask you a series of questions for the setting to configure.  The
+first choice is the setting:
 
-Command | Description
+Setting | Description
 ------- | -----------
-Rust: Set Default Path | Set the default Cargo package to build.  If not specified, then it will detect it from the current view, or display a panel to choose from.
-Rust: Set Cargo Target | Set the Cargo target (`--lib`, `--example foo`, etc.) for each build variant.  The "Automatic Detection" option will attempt to determine which target to use based on the current active view in Sublime (a test file will use `--test` or a binary will use `--bin`, etc.).
-Rust: Set Cargo Build Profile | Set whether or not to use the `--release` flag.
-Rust: Set Cargo Target Triple | Set the target triple (such as `x86_64-apple-darwin`).
-Rust: Set Cargo Features | Set the Cargo build features to use.
-Rust: Set Cargo Toolchain | Set the Rust toolchain to use (`nightly`, `beta`, etc.).  Use the Targets > "All Targets" to set globally.
+Target | Specify an explicit target (`--bin`, `--lib`, `--example`, etc.).  The "Automatic Detection" option will attempt to determine which target to use based on the current active view in Sublime (a test file will use `--test` or a binary will use `--bin`, etc.).
+Profile | Determine whether or not the `--release` flag is used.
+Target Triple | The `--target` option to specify a target triple (such as `x86_64-apple-darwin`).
+Toolchain | Set the Rust toolchain to use (`nightly`, `beta`, etc.).
+Features | Set the Cargo build features to use.
+Environment Variables | Specify additional environment variables to set.
+Extra Cargo Arguments | Extra arguments to include in the command line.
+Default Package/Path | The default package to build, useful if you have a workspace with multiple Cargo packages.  See `Multiple Cargo Projects` below.
+
+If you have multiple Cargo packages in your workspace, it will ask for the package to configure.
+
+A setting can be global (for all build invocations), for a specific build variant (such as "Test"), or for a specific build target (such as `--example myprog`).
 
 Caution: If you have not created a `sublime-project` file, then any changes
 you make will be lost if you close the Sublime window.
@@ -109,7 +116,8 @@ An example of a `sublime-project` file:
                         }
                     }
                 }
-            }
+            },
+            "default_path": "/path/to/package"
         }
     }
 }
@@ -119,17 +127,17 @@ The available settings are:
 
 Setting Name | Description
 ------------ | -----------
-`working_dir` | The directory where to run Cargo.  If not specified, uses the value from `default_path`, otherwise attempts to detect from the active view, or displays a panel to choose a Cargo package.
-`script_path` | Path to a `.rs` script, used by `cargo script` if you want to hard-code a specific script to run.
-`release` | If true, uses the `--release` flag.
-`target_triple` | If set, uses the `--target` flag with the given value.
+`target` | The Cargo target (such as `"--bin myprog"`).  Applies to `variants` only.  Can be `"auto"` (see "Automatic Detection" above).
 `toolchain` | The Rust toolchain to use (such as `nightly` or `beta`).
-`target` | The Cargo target (such as `"--bin myprog"`).  Applies to `variants` only.  Can be `"auto"` (see "Set Cargo Target" above).
-`no_default_features` | If True, sets the `--no-default-features` flag.
+`target_triple` | If set, uses the `--target` flag with the given value.
+`release` | If true, uses the `--release` flag.
 `features` | A string with a space separated list of features to pass to the `--features` flag.  Set to "ALL" to pass the `--all-features` flag.
 `extra_cargo_args` | Extra arguments passed to Cargo (before the `--` flags separator).
 `extra_run_args` | Extra arguments passed to Cargo (after the `--` flags separator).
 `env` | Object of environment variables to add when running Cargo.
+`working_dir` | The directory where to run Cargo.  If not specified, uses the value from `default_path`, otherwise attempts to detect from the active view, or displays a panel to choose a Cargo package.
+`script_path` | Path to a `.rs` script, used by `cargo script` if you want to hard-code a specific script to run.
+`no_default_features` | If True, sets the `--no-default-features` flag.
 
 The extra args settings support standard Sublime variable expansion (see
 [Build System
@@ -144,6 +152,8 @@ folders).
 If you have multiple Cargo projects in your Sublime window, the build system
 will use the currently active view to attempt to determine which project to
 build.  Otherwise it will show an input panel to select a package.
+
+You can set the `default_path` setting to always use a specific path.  It is specified at the same level as `paths` (see example above).  This can be set using the  `Rust: Configure Cargo Build` command.
 
 ## Custom Build Variants (Advanced)
 
