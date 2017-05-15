@@ -1,7 +1,8 @@
 import sublime
 import sublime_plugin
 import os
-from .rust import messages, rust_proc, rust_thread, util, target_detect
+from .rust import (messages, rust_proc, rust_thread, util, target_detect,
+                   cargo_settings)
 from pprint import pprint
 
 
@@ -77,17 +78,13 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
 
     def run(self):
         self.triggered_file_name = os.path.abspath(self.view.file_name())
-        if util.get_setting('rust_syntax_checking_method') == 'clippy':
-            # Clippy must run in the same directory as Cargo.toml.
-            # See https://github.com/Manishearth/rust-clippy/issues/1515
-            self.cwd = util.find_cargo_manifest(self.triggered_file_name)
-            if self.cwd is None:
-                print('Rust Enhanced skipping on-save syntax check.')
-                print('Failed to find Cargo.toml from %r' % self.triggered_file_name)
-                print('Clippy requires a Cargo.toml to exist.')
-                return
-        else:
-            self.cwd = os.path.dirname(self.triggered_file_name)
+        self.cwd = util.find_cargo_manifest(self.triggered_file_name)
+        if self.cwd is None:
+            # A manifest is required.
+            print('Rust Enhanced skipping on-save syntax check.')
+            print('Failed to find Cargo.toml from %r' % self.triggered_file_name)
+            print('A Cargo.toml manifest is required.')
+            return
 
         self.view.set_status('rust-check', 'Rust syntax check running...')
         self.this_view_found = False
@@ -108,10 +105,16 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         :raises rust_proc.ProcessTerminatedError: Check was canceled.
         """
         method = util.get_setting('rust_syntax_checking_method', 'no-trans')
+        settings = cargo_settings.CargoSettings(self.window)
+        settings.load()
+        command_info = cargo_settings.CARGO_COMMANDS[method]
+
         if method == 'clippy':
-            cmd = ['cargo', '+nightly', 'clippy', '--message-format=json']
+            # Clippy does not support cargo target filters, must be run for
+            # all targets.
+            cmd = settings.get_command(command_info, self.cwd)
             p = rust_proc.RustProc()
-            p.run(self.window, cmd, self.cwd, self)
+            p.run(self.window, cmd['command'], self.cwd, self, env=cmd['env'])
             p.wait()
             return
 
@@ -119,25 +122,21 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         td = target_detect.TargetDetector(self.window)
         targets = td.determine_targets(self.triggered_file_name)
         for (target_src, target_args) in targets:
-            if method == 'check':
-                cmd = ['cargo', 'check', '--message-format=json']
-                cmd.extend(target_args)
-            else:
-                cmd = ['cargo', 'rustc']
-                cmd.extend(target_args)
-                cmd.extend(['--', '-Zno-trans', '-Zunstable-options',
-                            '--error-format=json'])
-                if util.get_setting('rust_syntax_checking_include_tests', True):
-                    if not ('--test' in target_args or '--bench' in target_args):
-                        # Including the test harness has a few drawbacks.
-                        # missing_docs lint is disabled (see
-                        # https://github.com/rust-lang/sublime-rust/issues/156)
-                        # It also disables the "main function not found" error for
-                        # binaries.
-                        cmd.append('--test')
+            cmd = settings.get_command(command_info, self.cwd,
+                initial_settings={'target': ' '.join(target_args)})
+            if method == 'no-trans':
+                cmd['command'].extend(['--', '-Zno-trans', '-Zunstable-options'])
+                if (util.get_setting('rust_syntax_checking_include_tests', True) and
+                    not ('--test' in target_args or '--bench' in target_args)):
+                    # Including the test harness has a few drawbacks.
+                    # missing_docs lint is disabled (see
+                    # https://github.com/rust-lang/sublime-rust/issues/156)
+                    # It also disables the "main function not found" error for
+                    # binaries.
+                    cmd['command'].append('--test')
             p = rust_proc.RustProc()
             self.current_target_src = target_src
-            p.run(self.window, cmd, self.cwd, self)
+            p.run(self.window, cmd['command'], self.cwd, self, env=cmd['env'])
             p.wait()
             if self.this_view_found:
                 break

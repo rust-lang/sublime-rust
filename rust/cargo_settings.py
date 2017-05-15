@@ -110,6 +110,18 @@ CARGO_COMMANDS = {
         'requires_view_path': True,
         'requires_manifest': False,
     },
+    # This is a special command (not exposed) used by on-save syntax checking.
+    'no-trans': {
+        'name': 'no-trans',
+        'command': 'rustc',
+        'allows_target': True,
+        'allows_target_triple': True,
+        'allows_release': True,
+        'allows_features': True,
+        'allows_json': True,
+        'requires_view_path': False,
+        'requires_manifest': False,
+    }
 }
 
 
@@ -201,6 +213,8 @@ class CargoSettings(object):
         :Returns: A dictionary with the keys:
             - `command`: The command to run as a list of strings.
             - `env`: Dictionary of environment variables (or None).
+
+            Returns None if the command cannot be constructed.
         """
         command = cmd_info['command']
         result = ['cargo']

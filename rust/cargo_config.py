@@ -270,8 +270,11 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
         return result
 
     def filter_variant(self, x):
-        """Subclasses override this to filter variants from the variant list."""
-        return True
+        """Subclasses override this to filter variants from the variant
+        list."""
+        # no-trans is a special, hidden, internal command. In theory, a user
+        # can configure it, but since it is deprecated, just hide it for now.
+        return x['name'] != 'no-trans'
 
     def items_which(self):
         # This is a bit of a hack so that when called programmatically you
@@ -373,7 +376,8 @@ class CargoSetTarget(CargoConfigBase):
     sequence = ['package', 'variant', 'target']
 
     def filter_variant(self, info):
-        return info.get('allows_target', False)
+        return super(CargoSetTarget, self).filter_variant(info) and \
+            info.get('allows_target', False)
 
     def items_target(self):
         items = super(CargoSetTarget, self).items_target()
@@ -713,7 +717,8 @@ class CargoCreateNewBuild(CargoConfigBase):
             raise CancelCommandError
         result = []
         for key, info in CARGO_COMMANDS.items():
-            result.append((info['name'], key))
+            if self.filter_variant(info):
+                result.append((info['name'], key))
         result.sort()
         result.append(('New Command', 'NEW_COMMAND'))
         return result
