@@ -42,6 +42,25 @@ Document | <code>cargo&nbsp;doc</code> | Builds package documentation.
 Clippy | <code>cargo&nbsp;clippy</code> | Runs [Clippy](https://github.com/Manishearth/rust-clippy).  Clippy must be installed, and currently requires the nightly toolchain.
 Script | <code>cargo&nbsp;script&nbsp;$path</code> | Runs [Cargo Script](https://github.com/DanielKeep/cargo-script).  Cargo Script must be installed.  This is an addon that allows you to run a Rust source file like a script (without a Cargo.toml manifest).
 
+## General Settings
+
+General settings (see [Settings](../README.md#settings)) for how messages are displayed are:
+
+| Setting | Default | Description |
+| :------ | :------ | :---------- |
+| `rust_syntax_hide_warnings` | `false` | If true, will not display warning messages. |
+| `rust_syntax_error_color` | `"#F00"` | Color of error messages. |
+| `rust_syntax_warning_color` | `"#FF0"` | Color of warning messages. |
+| `rust_phantom_style` | `"normal"` | How to display inline messages.  Either `normal` or `none`. |
+| `rust_region_style` | `"outline"` | How to highlight messages.  Either `outline` or `none`. |
+
+It also supports Sublime's build settings:
+
+| Setting | Default | Description |
+| :------ | :------ | :---------- |
+| `show_errors_inline` | `true` | If true, messages are displayed in line using Sublime's phantoms.  If false, messages are only displayed in the output panel. |
+| `show_panel_on_build` | `true` | If true, an output panel is displayed at the bottom of the window showing the compiler output. |
+
 ## Cargo Project Settings
 
 You can customize how Cargo is run with settings stored in your
@@ -132,8 +151,8 @@ Setting Name | Description
 `target_triple` | If set, uses the `--target` flag with the given value.
 `release` | If true, uses the `--release` flag.
 `features` | A string with a space separated list of features to pass to the `--features` flag.  Set to "ALL" to pass the `--all-features` flag.
-`extra_cargo_args` | Extra arguments passed to Cargo (before the `--` flags separator).
-`extra_run_args` | Extra arguments passed to Cargo (after the `--` flags separator).
+`extra_cargo_args` | String of extra arguments passed to Cargo (before the `--` flags separator).
+`extra_run_args` | String of extra arguments passed to Cargo (after the `--` flags separator).
 `env` | Object of environment variables to add when running Cargo.
 `working_dir` | The directory where to run Cargo.  If not specified, uses the value from `default_path`, otherwise attempts to detect from the active view, or displays a panel to choose a Cargo package.
 `script_path` | Path to a `.rs` script, used by `cargo script` if you want to hard-code a specific script to run.
