@@ -214,7 +214,7 @@ class rustPluginSyntaxCheckEvent(sublime_plugin.EventListener):
         # For now, just grab the first kind since it will always result in the
         # same arguments.
         kind = target['kind'][0]
-        if kind in ('lib', 'rlib', 'dylib', 'staticlib', 'proc-macro'):
+        if kind in ('lib', 'rlib', 'dylib', 'cdylib', 'staticlib', 'proc-macro'):
             return (target['src_path'], '--lib')
         elif kind in ('bin', 'test', 'example', 'bench'):
             return (target['src_path'], '--'+kind+' '+target['name'])
