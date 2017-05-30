@@ -279,10 +279,11 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
     def items_which(self):
         # This is a bit of a hack so that when called programmatically you
         # don't have to specify 'which'.
-        if 'variant' in self.input:
-            self.input['which'] = 'variant'
-        elif 'target' in self.input:
-            self.input['which'] = 'target'
+        if 'which' not in self.input:
+            if 'variant' in self.input:
+                self.input['which'] = 'variant'
+            elif 'target' in self.input:
+                self.input['which'] = 'target'
 
         return [
             (['Configure %s for all build commands.' % self.config_name,
