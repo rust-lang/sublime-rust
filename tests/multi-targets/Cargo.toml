@@ -52,3 +52,9 @@ name = "exlib"
 path = "examples/exlib.rs"
 crate-type = ["dylib"]
 test = false
+
+[[example]]
+name = "excdylib"
+path = "examples/excdylib.rs"
+crate-type = ["cdylib"]
+test = false

@@ -238,7 +238,7 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
             # AFAIK, when there are multiple "kind" values, this only happens
             # when there are multiple library kinds.
             kind = target['kind'][0]
-            if kind in ('lib', 'rlib', 'dylib', 'staticlib', 'proc-macro'):
+            if kind in ('lib', 'rlib', 'dylib', 'cdylib', 'staticlib', 'proc-macro'):
                 kinds.setdefault('lib', []).append(('Lib', '--lib'))
             elif kind in ('bin', 'test', 'example', 'bench'):
                 text = '%s: %s' % (kind.capitalize(), target['name'])
@@ -915,7 +915,7 @@ def get_cargo_metadata(window, cwd):
                 - kind: List of kinds.  May contain multiple entries if
                   `crate-type` specifies multiple values in Cargo.toml.
                   Lots of different types of values:
-                    - Libraries: 'lib', 'rlib', 'dylib', 'staticlib',
+                    - Libraries: 'lib', 'rlib', 'dylib', 'cdylib', 'staticlib',
                       'proc-macro'
                     - Executables: 'bin', 'test', 'example', 'bench'
                     - build.rs: 'custom-build'

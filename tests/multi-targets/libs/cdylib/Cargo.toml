@@ -1,0 +1,6 @@
+[package]
+name = "cdylib"
+version = "0.1.0"
+
+[lib]
+crate-type = ["cdylib"]

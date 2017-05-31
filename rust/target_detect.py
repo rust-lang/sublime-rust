@@ -92,8 +92,8 @@ class TargetDetector(object):
         # generally you only use one command-line argument to build multiple
         # "kinds" (--lib in this case).
         #
-        # Nightly beware:  [[example]] that specifies crate-type will no
-        # longer show up as "example", making it impossible to compile.
+        # Caution:  [[example]] that specifies crate-type had issues before
+        # 1.17.
         # See https://github.com/rust-lang/cargo/pull/3556 and
         # https://github.com/rust-lang/cargo/issues/3572
         # https://github.com/rust-lang/cargo/pull/3668  (ISSUE FIXED)
@@ -101,7 +101,7 @@ class TargetDetector(object):
         # For now, just grab the first kind since it will always result in the
         # same arguments.
         kind = target['kind'][0]
-        if kind in ('lib', 'rlib', 'dylib', 'staticlib', 'proc-macro'):
+        if kind in ('lib', 'rlib', 'dylib', 'cdylib', 'staticlib', 'proc-macro'):
             return (target['src_path'], ['--lib'])
         elif kind in ('bin', 'test', 'example', 'bench'):
             return (target['src_path'], ['--' + kind, target['name']])

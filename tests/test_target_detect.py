@@ -20,10 +20,6 @@ class TestTargetDetect(TestBase):
             ('src/altmain.rs', [('src/altmain.rs', '--bin otherbin')]),
             ('examples/ex1.rs', [('examples/ex1.rs', '--example ex1')]),
             ('examples/ex2.rs', [('examples/ex2.rs', '--example ex2')]),
-            # Unfortunately the fix for this missed the 1.16 deadline, wait
-            # for 1.17 to uncomment this.  See
-            # https://github.com/rust-lang/cargo/pull/3668
-            # ('examples/exlib.rs', [('examples/exlib.rs', '--example exlib')]),
             ('tests/test1.rs', [('tests/test1.rs', '--test test1')]),
             ('tests/test2.rs', [('tests/test2.rs', '--test test2')]),
             ('benches/bench1.rs', [('benches/bench1.rs', '--bench bench1')]),
@@ -39,8 +35,21 @@ class TestTargetDetect(TestBase):
                                          ('tests/test2.rs', '--test test2')]),
             # proc-macro kind
             ('pmacro/src/lib.rs', [('pmacro/src/lib.rs', '--lib')]),
-
+            # Different lib types.
+            ('libs/cdylib/src/lib.rs', [('libs/cdylib/src/lib.rs', '--lib')]),
+            ('libs/dylib/src/lib.rs', [('libs/dylib/src/lib.rs', '--lib')]),
+            ('libs/rlib/src/lib.rs', [('libs/rlib/src/lib.rs', '--lib')]),
+            ('libs/staticlib/src/lib.rs', [('libs/staticlib/src/lib.rs', '--lib')]),
         ]
+        rustc_version = util.get_rustc_version(sublime.active_window(),
+                                               plugin_path)
+        if semver.match(rustc_version, '>=1.17.0'):
+            # Example libraries had issues before 1.17.
+            expected_targets.extend([
+                ('examples/exlib.rs',[('examples/exlib.rs', '--example exlib')]),
+                ('examples/excdylib.rs',[('examples/excdylib.rs', '--example excdylib')]),
+            ])
+
         for (path, targets) in expected_targets:
             path = os.path.join('tests', 'multi-targets', path)
             targets = [(os.path.normpath(

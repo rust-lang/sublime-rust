@@ -37,10 +37,6 @@ class TestBase(unittest.TestCase):
 
     def setUp(self):
         window = sublime.active_window()
-        # No necessary to set build system since tests call 'cargo_exec'
-        # directly.
-        # window.run_command('set_build_system',
-        #     {'file': 'Packages/sublime-rust/RustEnhanced.sublime-build'})
         # Clear any rust project settings.
         data = window.project_data()
         if 'cargo_build' in data.get('settings', {}):
