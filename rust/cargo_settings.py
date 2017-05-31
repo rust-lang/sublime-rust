@@ -144,13 +144,6 @@ class CargoSettings(object):
             # Window does not have a Sublime project.
             self.project_data = {}
 
-        if self.window.project_file_name() is None:
-            # XXX: Better way to display a warning?  Is
-            # sublime.error_message() reasonable?
-            print(util.multiline_fix("""
-                Rust Enhanced Warning: This window does not have an associated sublime-project file.
-                Any changes to the Cargo build settings will be lost if you close the window."""))
-
     def get(self, key, default=None):
         return self.project_data.get('settings', {})\
                                 .get('cargo_build', {})\
@@ -159,7 +152,7 @@ class CargoSettings(object):
     def set(self, key, value):
         self.project_data.setdefault('settings', {})\
                          .setdefault('cargo_build', {})[key] = value
-        self.window.set_project_data(self.project_data)
+        self._set_project_data()
 
     def get_with_target(self, path, target, key, default=None):
         path = os.path.normpath(path)
@@ -194,7 +187,7 @@ class CargoSettings(object):
         else:
             d = pdata.setdefault('defaults', {})
         d[key] = value
-        self.window.set_project_data(self.project_data)
+        self._set_project_data()
 
     def set_with_variant(self, path, variant, key, value):
         path = os.path.normpath(path)
@@ -205,6 +198,15 @@ class CargoSettings(object):
                                  .setdefault('variants', {})\
                                  .setdefault(variant, {})
         vdata[key] = value
+        self._set_project_data()
+
+    def _set_project_data(self):
+        if self.window.project_file_name() is None:
+            # XXX: Better way to display a warning?  Is
+            # sublime.error_message() reasonable?
+            print(util.multiline_fix("""
+                Rust Enhanced Warning: This window does not have an associated sublime-project file.
+                Any changes to the Cargo build settings will be lost if you close the window."""))
         self.window.set_project_data(self.project_data)
 
     def get_command(self, cmd_info, settings_path, initial_settings={}):
