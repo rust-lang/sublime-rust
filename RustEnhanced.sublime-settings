@@ -3,6 +3,10 @@
     // build errors or warnings.
     "rust_syntax_checking": true,
 
+    // The method used to check code on-save.
+    // "check", "no-trans", or "clippy" (see README.md)
+    "rust_syntax_checking_method": "check",
+
     // Enable checking of test code within #[cfg(test)] sections.
     "rust_syntax_checking_include_tests": true,
 

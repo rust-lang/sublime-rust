@@ -60,8 +60,8 @@ This relies on Cargo and Rust (>= 1.8.0) being installed and on your system path
 | Setting | Default | Description |
 | :------ | :------ | :---------- |
 | `rust_syntax_checking` | `true` | Enable the on-save syntax checking. |
+| `rust_syntax_checking_method` | `"check"` | The method used for checking your code (see below). |
 | `rust_syntax_checking_include_tests` | `true` | Enable checking of test code within `#[cfg(test)]` sections (only for `no-trans` method). |
-| `rust_syntax_checking_method` | `"no-trans"` | The method used for checking your code (see below). |
 
 The available checking methods are:
 
