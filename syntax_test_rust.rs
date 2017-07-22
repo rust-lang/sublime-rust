@@ -219,7 +219,7 @@ fn factory() -> Box<Fn(i32) -> i32> {
 //                  ^^^^^^^^^^^^^^ meta.generic
 //                      ^^ storage.type
 //                              ^^ storage.type
-//                          ^^ punctuation.separator.generic
+//                          ^^ source.rust meta.function.rust meta.function.return-type.rust
 
     Box::new(|x| x + 1)
 }
@@ -1019,3 +1019,35 @@ pub fn macro_tests() {
 //  ^^^^^^^^^^^^ support.macro.rust
 //                ^^^^ constant.other.placeholder.rust
 }
+
+#[derive(Clone)]
+pub struct GobletMiddleware<B: Backend + ?Sized + 'static> {
+//         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.generic
+//                                                ^^^^^^^ storage.modifier.lifetime
+    pub derp: Arc<Api<B>>,
+}
+
+impl<B: Backend + ?Sized + 'static> GobletMiddleware<B> {
+// <- meta.impl
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
+//                         ^^^^^^^ storage.modifier.lifetime
+//                                  ^^^^^^^^^^^^^^^^^^^ meta.generic
+    pub fn new(api: Arc<Api<B>>) -> GobletMiddleware<B> {
+        GobletMiddleware { derp: api }
+    }
+}
+
+impl<B: Backend + ?Sized + 'static> Key for GobletMiddleware<B> {
+// <- meta.impl
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
+//                         ^^^^^^^ storage.modifier.lifetime
+//                                      ^^^ keyword.other
+//                                          ^^^^^^^^^^^^^^^^ entity.name.impl
+//                                                          ^^^ meta.generic
+    type Value = Arc<Api<B>>;
+}
+
+impl<T> From<AsRef<T>> for CliError<T> { }
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
+//                         ^^^^^^^^ entity.name.impl
+//                                 ^^^ meta.generic

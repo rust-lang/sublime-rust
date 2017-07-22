@@ -187,8 +187,7 @@ contexts:
     - match: '\b[[:lower:]_][[:lower:][:digit:]_]*!(?=\s*(\(|\{|\[))'
       scope: support.macro.rust
 
-    - match: \b(Copy|Send|Sized|Sync|Drop|Fn|FnMut|FnOnce|Box|ToOwned|Clone|PartialEq|PartialOrd|Eq|Ord|AsRef|AsMut|Into|From|Default|Iterator|Extend|IntoIterator|DoubleEndedIterator|ExactSizeIterator|Option|Some|None|Result|Ok|Err|SliceConcatExt|String|ToString|Vec)\b
-      scope: support.type.rust
+    - include: support-type
 
     - include: basic-identifiers
     - include: numbers
@@ -287,6 +286,17 @@ contexts:
     - match: '(?=\S)'
       pop: true
 
+  support-type:
+    - match: '(Vec|Option|Result|BTreeMap|HashMap|Box|Rc|Arc|AsRef|AsMut|Into|From)\s*(?=<)'
+      scope: support.type.rust
+      push: generic-angles
+    - match: '[?]?(?=\bSized\b)'
+      scope: keyword.operator.rust
+    - match: '[!]?(?=\bSync|Send\b)'
+      scope: keyword.operator.rust
+    - match: \b(Copy|Send|Sized|Sync|Drop|Fn|FnMut|FnOnce|Box|ToOwned|Clone|PartialEq|PartialOrd|Eq|Ord|AsRef|AsMut|Into|From|Default|Iterator|Extend|IntoIterator|DoubleEndedIterator|ExactSizeIterator|Option|Some|None|Result|Ok|Err|SliceConcatExt|String|ToString|Vec)\b 
+      scope: support.type.rust 
+
   return-type:
     - match: '->'
       scope: punctuation.separator.rust
@@ -367,9 +377,7 @@ contexts:
   generic-angles:
     - meta_scope: meta.generic.rust
     # -> to cover https://doc.rust-lang.org/std/boxed/trait.FnBox.html
-    - match: '->'
-      scope: punctuation.separator.generic.rust
-      push: generic-angles-contents
+    - include: support-type
     - match: '>'
       scope: punctuation.definition.generic.end.rust
       pop: true
@@ -396,7 +404,7 @@ contexts:
           scope: punctuation.definition.group.end.rust
           pop: true
         - include: type-any-identifier
-    - match: '(?=>|[^\s\$=<_+''(),&:[:alnum:]])'
+    - match: '(?=>)'
       pop: true
     - match: '<'
       scope: punctuation.definition.generic.begin.rust
@@ -406,12 +414,18 @@ contexts:
           pop: true
         - include: generic-angles-contents
     - include: type-any-identifier
-    - match: ':'
+    - match: '{{identifier}}'
+    - match: ':|,'
       scope: punctuation.separator.rust
-    - match: '\+'
+    - match: '\+|\bas\b'
       scope: keyword.operator.rust
+    - match: '\S'
+      scope: invalid.illegal.rust
+      pop: true
 
   type-any-identifier:
+    - include: support-type
+    - include: return-type
     - match: '&'
       scope: keyword.operator.rust
     - match: \b(mut|ref)\b
@@ -643,10 +657,11 @@ contexts:
       set: impl-body
     - match: '(?=\bwhere\b)'
       set: impl-where
+    - match: '{{identifier}}(?=<)'
+      scope: entity.name.impl.rust
+      push: generic-angles
     - match: '{{identifier}}'
       scope: entity.name.impl.rust
-    - match: '(?=<)'
-      push: generic-angles
     - match: '&'
       scope: keyword.operator.rust
     - match: \b(mut|ref)\b
