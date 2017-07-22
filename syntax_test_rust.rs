@@ -2,7 +2,7 @@
 
 // Line comments
 // <- comment.line.double-slash
-// ^^^^^^^^^^^^^ comment.line.double-slash
+// ^^^^^^^^^^^^^^ comment.line.double-slash
 /// Line doc comments
 // <- comment.line.documentation
 // ^^^^^^^^^^^^^ comment.line.documentation

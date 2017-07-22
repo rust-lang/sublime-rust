@@ -784,12 +784,12 @@ contexts:
     - match: "//[!/]"
       push:
         - meta_scope: comment.line.documentation.rust
-        - match: $
+        - match: $\n?
           pop: true
     - match: //
       push:
         - meta_scope: comment.line.double-slash.rust
-        - match: $
+        - match: $\n?
           pop: true
 
   block-comments:
