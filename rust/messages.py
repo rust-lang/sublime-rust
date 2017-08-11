@@ -446,27 +446,12 @@ def _add_rust_messages(window, cwd, info, target_path,
       Currently only has 'span' key, the span of the parent to display the
       message.
     """
-    error_colour = util.get_setting('rust_syntax_error_color', 'var(--redish)')
-    warning_colour = util.get_setting('rust_syntax_warning_color', 'var(--yellowish)')
-
     # Include "notes" tied to errors, even if warnings are disabled.
     if (info['level'] != 'error' and
         util.get_setting('rust_syntax_hide_warnings', False) and
         not parent_info
        ):
         return
-
-    # TODO: Consider matching the colors used by rustc.
-    # - error: red
-    #     `bug` appears as "error: internal compiler error"
-    # - warning: yellow
-    # - note: bright green
-    # - help: cyan
-    is_error = info['level'] == 'error'
-    if is_error:
-        base_color = error_colour
-    else:
-        base_color = warning_colour
 
     msg_template = """
         <body id="rust-message">
@@ -477,8 +462,14 @@ def _add_rust_messages(window, cwd, info, target_path,
                 .rust-error {{
                     color: %s;
                 }}
-                .rust-additional {{
-                    color: var(--yellowish);
+                .rust-warning {{
+                    color: %s;
+                }}
+                .rust-note {{
+                    color: %s;
+                }}
+                .rust-help {{
+                    color: %s;
                 }}
                 a {{
                     text-decoration: inherit;
@@ -488,7 +479,12 @@ def _add_rust_messages(window, cwd, info, target_path,
                 }}
             </style>
             <span class="{cls}">{level}: {msg} {extra}<a href="hide">\xD7</a></span>
-        </body>""" % (base_color,)
+        </body>""" % (
+        util.get_setting('rust_syntax_error_color', 'var(--redish)'),
+        util.get_setting('rust_syntax_warning_color', 'var(--yellowish)'),
+        util.get_setting('rust_syntax_note_color', 'var(--greenish)'),
+        util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
+    )
 
     def _add_message(span, is_main, message, extra=''):
         span_path = os.path.realpath(os.path.join(cwd, span['file_name']))
@@ -500,10 +496,12 @@ def _add_rust_messages(window, cwd, info, target_path,
         else:
             span_region = None
 
-        if info['level'] == 'error':
-            cls = 'rust-error'
-        else:
-            cls = 'rust-additional'
+        cls = {
+            'error': 'rust-error',
+            'warning': 'rust-warning',
+            'note': 'rust-note',
+            'help': 'rust-help',
+        }.get(info['level'], 'rust-error')
 
         # Rust performs some pretty-printing for things like suggestions,
         # attempt to retain some of the formatting.  This isn't perfect

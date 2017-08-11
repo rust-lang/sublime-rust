@@ -13,11 +13,13 @@
     // If true, will not display warning messages.
     "rust_syntax_hide_warnings": false,
 
-    // Color of error messages.
-    "rust_syntax_error_color": "#F00",
-
-    // Color of warning messages.
-    "rust_syntax_warning_color":"#FF0",
+    // Color of messages.
+    // These use CSS colors.  See
+    // https://www.sublimetext.com/docs/3/minihtml.html for more detail.
+    "rust_syntax_error_color": "var(--redish)",
+    "rust_syntax_warning_color": "var(--yellowish)",
+    "rust_syntax_note_color": "var(--greenish)",
+    "rust_syntax_help_color": "var(--bluish)",
 
     // Specify environment variables to add when running Cargo.
     // "rust_env": {"PATH": "$PATH:$HOME/.cargo/bin"}
