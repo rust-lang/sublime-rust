@@ -72,6 +72,7 @@ class TestSyntaxCheck(TestBase):
             # error in a cfg(test) section
             'error-tests/src/lib.rs',
             'error-tests/tests/macro-expansion.rs',
+            'error-tests/tests/macro-backtrace-println.rs',
             # Workspace tests.
             'workspace/workspace1/src/lib.rs',
             'workspace/workspace1/src/anothermod/mod.rs',

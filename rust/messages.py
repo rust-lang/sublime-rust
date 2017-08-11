@@ -412,7 +412,12 @@ def _add_rust_messages(window, cwd, info, target_path,
             - 'column_end':
             - 'is_primary': If True, this is the primary span where the error
               started.  Note: It is possible (though rare) for multiple spans
-              to be marked as primary.
+              to be marked as primary (for example, 'immutable borrow occurs
+              here' and 'mutable borrow ends here' can be two separate spans
+              both "primary").  Top (parent) messages should always have at
+              least one primary span (unless it has 0 spans).  Child messages
+              may have 0 or more primary spans.  AFAIK, spans from 'expansion'
+              are never primary.
             - 'text': List of dictionaries showing the original source code.
             - 'label': A message to display at this span location.  May be
               None (AFAIK, this only happens when is_primary is True, in which
@@ -438,8 +443,8 @@ def _add_rust_messages(window, cwd, info, target_path,
           should be written.
 
     - `parent_info`: Dictionary used for tracking "children" messages.
-      Includes 'view' and 'region' keys to indicate where a child message
-      should be displayed.
+      Currently only has 'span' key, the span of the parent to display the
+      message.
     """
     error_colour = util.get_setting('rust_syntax_error_color', 'var(--redish)')
     warning_colour = util.get_setting('rust_syntax_warning_color', 'var(--yellowish)')
@@ -485,7 +490,16 @@ def _add_rust_messages(window, cwd, info, target_path,
             <span class="{cls}">{level}: {msg} {extra}<a href="hide">\xD7</a></span>
         </body>""" % (base_color,)
 
-    def _add_message(path, span_region, is_main, message, extra=''):
+    def _add_message(span, is_main, message, extra=''):
+        span_path = os.path.realpath(os.path.join(cwd, span['file_name']))
+        # Sublime text is 0 based whilst the line/column info from
+        # rust is 1 based.
+        if span.get('line_start'):
+            span_region = ((span['line_start'] - 1, span['column_start'] - 1),
+                           (span['line_end'] - 1, span['column_end'] - 1))
+        else:
+            span_region = None
+
         if info['level'] == 'error':
             cls = 'rust-error'
         else:
@@ -509,14 +523,13 @@ def _add_rust_messages(window, cwd, info, target_path,
             msg=escaped_message,
             extra=extra
         )
-        add_message(window, path, info['level'], span_region,
+        add_message(window, span_path, info['level'], span_region,
                     is_main, content)
         if msg_cb:
-            msg_cb(path, span_region, is_main, message, info['level'])
+            msg_cb(span_path, span_region, is_main, message, info['level'])
 
-    def add_primary_message(path, span_region, is_main, message):
-        parent_info['path'] = path
-        parent_info['span'] = span_region
+    def add_primary_message(span, is_main, message):
+        parent_info['span'] = span
         # Not all codes have explanations (yet).
         if info['code'] and info['code']['explanation']:
             # TODO
@@ -526,13 +539,12 @@ def _add_rust_messages(window, cwd, info, target_path,
             extra = ' <a href="https://doc.rust-lang.org/error-index.html#%s">?</a>' % (info['code']['code'],)
         else:
             extra = ''
-        _add_message(path, span_region, is_main, message, extra)
+        _add_message(span, is_main, message, extra)
 
     if len(info['spans']) == 0:
         if parent_info:
             # This is extra info attached to the parent message.
-            add_primary_message(parent_info['path'],
-                                parent_info['span'],
+            add_primary_message(parent_info['span'],
                                 False,
                                 info['message'])
         else:
@@ -546,7 +558,8 @@ def _add_rust_messages(window, cwd, info, target_path,
                 if target_path:
                     # Display at the bottom of the root path (like main.rs)
                     # for lack of a better place to put it.
-                    add_primary_message(target_path, None, True, imsg)
+                    fake_span = {'file_name': target_path}
+                    add_primary_message(fake_span, True, imsg)
                 else:
                     if msg_cb:
                         msg_cb(None, None, True, imsg, info['level'])
@@ -554,26 +567,29 @@ def _add_rust_messages(window, cwd, info, target_path,
     for span in info['spans']:
         is_primary = span['is_primary']
 
+        def find_span_r(span):
+            if span['expansion']:
+                return find_span_r(span['expansion']['span'])
+            else:
+                return span
+
         if 'macros>' in span['file_name']:
             # Rust gives the chain of expansions for the macro, which we don't
             # really care about.  We want to find the site where the macro was
             # invoked.  I'm not entirely confident this is the best way to do
             # this, but it seems to work.  This is roughly emulating what is
             # done in librustc_errors/emitter.rs fix_multispan_in_std_macros.
-            def find_span_r(span):
-                if span['expansion']:
-                    return find_span_r(span['expansion']['span'])
-                else:
-                    return span
             span = find_span_r(span)
             if span is None:
                 continue
 
-        span_path = os.path.realpath(os.path.join(cwd, span['file_name']))
-        # Sublime text is 0 based whilst the line/column info from
-        # rust is 1 based.
-        span_region = ((span['line_start'] - 1, span['column_start'] - 1),
-                       (span['line_end'] - 1, span['column_end'] - 1))
+        # Add a message for macro invocation site if available in the local
+        # crate.
+        if span['expansion'] and \
+                'macros>' not in span['file_name'] and \
+                not span['expansion']['macro_decl_name'].startswith('#['):
+            invoke_span = find_span_r(span)
+            _add_message(invoke_span, False, 'in this macro invocation')
 
         label = span['label']
         # Some spans don't have a label.  These seem to just imply
@@ -583,15 +599,15 @@ def _add_rust_messages(window, cwd, info, target_path,
         # This can also happen for macro expansions.
         if label:
             # Display the label for this Span.
-            _add_message(span_path, span_region, False, label)
+            _add_message(span, False, label)
         if is_primary:
             # Show the overall error message.
-            add_primary_message(span_path, span_region, True, info['message'])
+            add_primary_message(span, True, info['message'])
         if span['suggested_replacement']:
             # The "suggested_replacement" contains the code that
             # should replace the span.  However, it can be easier to
             # read if you repeat the entire line (from "rendered").
-            _add_message(span_path, span_region, False, info['rendered'])
+            _add_message(span, False, info['rendered'])
 
     # Recurse into children (which typically hold notes).
     for child in info['children']:
