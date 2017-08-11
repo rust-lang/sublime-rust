@@ -576,17 +576,14 @@ def _add_rust_messages(window, cwd, info, target_path,
                        (span['line_end'] - 1, span['column_end'] - 1))
 
         label = span['label']
+        # Some spans don't have a label.  These seem to just imply
+        # that the main "message" is sufficient, and always seems
+        # to happen when the span is_primary.
+        #
+        # This can also happen for macro expansions.
         if label:
             # Display the label for this Span.
             _add_message(span_path, span_region, False, label)
-        else:
-            # Some spans don't have a label.  These seem to just imply
-            # that the main "message" is sufficient, and always seems
-            # to happen when the span is_primary.
-            if not is_primary:
-                # When can this happen?
-                pprint(info)
-                raise ValueError('Unexpected span with no label')
         if is_primary:
             # Show the overall error message.
             add_primary_message(span_path, span_region, True, info['message'])
