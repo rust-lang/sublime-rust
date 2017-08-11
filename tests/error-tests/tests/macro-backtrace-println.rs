@@ -27,5 +27,5 @@ macro_rules! myprintln {
 
 fn main() {
     myprintln!("{}");
-//  ^^^^^^^^^^^^^^^^^ERR in this macro invocation
+//  ^^^^^^^^^^^^^^^^^HELP in this macro invocation
 }

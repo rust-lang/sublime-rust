@@ -486,7 +486,7 @@ def _add_rust_messages(window, cwd, info, target_path,
         util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
     )
 
-    def _add_message(span, is_main, message, extra=''):
+    def _add_message(span, is_main, message, extra='', level=None):
         span_path = os.path.realpath(os.path.join(cwd, span['file_name']))
         # Sublime text is 0 based whilst the line/column info from
         # rust is 1 based.
@@ -496,12 +496,15 @@ def _add_rust_messages(window, cwd, info, target_path,
         else:
             span_region = None
 
+        if level is None:
+            level = info['level']
+
         cls = {
             'error': 'rust-error',
             'warning': 'rust-warning',
             'note': 'rust-note',
             'help': 'rust-help',
-        }.get(info['level'], 'rust-error')
+        }.get(level, 'rust-error')
 
         # Rust performs some pretty-printing for things like suggestions,
         # attempt to retain some of the formatting.  This isn't perfect
@@ -517,14 +520,14 @@ def _add_rust_messages(window, cwd, info, target_path,
         escaped_message = ''.join(map(escape_and_link, enumerate(parts)))
         content = msg_template.format(
             cls=cls,
-            level=info['level'],
+            level=level,
             msg=escaped_message,
             extra=extra
         )
-        add_message(window, span_path, info['level'], span_region,
+        add_message(window, span_path, level, span_region,
                     is_main, content)
         if msg_cb:
-            msg_cb(span_path, span_region, is_main, message, info['level'])
+            msg_cb(span_path, span_region, is_main, message, level)
 
     def add_primary_message(span, is_main, message):
         parent_info['span'] = span
@@ -587,7 +590,8 @@ def _add_rust_messages(window, cwd, info, target_path,
                 'macros>' not in span['file_name'] and \
                 not span['expansion']['macro_decl_name'].startswith('#['):
             invoke_span = find_span_r(span)
-            _add_message(invoke_span, False, 'in this macro invocation')
+            _add_message(invoke_span, False, 'in this macro invocation',
+                level='help')
 
         label = span['label']
         # Some spans don't have a label.  These seem to just imply
