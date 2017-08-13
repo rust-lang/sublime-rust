@@ -37,13 +37,27 @@ class TestSyntaxCheck(TestBase):
             // ~ERR recursive type
             // ~HELP insert indirection
 
+        For messages that appear at the bottom of the file, use a comment with
+        "end-msg:" like this:
+
+            // end-msg: WARN crate `SNAKE` should have a snake case
+
+        If a message starts and ends with a slash, it will match as a regex.
+
+            // ^^^ERR /this is.*a regex/
+
         You can place restrictions on the message in parenthesis after the
-        level (comma separated).  This can be a semver check, or the word
-        "test" to indicate that this message only shows up in a cfg(test)
-        block.  Examples:
+        level (comma separated).  Examples:
 
             // ^^^ERR(<1.16.0) error msg before 1.16
             // ^^^ERR(>=1.16.0,test) error msg after 1.16, test block only
+
+        The current restrictions are:
+
+        - `test`: This message only appears in a cfg(test) block.
+        - `no-trans`: This message only appears with no-trans method.
+        - `!no-trans`: This message does not appear in no-trans method.
+        - semver: Any semver string to match against the rustc version.
 
         These tests are somewhat fragile, as new versions of Rust change the
         formatting of messages.  Hopefully these examples are relatively
@@ -73,6 +87,9 @@ class TestSyntaxCheck(TestBase):
             'error-tests/src/lib.rs',
             'error-tests/tests/macro-expansion.rs',
             'error-tests/tests/macro-backtrace-println.rs',
+            'error-tests/examples/SNAKE.rs',
+            ('error-tests/examples/no_main.rs', 'error-tests/examples/no_main_mod.rs'),
+            ('error-tests/tests/remote_note_1.rs', 'error-tests/tests/remote_note_1_mod.rs'),
             # Workspace tests.
             'workspace/workspace1/src/lib.rs',
             'workspace/workspace1/src/anothermod/mod.rs',
@@ -94,9 +111,11 @@ class TestSyntaxCheck(TestBase):
                 }
             })
         for path in to_test:
-            path = os.path.join('tests', path)
-            self._with_open_file(path, self._test_messages,
-                methods=methods)
+            if not isinstance(paths, tuple):
+                paths = (paths,)
+            paths = [os.path.join('tests', p) for p in paths]
+            self._with_open_file(paths[0], self._test_messages,
+                methods=methods, extra_paths=paths[1:])
 
     def test_clippy_messages(self):
         """Test clippy messages."""
@@ -106,35 +125,39 @@ class TestSyntaxCheck(TestBase):
         for path in to_test:
             self._with_open_file(path, self._test_messages, methods=['clippy'])
 
-    def _test_messages(self, view, methods=None):
-        # Trigger the generation of messages.
-        phantoms = []
-        view_regions = []
+    def _test_messages(self, view, methods=None, extra_paths=()):
+
+        # Capture all calls to Sublime to add phantoms and regions.
+        # These are keyed by filename.
+        phantoms = {}
+        view_regions = {}
 
         def collect_phantoms(v, key, region, content, layout, on_navigate):
-            if v == view:
-                phantoms.append((region, content))
+            ps = phantoms.setdefault(v.file_name(), [])
+            ps.append((region, content))
 
         def collect_regions(v, key, regions, scope, icon, flags):
-            if v == view:
-                view_regions.extend(regions)
+            rs = view_regions.setdefault(v.file_name(), [])
+            rs.extend(regions)
 
         m = plugin.rust.messages
         orig_add_phantom = m._sublime_add_phantom
         orig_add_regions = m._sublime_add_regions
         m._sublime_add_phantom = collect_phantoms
         m._sublime_add_regions = collect_regions
+
+        # Trigger the generation of messages.
         try:
             for method in methods:
                 with AlteredSetting('rust_syntax_checking_method', method):
-                    self._test_messages2(view, phantoms, view_regions, method)
+                    self._test_messages2(view, phantoms, view_regions, method, extra_paths)
                 phantoms.clear()
                 view_regions.clear()
         finally:
             m._sublime_add_phantom = orig_add_phantom
             m._sublime_add_regions = orig_add_regions
 
-    def _test_messages2(self, view, phantoms, regions, method):
+    def _test_messages2(self, view, phantoms, regions, method, extra_paths):
         e = plugin.SyntaxCheckPlugin.RustSyntaxCheckEvent()
         # Force Cargo to recompile.
         self._cargo_clean(view)
@@ -142,6 +165,20 @@ class TestSyntaxCheck(TestBase):
         e.on_post_save(view)
         # Wait for it to finish.
         self._get_rust_thread().join()
+        self._test_messages_check(view, phantoms, regions, method)
+
+        def extra_check(view):
+            # on_load is disabled during tests, do it manually.
+            plugin.rust.messages.show_messages_for_view(view)
+            self._test_messages_check(view, phantoms, regions, method)
+
+        # Load any other views that are expected to have messages.
+        for path in extra_paths:
+            self._with_open_file(path, extra_check)
+
+    def _test_messages_check(self, view, phantoms, regions, method):
+        phantoms = phantoms.get(view.file_name(), [])
+        regions = regions.get(view.file_name(), [])
         expected_messages = self._collect_expected_regions(view)
 
         # Refresh based on the toolchain used.
@@ -164,10 +201,20 @@ class TestSyntaxCheck(TestBase):
                         # blocks (see
                         # https://github.com/rust-lang/cargo/issues/3431)
                         return False
+                elif check == '!no-trans':
+                    # This message does not show up in no-trans.
+                    if method == 'no-trans':
+                        return False
+                elif check == 'no-trans':
+                    # This message only shows up in no-trans.
+                    if method != 'no-trans':
+                        return False
                 else:
                     if not semver.match(self.rustc_version, check):
                         return False
             return True
+
+        region_set = {(r.begin(), r.end()) for r in regions}
 
         # Check phantoms.
         for emsg_info in expected_messages:
@@ -177,9 +224,15 @@ class TestSyntaxCheck(TestBase):
                     # Phantom regions only apply to the last row.
                     r_row, _ = view.rowcol(region.end())
                     emsg_row, _ = view.rowcol(emsg_info['end'])
-                    if r_row == emsg_row and emsg_info['message'] in content:
-                        self.assertIn(emsg_info['level_text'], content)
-                        break
+                    if r_row == emsg_row:
+                        emsg = emsg_info['message']
+                        if emsg.startswith('/') and emsg.endswith('/'):
+                            match = bool(re.search(emsg[1:-1], content, re.S))
+                        else:
+                            match = emsg in content
+                        if match:
+                            self.assertIn(emsg_info['level'], content)
+                            break
                 else:
                     raise AssertionError('Did not find expected message "%s:%s" for region %r:%r for file %r method=%r\nAvailable phantoms=%r' % (
                         emsg_info['level'], emsg_info['message'],
@@ -192,7 +245,6 @@ class TestSyntaxCheck(TestBase):
 
         # Check regions.
         found_regions = set()
-        region_set = {(r.begin(), r.end()) for r in regions}
 
         for emsg_info in expected_messages:
             if restriction_check(emsg_info['restrictions']):
@@ -229,6 +281,7 @@ class TestSyntaxCheck(TestBase):
             row = view.rowcol(region.end())[0]
             region_map[row] = (region.begin() + 9, region.end() - 7)
 
+        # Tilde identifies the message for the multi-line span just above.
         pattern = r'// *~(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
         regions = view.find_all(pattern)
         last_line = None  # Used to handle multiple messages on the same line.
@@ -252,8 +305,7 @@ class TestSyntaxCheck(TestBase):
             result.append({
                 'begin': actual_region[0],
                 'end': actual_region[1],
-                'level': m.group(1),
-                'level_text': msg_level_text[m.group(1)],
+                'level': msg_level_text[m.group(1)],
                 'restrictions': m.group(2),
                 'message': m.group(3)
             })
@@ -279,10 +331,23 @@ class TestSyntaxCheck(TestBase):
             result.append({
                 'begin': begin,
                 'end': end,
-                'level': m.group(3),
-                'level_text': msg_level_text[m.group(3)],
+                'level': msg_level_text[m.group(3)],
                 'restrictions': m.group(4),
                 'message': m.group(5)
+            })
+
+        # Messages that appear at the end of the file.
+        pattern = r'// *end-msg: *(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
+        regions = view.find_all(pattern)
+        for region in regions:
+            text = view.substr(region)
+            m = re.match(pattern, text)
+            result.append({
+                'begin': view.size(),
+                'end': view.size(),
+                'level': msg_level_text[m.group(1)],
+                'restrictions': m.group(2),
+                'message': m.group(3),
             })
 
         return result

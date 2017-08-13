@@ -17,5 +17,5 @@
 // children without spans, spans with no labels
 // Should display error (with link) and a note of expected type.
 fn main() { let i: (); i = f(); }
+//                         ^^^ERR /this function takes 1 parameter.*Note: ↑:13/
 //                         ^^^ERR expected 1 parameter
-//                         ^^^ERR this function takes 1 parameter
