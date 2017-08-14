@@ -6,4 +6,5 @@ fn main() {
 
     example!(inner!(b" "));
 //  ^^^^^^^^^^^^^^^^^^^^^^^ERR no method named `missing`
+//  ^^^^^^^^^^^^^^^^^^^^^^^ERR this error originates in a macro outside of the current crate
 }

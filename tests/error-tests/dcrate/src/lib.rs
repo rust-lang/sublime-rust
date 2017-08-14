@@ -9,3 +9,17 @@ macro_rules! example {
 macro_rules! inner {
     ($x:expr) => ($x.missing())
 }
+
+#[macro_export]
+macro_rules! example_bad_syntax {
+    () => {
+        enum E {
+            Kind(x: u32)
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! example_bad_value {
+    () => (1i32)
+}

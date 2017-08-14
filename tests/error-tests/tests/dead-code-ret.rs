@@ -17,6 +17,7 @@ fn main() {
     return;
     println!("Paul is dead");
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^ERR unreachable statement
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^ERR this error originates in a macro outside of the current crate
 }
 
 // This is a test of macro expansion, should print error on println!

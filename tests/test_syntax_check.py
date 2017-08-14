@@ -90,6 +90,8 @@ class TestSyntaxCheck(TestBase):
             'error-tests/examples/SNAKE.rs',
             ('error-tests/examples/no_main.rs', 'error-tests/examples/no_main_mod.rs'),
             ('error-tests/tests/remote_note_1.rs', 'error-tests/tests/remote_note_1_mod.rs'),
+            'error-tests/tests/macro-expansion-outside-1.rs',
+            'error-tests/tests/macro-expansion-outside-2.rs',
             # Workspace tests.
             'workspace/workspace1/src/lib.rs',
             'workspace/workspace1/src/anothermod/mod.rs',

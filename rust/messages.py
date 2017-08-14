@@ -50,6 +50,10 @@ def add_message(window, path, span, level, is_main, message):
         attached detailed diagnostic information, child notes, etc.
     :param message: The message to display.
     """
+    if 'macros>' in path:
+        # Macros from external crates will be displayed in the console
+        # via msg_cb.
+        return
     wid = window.id()
     try:
         messages_by_path = WINDOW_MESSAGES[wid]['paths']
@@ -606,11 +610,11 @@ def _collect_rust_messages(window, cwd, info, target_path,
                     if msg_cb:
                         msg_cb(None, None, True, imsg, info['level'])
 
-    def find_span_r(span):
+    def find_span_r(span, expansion=None):
         if span['expansion']:
-            return find_span_r(span['expansion']['span'])
+            return find_span_r(span['expansion']['span'], span['expansion'])
         else:
-            return span
+            return span, expansion
 
     for span in info['spans']:
         if 'macros>' in span['file_name']:
@@ -619,22 +623,44 @@ def _collect_rust_messages(window, cwd, info, target_path,
             # invoked.  I'm not entirely confident this is the best way to do
             # this, but it seems to work.  This is roughly emulating what is
             # done in librustc_errors/emitter.rs fix_multispan_in_std_macros.
-            target_span = find_span_r(span)
-            if target_span:
-                updated = target_span.copy()
-                updated['is_primary'] = span['is_primary']
-                updated['label'] = span['label']
-                updated['suggested_replacement'] = span['suggested_replacement']
-                span = updated
-            else:
+            target_span, expansion = find_span_r(span)
+            if not target_span:
                 continue
+            updated = target_span.copy()
+            updated['is_primary'] = span['is_primary']
+            updated['label'] = span['label']
+            updated['suggested_replacement'] = span['suggested_replacement']
+            span = updated
+
+            if 'macros>' in span['file_name']:
+                # Macros from extern crates do not have 'expansion', and thus
+                # we do not have a location to highlight.  Place the result at
+                # the bottom of the primary target path.
+                macro_name = span['file_name']
+                if target_path:
+                    span['file_name'] = target_path
+                    span['line_start'] = None
+                # else, messages will be shown in console via msg_cb.
+                add_additional(span,
+                    'Errors occurred in macro %s from external crate' % (macro_name,),
+                    info['level'])
+                text = ''.join([x['text'] for x in span['text']])
+                add_additional(span,
+                    'Macro text: %s' % (text,),
+                    info['level'])
+            else:
+                if not expansion or not expansion['def_site_span'] \
+                        or 'macros>' in expansion['def_site_span']['file_name']:
+                    add_additional(span,
+                        'this error originates in a macro outside of the current crate',
+                        info['level'])
 
         # Add a message for macro invocation site if available in the local
         # crate.
         if span['expansion'] and \
                 'macros>' not in span['file_name'] and \
                 not span['expansion']['macro_decl_name'].startswith('#['):
-            invoke_span = find_span_r(span)
+            invoke_span, expansion = find_span_r(span)
             add_additional(invoke_span, 'in this macro invocation', 'help')
 
         if span['is_primary']:
