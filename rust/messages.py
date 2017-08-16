@@ -725,14 +725,20 @@ def _create_cross_links(main_message, additional_messages):
         else:
             return 999999999
 
+    link_set = set()
     links = []
     link_template = '<a href="{url}" class="rust-link">Note: {filename}{lineno}</a>'
     for msg in additional_messages:
+        msg_lineno = get_lineno(msg)
+        seen_key = (msg['span_path'], msg_lineno)
         # Only include a link if it is not close to the main message.
         if msg['span_path'] != main_message['span_path'] or \
-           abs(get_lineno(msg) - get_lineno(main_message)) > 5:
+           abs(msg_lineno - get_lineno(main_message)) > 5:
+            if seen_key in link_set:
+                continue
+            link_set.add(seen_key)
             if msg['span_region']:
-                lineno = ':%s' % (msg['span_region'][0][0] + 1,)
+                lineno = ':%s' % (msg_lineno + 1,)
             else:
                 # AFAIK, this code path is not possible, but leaving it here
                 # to be safe.
