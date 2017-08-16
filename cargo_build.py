@@ -18,16 +18,16 @@ class CargoExecCommand(sublime_plugin.WindowCommand):
 
     This takes the following arguments:
 
-    - `command`: The command to run.  Commands are defined in the
+    - `command`: The command name to run.  Commands are defined in the
       `cargo_settings` module.  You can define your own custom command by
       passing in `command_info`.
     - `command_info`: Dictionary of values the defines how the cargo command
-      is constructed.  See `command_settings.CARGO_COMMANDS`.
+      is constructed.  See `cargo_settings.CARGO_COMMANDS`.
     - `settings`: Dictionary of settings overriding anything set in the
-      Sublime project settings (see `command_settings` module).
+      Sublime project settings (see `cargo_settings` module).
     """
 
-    # The combined command info from `command_settings` and whatever the user
+    # The combined command info from `cargo_settings` and whatever the user
     # passed in.
     command_info = None
     # Dictionary of initial settings passed in by the user.
@@ -49,7 +49,7 @@ class CargoExecCommand(sublime_plugin.WindowCommand):
         if command == 'auto':
             self._detect_auto_build()
         else:
-            self.command = command
+            self.command_name = command
             self.command_info = cargo_settings.CARGO_COMMANDS\
                 .get(command, {}).copy()
             if command_info:
@@ -117,7 +117,7 @@ class CargoExecCommand(sublime_plugin.WindowCommand):
             self.settings_path = script_path
             return on_done()
 
-        default_path = self.settings.get('default_path')
+        default_path = self.settings.get_project_base('default_path')
         if default_path:
             self.settings_path = default_path
             if os.path.isfile(default_path):
@@ -153,7 +153,7 @@ class CargoExecCommand(sublime_plugin.WindowCommand):
         if self.command_info.get('wants_run_args', False) and \
                 not self.initial_settings.get('extra_run_args'):
             self.window.show_input_panel('Enter extra args:',
-                LAST_EXTRA_ARGS.get(self.command, ''),
+                LAST_EXTRA_ARGS.get(self.command_name, ''),
                 self._on_extra_args, None, None)
         else:
             self._run()
@@ -165,7 +165,8 @@ class CargoExecCommand(sublime_plugin.WindowCommand):
 
     def _run(self):
         t = CargoExecThread(self.window, self.settings,
-                            self.command_info, self.initial_settings,
+                            self.command_name, self.command_info,
+                            self.initial_settings,
                             self.settings_path, self.working_dir)
         t.start()
 
@@ -175,17 +176,20 @@ class CargoExecThread(rust_thread.RustThread):
     silently_interruptible = False
     name = 'Cargo Exec'
 
-    def __init__(self, window, settings, command_info, initial_settings,
-                 settings_path, working_dir):
+    def __init__(self, window, settings,
+                 command_name, command_info,
+                 initial_settings, settings_path, working_dir):
         super(CargoExecThread, self).__init__(window)
         self.settings = settings
+        self.command_name = command_name
         self.command_info = command_info
         self.initial_settings = initial_settings
         self.settings_path = settings_path
         self.working_dir = working_dir
 
     def run(self):
-        cmd = self.settings.get_command(self.command_info,
+        cmd = self.settings.get_command(self.command_name,
+                                        self.command_info,
                                         self.settings_path,
                                         self.initial_settings)
         if not cmd:

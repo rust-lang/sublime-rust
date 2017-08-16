@@ -56,13 +56,17 @@ def debug(msg, *args):
     print(msg % args)
 
 
-def get_rustc_version(window, cwd):
+def get_rustc_version(window, cwd, toolchain=None):
     """Returns the rust version for the given directory.
 
     :Returns: A string such as '1.16.0' or '1.17.0-nightly'.
     """
     from . import rust_proc
-    output = rust_proc.check_output(window, ['rustc', '--version'], cwd)
+    cmd = ['rustc']
+    if toolchain:
+        cmd.append('+' + toolchain)
+    cmd.append('--version')
+    output = rust_proc.check_output(window, cmd, cwd)
     # Example outputs:
     # rustc 1.15.1 (021bd294c 2017-02-08)
     # rustc 1.16.0-beta.2 (bc15d5281 2017-02-16)

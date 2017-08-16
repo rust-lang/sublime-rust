@@ -143,61 +143,124 @@ class CargoSettings(object):
         if self.project_data is None:
             # Window does not have a Sublime project.
             self.project_data = {}
+        self.re_settings = sublime.load_settings('RustEnhanced.sublime-settings')
 
-    def get(self, key, default=None):
+    def get_global_default(self, key, default=None):
+        return self.re_settings.get('cargo_build', {})\
+                               .get('defaults', {})\
+                               .get(key, default)
+
+    def set_global_default(self, key, value):
+        cb = self.re_settings.get('cargo_build', {})
+        cb.setdefault('defaults', {})[key] = value
+        self.re_settings.set('cargo_build', cb)
+        sublime.save_settings('RustEnhanced.sublime-settings')
+
+    def get_project_default(self, key, default=None):
+        return self.project_data.get('settings', {})\
+                                .get('cargo_build', {})\
+                                .get('defaults', {})\
+                                .get(key, default)
+
+    def set_project_default(self, key, value):
+        self.project_data.setdefault('settings', {})\
+                         .setdefault('cargo_build', {})\
+                         .setdefault('defaults', {})[key] = value
+        self._set_project_data()
+
+    def get_global_variant(self, variant, key, default=None):
+        return self.re_settings.get('cargo_build', {})\
+                               .get('variants', {})\
+                               .get(variant, {})\
+                               .get(key, default)
+
+    def set_global_variant(self, variant, key, value):
+        cb = self.re_settings.get('cargo_build', {})
+        cb.setdefault('variants', {})\
+          .setdefault(variant, {})[key] = value
+        self.re_settings.set('cargo_build', cb)
+        sublime.save_settings('RustEnhanced.sublime-settings')
+
+    def get_project_variant(self, variant, key, default=None):
+        return self.project_data.get('settings', {})\
+                                .get('cargo_build', {})\
+                                .get('variants', {})\
+                                .get(variant, {})\
+                                .get(key, default)
+
+    def set_project_variant(self, variant, key, value):
+        self.project_data.setdefault('settings', {})\
+                         .setdefault('cargo_build', {})\
+                         .setdefault('variants', {})\
+                         .setdefault(variant, {})[key] = value
+        self._set_project_data()
+
+    def get_project_package_default(self, path, key, default=None):
+        path = os.path.normpath(path)
+        return self.project_data.get('settings', {})\
+                                .get('cargo_build', {})\
+                                .get('paths', {})\
+                                .get(path, {})\
+                                .get('defaults', {})\
+                                .get(key, default)
+
+    def set_project_package_default(self, path, key, value):
+        path = os.path.normpath(path)
+        self.project_data.setdefault('settings', {})\
+                         .setdefault('cargo_build', {})\
+                         .setdefault('paths', {})\
+                         .setdefault(path, {})\
+                         .setdefault('defaults', {})[key] = value
+        self._set_project_data()
+
+    def get_project_package_variant(self, path, variant, key, default=None):
+        path = os.path.normpath(path)
+        return self.project_data.get('settings', {})\
+                                .get('cargo_build', {})\
+                                .get('paths', {})\
+                                .get(path, {})\
+                                .get('variants', {})\
+                                .get(variant, {})\
+                                .get(key, default)
+
+    def set_project_package_variant(self, path, variant, key, value):
+        path = os.path.normpath(path)
+        self.project_data.setdefault('settings', {})\
+                         .setdefault('cargo_build', {})\
+                         .setdefault('paths', {})\
+                         .setdefault(path, {})\
+                         .setdefault('variants', {})\
+                         .setdefault(variant, {})[key] = value
+        self._set_project_data()
+
+    def get_project_package_target(self, path, target, key, default=None):
+        path = os.path.normpath(path)
+        return self.project_data.get('settings', {})\
+                                .get('cargo_build', {})\
+                                .get('paths', {})\
+                                .get(path, {})\
+                                .get('targets', {})\
+                                .get(target, {})\
+                                .get(key, default)
+
+    def set_project_package_target(self, path, target, key, value):
+        path = os.path.normpath(path)
+        self.project_data.setdefault('settings', {})\
+                         .setdefault('cargo_build', {})\
+                         .setdefault('paths', {})\
+                         .setdefault(path, {})\
+                         .setdefault('targets', {})\
+                         .setdefault(target, {})[key] = value
+        self._set_project_data()
+
+    def get_project_base(self, key, default=None):
         return self.project_data.get('settings', {})\
                                 .get('cargo_build', {})\
                                 .get(key, default)
 
-    def set(self, key, value):
+    def set_project_base(self, key, value):
         self.project_data.setdefault('settings', {})\
                          .setdefault('cargo_build', {})[key] = value
-        self._set_project_data()
-
-    def get_with_target(self, path, target, key, default=None):
-        path = os.path.normpath(path)
-        pdata = self.project_data.get('settings', {})\
-                                 .get('cargo_build', {})\
-                                 .get('paths', {})\
-                                 .get(path, {})
-        if target:
-            d = pdata.get('targets', {}).get(target, {})
-        else:
-            d = pdata.get('defaults', {})
-        return d.get(key, default)
-
-    def get_with_variant(self, path, variant, key, default=None):
-        path = os.path.normpath(path)
-        vdata = self.project_data.get('settings', {})\
-                                 .get('cargo_build', {})\
-                                 .get('paths', {})\
-                                 .get(path, {})\
-                                 .get('variants', {})\
-                                 .get(variant, {})
-        return vdata.get(key, default)
-
-    def set_with_target(self, path, target, key, value):
-        path = os.path.normpath(path)
-        pdata = self.project_data.setdefault('settings', {})\
-                                 .setdefault('cargo_build', {})\
-                                 .setdefault('paths', {})\
-                                 .setdefault(path, {})
-        if target:
-            d = pdata.setdefault('targets', {}).setdefault(target, {})
-        else:
-            d = pdata.setdefault('defaults', {})
-        d[key] = value
-        self._set_project_data()
-
-    def set_with_variant(self, path, variant, key, value):
-        path = os.path.normpath(path)
-        vdata = self.project_data.setdefault('settings', {})\
-                                 .setdefault('cargo_build', {})\
-                                 .setdefault('paths', {})\
-                                 .setdefault(path, {})\
-                                 .setdefault('variants', {})\
-                                 .setdefault(variant, {})
-        vdata[key] = value
         self._set_project_data()
 
     def _set_project_data(self):
@@ -209,31 +272,17 @@ class CargoSettings(object):
                 Any changes to the Cargo build settings will be lost if you close the window."""))
         self.window.set_project_data(self.project_data)
 
-    def get_command(self, cmd_info, settings_path, initial_settings={}):
-        """Generates the command arguments for running Cargo.
+    def determine_target(self, cmd_name, settings_path,
+                         cmd_info=None, override=None):
+        if cmd_info is None:
+            cmd_info = CARGO_COMMANDS[cmd_name]
 
-        :Returns: A dictionary with the keys:
-            - `command`: The command to run as a list of strings.
-            - `env`: Dictionary of environment variables (or None).
-
-            Returns None if the command cannot be constructed.
-        """
-        command = cmd_info['command']
-        result = ['cargo']
-        pdata = self.project_data.get('settings', {})\
-                                 .get('cargo_build', {})\
-                                 .get('paths', {})\
-                                 .get(settings_path, {})
-        vdata = pdata.get('variants', {})\
-                     .get(command, {})
-
-        def vdata_get(key, default=None):
-            return initial_settings.get(key, vdata.get(key, default))
-
-        # Target
         target = None
         if cmd_info.get('allows_target', False):
-            tcfg = vdata_get('target')
+            if override:
+                tcfg = override
+            else:
+                tcfg = self.get_project_package_variant(settings_path, cmd_name, 'target')
             if tcfg == 'auto':
                 # If this fails, leave target as None and let Cargo sort it
                 # out (it may display an error).
@@ -246,14 +295,89 @@ class CargoSettings(object):
                         target = ' '.join(cmd_line)
             else:
                 target = tcfg
+        return target
 
-        def get(key, default=None):
-            d = pdata.get('defaults', {}).get(key, default)
-            v_val = vdata.get(key, d)
-            t_val = pdata.get('targets', {}).get(target, {}).get(key, v_val)
-            return initial_settings.get(key, t_val)
+    def get_computed(self, settings_path, variant, target, key,
+                     default=None, initial_settings={}):
+        """Get the configuration value for the given key."""
+        v = initial_settings.get(key)
+        if v is None:
+            v = self.get_project_package_target(settings_path, target, key)
+            if v is None:
+                v = self.get_project_package_variant(settings_path, variant, key)
+                if v is None:
+                    v = self.get_project_package_default(settings_path, key)
+                    if v is None:
+                        v = self.get_project_variant(variant, key)
+                        if v is None:
+                            v = self.get_global_variant(variant, key)
+                            if v is None:
+                                v = self.get_project_default(key)
+                                if v is None:
+                                    v = self.get_global_default(key, default)
+        return v
 
-        toolchain = get('toolchain', None)
+    def get_merged(self, settings_path, variant, target, key,
+                   initial_settings={}):
+        """Get the configuration value for the given key.
+
+        This assumes the value is a dictionary, and will merge all values from
+        each level.  This is primarily used for the `env` environment
+        variables.
+        """
+        result = self.get_global_default(key, {}).copy()
+
+        proj_def = self.get_project_default(key, {})
+        result.update(proj_def)
+
+        glbl_var = self.get_global_variant(variant, key, {})
+        result.update(glbl_var)
+
+        proj_var = self.get_project_variant(variant, key, {})
+        result.update(proj_var)
+
+        pp_def = self.get_project_package_default(settings_path, key, {})
+        result.update(pp_def)
+
+        pp_var = self.get_project_package_variant(settings_path, variant, key, {})
+        result.update(pp_var)
+
+        pp_tar = self.get_project_package_target(settings_path, target, key, {})
+        result.update(pp_tar)
+
+        initial = initial_settings.get(key, {})
+        result.update(initial)
+        return result
+
+    def get_command(self, cmd_name, cmd_info,
+                    settings_path, initial_settings={}):
+        """Generates the command arguments for running Cargo.
+
+        :param cmd_name: The name of the command, the key used to select a
+            "variant".
+        :param cmd_info: Dictionary from `CARGO_COMMANDS` with rules on how to
+            construct the command.
+        :param settings_path: The absolute path to the Cargo project root
+            directory.
+        :keyword initial_settings: Initial settings to inject which override
+            all other settings.
+
+        :Returns: A dictionary with the keys:
+            - `command`: The command to run as a list of strings.
+            - `env`: Dictionary of environment variables (or None).
+
+            Returns None if the command cannot be constructed.
+        """
+        target = self.determine_target(cmd_name, settings_path,
+            cmd_info=cmd_info, override=initial_settings.get('target'))
+
+        def get_computed(key, default=None):
+            return self.get_computed(settings_path, cmd_name, target, key,
+                default=default, initial_settings=initial_settings)
+
+        result = ['cargo']
+
+        toolchain = get_computed('toolchain', None)
         if toolchain:
             result.append('+' + toolchain)
 
@@ -266,13 +390,13 @@ class CargoSettings(object):
 
         # target_triple
         if cmd_info.get('allows_target_triple', False):
-            v = get('target_triple', None)
+            v = get_computed('target_triple', None)
             if v:
                 result.extend(['--target', v])
 
         # release (profile)
         if cmd_info.get('allows_release', False):
-            v = get('release', False)
+            v = get_computed('release', False)
             if v:
                 result.append('--release')
 
@@ -282,10 +406,10 @@ class CargoSettings(object):
 
         # features
         if cmd_info.get('allows_features', False):
-            v = get('no_default_features', False)
+            v = get_computed('no_default_features', False)
             if v:
                 result.append('--no-default-features')
-            v = get('features', None)
+            v = get_computed('features', None)
             if v:
                 if v.upper() == 'ALL':
                     result.append('--all-features')
@@ -295,11 +419,11 @@ class CargoSettings(object):
 
         # Add path from current active view (mainly for "cargo script").
         if cmd_info.get('requires_view_path', False):
-            script_path = get('script_path')
+            script_path = get_computed('script_path')
             if not script_path:
                 if not util.active_view_is_rust():
                     sublime.error_message(util.multiline_fix("""
-                        Cargo build command %r requires the current view to be a Rust source file.""" % command))
+                        Cargo build command %r requires the current view to be a Rust source file.""" % cmd_info['name']))
                     return None
                 script_path = self.window.active_view().file_name()
             result.append(script_path)
@@ -309,22 +433,20 @@ class CargoSettings(object):
                 self.window.extract_variables())
 
         # Extra args.
-        extra_cargo_args = get('extra_cargo_args')
+        extra_cargo_args = get_computed('extra_cargo_args')
         if extra_cargo_args:
             extra_cargo_args = expand(extra_cargo_args)
             result.extend(shlex.split(extra_cargo_args))
 
-        extra_run_args = get('extra_run_args')
+        extra_run_args = get_computed('extra_run_args')
         if extra_run_args:
             extra_run_args = expand(extra_run_args)
             result.append('--')
             result.extend(shlex.split(extra_run_args))
 
         # Compute the environment.
-        env = pdata.get('defaults', {}).get('env', {})
-        env.update(vdata.get('env', {}))
-        env.update(pdata.get('targets', {}).get(target, {}).get('env', {}))
-        env.update(initial_settings.get('env', {}))
+        env = self.get_merged(settings_path, cmd_name, target, 'env',
+            initial_settings=initial_settings)
         for k, v in env.items():
             env[k] = os.path.expandvars(v)
         if not env:

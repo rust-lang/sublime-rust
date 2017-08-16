@@ -61,19 +61,21 @@ It also supports Sublime's build settings:
 | `show_errors_inline` | `true` | If true, messages are displayed in line using Sublime's phantoms.  If false, messages are only displayed in the output panel. |
 | `show_panel_on_build` | `true` | If true, an output panel is displayed at the bottom of the window showing the compiler output. |
 
-## Cargo Project Settings
+## Cargo Settings
 
-You can customize how Cargo is run with settings stored in your
-`sublime-project` file.  Settings can be applied per-target (`--lib`,
-`--example foo`, etc.), for specific variants ("Build", "Run", "Test", etc.),
-or globally.
+A variety of settings are available to customize how Cargo is run. These
+settings can be set globally, per-Sublime project, per-Cargo package, for
+specific build variants ("Build", "Run", "Test", etc.), or specific Cargo
+targets (`--lib`, `--example foo`, etc.).
 
 ### Configure Command
 
 To help you configure the Cargo build settings, run the `Rust: Configure Cargo
-Build` command from Sublime's Command Palette (Ctrl-Shift-P / ⌘-Shift-P).
-This will ask you a series of questions for the setting to configure.  The
-first choice is the setting:
+Build` command from Sublime's Command Palette (Ctrl-Shift-P / ⌘-Shift-P). This
+will ask you a series of questions for the setting to configure.  It will
+update your `.sublime-project` or `Users/RustEnhanced.sublime-settings` file
+depending on which options you pick.  The first question is the setting you
+want to update:
 
 Setting | Description
 ------- | -----------
@@ -88,21 +90,30 @@ Default Package/Path | The default package to build, useful if you have a worksp
 
 If you have multiple Cargo packages in your workspace, it will ask for the package to configure.
 
-A setting can be global (for all build invocations), for a specific build variant (such as "Test"), or for a specific build target (such as `--example myprog`).
-
 Caution: If you have not created a `sublime-project` file, then any changes
 you make will be lost if you close the Sublime window.
 
 ### Settings
 
-Settings are stored in your `sublime-project` file under `"cargo_build"` in
-the `"settings"` key. Settings are organized per Cargo package in the
-`"paths"` object.  Paths can either be directories to a Cargo package, or the
-path to a Rust source file (when used with `cargo script`).  The top-level
-keys for each package are:
+Cargo settings are stored in the `"cargo_build"` Sublime setting.  This can be
+either in your `sublime-project` file or in
+`Users/RustEnhanced.sublime-settings`.  `"cargo_build"` is an object with the
+following keys:
 
 Key | Description
 --- | -----------
+`"paths"` | Settings for specific Cargo packages.
+`"default_path"` | The default Cargo package to build (useful for workspaces, see below).
+`"variants"` | Settings per build variant.
+`"defaults"` | Default settings used if not set per target or variant.
+
+Paths should be an absolute path to the directory of a Cargo package, or the
+path to a Rust source file (when used with `cargo script`).
+
+`"paths"` is an object of path keys mapping to an object with the keys:
+
+Path Key | Description
+-------- | -----------
 `"defaults"` | Default settings used if not set per target or variant.
 `"targets"` | Settings per target (such as `"--lib"` or `"--bin foo"`).
 `"variants"` | Settings per build variant.
@@ -119,7 +130,7 @@ An example of a `sublime-project` file:
             "paths": {
                 "/path/to/package": {
                     "defaults": {
-                        "release": true
+                        "release": false
                     },
                     "targets": {
                         "--example ex1": {
@@ -136,7 +147,17 @@ An example of a `sublime-project` file:
                     }
                 }
             },
-            "default_path": "/path/to/package"
+            "default_path": "/path/to/package",
+            "variants": {
+                "run": {
+                    "env": {
+                        "RUST_BACKTRACE": 1
+                    }
+                }
+            },
+            "defaults": {
+                "release": true
+            }
         }
     }
 }
@@ -161,6 +182,19 @@ Setting Name | Description
 The extra args settings support standard Sublime variable expansion (see
 [Build System
 Variables](http://docs.sublimetext.info/en/latest/reference/build_systems/configuration.html#build-system-variables))
+
+### Setting Precedence
+
+The Cargo commands will generally use the most specific setting available.
+The order they are searched are (first found value wins):
+
+1. `.sublime-project` > Cargo Package > Cargo Target
+2. `.sublime-project` > Cargo Package > Build Variant
+3. `.sublime-project` > Cargo Package > Defaults
+4. `.sublime-project` > Build Variant
+5. `RustEnhanced.sublime-settings` > Build Variant
+6. `.sublime-project` > Defaults
+7. `RustEnhanced.sublime-settings` > Defaults
 
 ## Multiple Cargo Projects (Advanced)
 

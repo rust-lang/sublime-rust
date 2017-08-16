@@ -33,6 +33,11 @@ def unescape(s):
             .replace('&gt;', '>')
 
 
+# This is used to mark overridden configuration variables that should be
+# deleted.
+DELETE_SENTINEL = 'DELETE_SENTINEL'
+
+
 class TestBase(unittest.TestCase):
 
     def setUp(self):
@@ -42,13 +47,31 @@ class TestBase(unittest.TestCase):
         if 'cargo_build' in data.get('settings', {}):
             del data['settings']['cargo_build']
             window.set_project_data(data)
-        self.settings = sublime.load_settings('RustEnhanced.sublime-settings')
-        self._orig_show_panel = self.settings.get('show_panel_on_build')
-        self.settings.set('show_panel_on_build', False)
         plugin.cargo_build.ON_LOAD_MESSAGES_ENABLED = False
 
+        # Override settings.
+        self._original_settings = {}
+        self.settings = sublime.load_settings('RustEnhanced.sublime-settings')
+        self._override_setting('show_panel_on_build', False)
+        self._override_setting('cargo_build', {})
+
+    def _override_setting(self, name, value):
+        if name not in self._original_settings:
+            if self.settings.has(name):
+                self._original_settings[name] = self.settings.get(name)
+            else:
+                self._original_settings[name] = DELETE_SENTINEL
+        self.settings.set(name, value)
+
+    def _restore_settings(self):
+        for key, value in self._original_settings.items():
+            if value is DELETE_SENTINEL:
+                self.settings.erase(key)
+            else:
+                self.settings.set(key, value)
+
     def tearDown(self):
-        self.settings.set('show_panel_on_build', self._orig_show_panel)
+        self._restore_settings()
         plugin.cargo_build.ON_LOAD_MESSAGES_ENABLED = True
 
     def _get_rust_thread(self):

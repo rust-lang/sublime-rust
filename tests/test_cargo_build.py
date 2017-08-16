@@ -95,7 +95,7 @@ class TestCargoBuild(TestBase):
 
     def _test_profile(self, view):
         window = view.window()
-        window.run_command('cargo_set_profile', {'target': None,
+        window.run_command('cargo_set_profile', {'which': 'project_default',
                                                  'profile': 'release'})
         self._run_build_wait()
         self.assertTrue(os.path.exists(
@@ -104,7 +104,7 @@ class TestCargoBuild(TestBase):
             os.path.join(multi_target_root, 'target/debug')))
 
         self._cargo_clean(multi_target_root)
-        window.run_command('cargo_set_profile', {'target': None,
+        window.run_command('cargo_set_profile', {'which': 'project_default',
                                                  'profile': 'dev'})
         self._run_build_wait()
         self.assertFalse(os.path.exists(
@@ -121,13 +121,14 @@ class TestCargoBuild(TestBase):
         window = view.window()
         # Use a fake triple, since we don't want to assume what you have
         # installed.
-        window.run_command('cargo_set_triple', {'target': None,
+        window.run_command('cargo_set_triple', {'which': 'project_default',
+                                                'toolchain': None,
                                                 'target_triple': 'a-b-c'})
         settings = cargo_settings.CargoSettings(window)
         settings.load()
         cmd_info = cargo_settings.CARGO_COMMANDS['build']
         manifest_dir = util.find_cargo_manifest(view.file_name())
-        cmd = settings.get_command(cmd_info, manifest_dir)['command']
+        cmd = settings.get_command('build', cmd_info, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', 'build', '--target', 'a-b-c',
                                '--message-format=json'])
 
@@ -139,37 +140,37 @@ class TestCargoBuild(TestBase):
     def _test_toolchain(self, view):
         window = view.window()
         # Variant
-        window.run_command('cargo_set_toolchain', {'which': 'variant',
+        window.run_command('cargo_set_toolchain', {'which': 'project_variant',
                                                    'variant': 'build',
                                                    'toolchain': 'nightly'})
         settings = cargo_settings.CargoSettings(window)
         settings.load()
         cmd_info = cargo_settings.CARGO_COMMANDS['build']
         manifest_dir = util.find_cargo_manifest(view.file_name())
-        cmd = settings.get_command(cmd_info, manifest_dir)['command']
+        cmd = settings.get_command('build', cmd_info, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', '+nightly', 'build',
                                '--message-format=json'])
 
         # Variant clear.
-        window.run_command('cargo_set_toolchain', {'which': 'variant',
+        window.run_command('cargo_set_toolchain', {'which': 'project_variant',
                                                    'variant': 'build',
                                                    'toolchain': None})
         settings.load()
         cmd_info = cargo_settings.CARGO_COMMANDS['build']
         manifest_dir = util.find_cargo_manifest(view.file_name())
-        cmd = settings.get_command(cmd_info, manifest_dir)['command']
+        cmd = settings.get_command('build', cmd_info, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', 'build',
                                '--message-format=json'])
 
         # Target
-        window.run_command('cargo_set_toolchain', {'which': 'target',
+        window.run_command('cargo_set_toolchain', {'which': 'project_package_target',
                                                    'target': '--bin bin1',
                                                    'toolchain': 'nightly'})
         window.run_command('cargo_set_target', {'variant': 'build',
                                                 'target': '--bin bin1'})
         settings.load()
         manifest_dir = util.find_cargo_manifest(view.file_name())
-        cmd = settings.get_command(cmd_info, manifest_dir)['command']
+        cmd = settings.get_command('build', cmd_info, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', '+nightly', 'build', '--bin', 'bin1',
                                '--message-format=json'])
 
@@ -237,6 +238,7 @@ class TestCargoBuild(TestBase):
             self._test_check)
 
     def _test_check(self, view):
+        self._cargo_clean(view)
         self._run_build_wait('check',
             settings={'target': '--example err_ex'})
         self._check_added_message(view.window(), view.file_name(),
@@ -249,7 +251,7 @@ class TestCargoBuild(TestBase):
 
     def _test_bench(self, view):
         window = view.window()
-        window.run_command('cargo_set_toolchain', {'which': 'variant',
+        window.run_command('cargo_set_toolchain', {'which': 'project_variant',
                                                    'variant': 'bench',
                                                    'toolchain': 'nightly'})
         self._run_build_wait('bench')
@@ -288,8 +290,9 @@ class TestCargoBuild(TestBase):
             self._test_clippy)
 
     def _test_clippy(self, view):
+        self._cargo_clean(view)
         window = view.window()
-        window.run_command('cargo_set_toolchain', {'which': 'variant',
+        window.run_command('cargo_set_toolchain', {'which': 'project_variant',
                                                    'variant': 'clippy',
                                                    'toolchain': 'nightly'})
         self._run_build_wait('clippy')
@@ -329,28 +332,28 @@ class TestCargoBuild(TestBase):
         output = self._get_build_output(window)
         self.assertRegex(output, '(?m)^feats: feat1$')
 
-        window.run_command('cargo_set_features', {'target': None,
+        window.run_command('cargo_set_features', {'which': 'project_package_default',
                                                   'no_default_features': True,
                                                   'features': ''})
         self._run_build_wait('run')
         output = self._get_build_output(window)
         self.assertRegex(output, '(?m)^feats: $')
 
-        window.run_command('cargo_set_features', {'target': None,
+        window.run_command('cargo_set_features', {'which': 'project_package_default',
                                                   'no_default_features': False,
                                                   'features': 'feat3'})
         self._run_build_wait('run')
         output = self._get_build_output(window)
         self.assertRegex(output, '(?m)^feats: feat1 feat3$')
 
-        window.run_command('cargo_set_features', {'target': None,
+        window.run_command('cargo_set_features', {'which': 'project_package_default',
                                                   'no_default_features': True,
                                                   'features': 'feat2 feat3'})
         self._run_build_wait('run')
         output = self._get_build_output(window)
         self.assertRegex(output, '(?m)^feats: feat2 feat3$')
 
-        window.run_command('cargo_set_features', {'target': None,
+        window.run_command('cargo_set_features', {'which': 'project_package_default',
                                                   'no_default_features': True,
                                                   'features': 'ALL'})
         self._run_build_wait('run')
@@ -380,8 +383,8 @@ class TestCargoBuild(TestBase):
         window = view.window()
         settings = cargo_settings.CargoSettings(window)
         settings.load()
-        settings.set_with_target(multi_target_root, '--bin penv', 'env',
-            {'RUST_BUILD_ENV_TEST': 'abcdef'})
+        settings.set_project_package_target(multi_target_root, '--bin penv',
+            'env', {'RUST_BUILD_ENV_TEST': 'abcdef'})
         window.run_command('cargo_set_target', {'variant': 'run',
                                                 'target': '--bin penv'})
         self._run_build_wait('run')

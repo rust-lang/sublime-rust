@@ -73,6 +73,9 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
     # from the active view if it is available.
     package_allows_active_view_shortcut = True
 
+    # If True, 'which' will only allow you choose a package-specific setting.
+    which_requires_package = False
+
     # This is a dictionary populated by the `items_package` method.
     # Key is the path to a package, the value is the metadata from Cargo.
     # This is used by other questions (like `items_target`) to get more
@@ -105,13 +108,6 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
             self.done()
             return
 
-        try:
-            item_info = getattr(self, 'items_' + q)()
-        except CancelCommandError:
-            return
-        if not isinstance(item_info, dict):
-            item_info = {'items': item_info}
-
         f_selected = getattr(self, 'selected_' + q, None)
 
         # Called with the result of what the user selected.
@@ -130,6 +126,13 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
         if q in self.input:
             make_choice(self.input[q])
         else:
+            try:
+                item_info = getattr(self, 'items_' + q)()
+            except CancelCommandError:
+                return
+            if not isinstance(item_info, dict):
+                item_info = {'items': item_info}
+
             if 'items' in item_info:
                 def wrapper(index):
                     if index != -1:
@@ -231,6 +234,7 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
         }
 
     def items_target(self):
+        """Choosing a target requires that 'package' has already been chosen."""
         # Group by kind.
         kinds = {}
         package_path = self.choices['package']
@@ -249,7 +253,7 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
                 pass
             else:
                 print('Rust: Unsupported target found: %s' % kind)
-        items = [('All Targets', None)]
+        items = []
         for kind, values in kinds.items():
             allowed = True
             if self.choices.get('variant', None):
@@ -259,6 +263,8 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
                     allowed = kind in target_types
             if allowed:
                 items.extend(values)
+        if not items:
+            sublime.error_message('Could not determine available targets.')
         return items
 
     def items_variant(self):
@@ -277,61 +283,150 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
         return x['name'] != 'no-trans'
 
     def items_which(self):
+        """Choice to select at which level the setting should be saved at."""
         # This is a bit of a hack so that when called programmatically you
         # don't have to specify 'which'.
         if 'which' not in self.input:
             if 'variant' in self.input:
-                self.input['which'] = 'variant'
+                self.input['which'] = 'project_package_variant'
             elif 'target' in self.input:
-                self.input['which'] = 'target'
+                self.input['which'] = 'project_package_target'
 
-        return [
-            (['Configure %s for all build commands.' % self.config_name,
-              ''], 'default'),
-            (['Configure %s for a Build Variant.' % self.config_name,
-              'cargo build, cargo run, cargo test, etc.'], 'variant'),
-            (['Configure %s for a Target.' % self.config_name,
-              '--bin, --example, --test, etc.'], 'target')
-        ]
+        variant_extra = 'cargo build, cargo run, cargo test, etc.'
+        target_extra = '--bin, --example, --test, etc.'
+        result = []
+        if not self.which_requires_package:
+            result.extend([
+                (['Set %s globally.', 'Updates RustEnhanced.sublime-settings'],
+                    'global_default'),
+                (['Set %s in this Sublime project.', ''],
+                    'project_default'),
+                (['Set %s globally for a Build Variant.', variant_extra],
+                    'global_variant'),
+                (['Set %s in this Sublime project for a Build Variant (all Cargo packages).', variant_extra],
+                    'project_variant'),
+            ])
+        result.extend([
+            (['Set %s in this Sublime project for all commands (specific Cargo package).', ''],
+                'project_package_default'),
+            (['Set %s in this Sublime project for a Build Variant (specific Cargo package).', variant_extra],
+                'project_package_variant'),
+            (['Set %s in this Sublime project for a Target (specific Cargo package).', target_extra],
+                'project_package_target'),
+        ])
+        for (text, _) in result:
+            text[0] = text[0] % (self.config_name,)
+        return result
 
     def selected_which(self, which):
-        if which == 'default':
-            self.choices['target'] = None
-            return
-        elif which == 'variant':
+        if which in ('project_variant', 'global_variant'):
             return ['variant']
-        elif which == 'target':
-            return ['target']
-        else:
-            raise AssertionError(which)
+        elif which == 'project_package_default':
+            return ['package']
+        elif which == 'project_package_variant':
+            return ['package', 'variant']
+        elif which == 'project_package_target':
+            return ['package', 'target']
 
     def get_setting(self, name, default=None):
         """Retrieve a setting, honoring the "which" selection."""
-        if self.choices['which'] == 'variant':
-            return self.settings.get_with_variant(self.choices['package'],
-                                                  self.choices['variant'],
-                                                  name, default=default)
-        elif self.choices['which'] in ('default', 'target'):
-            return self.settings.get_with_target(self.choices['package'],
-                                                 self.choices['target'],
-                                                 name, default=default)
+        w = self.choices['which']
+        if w == 'global_default':
+            return self.settings.get_global_default(name, default)
+        elif w == 'project_default':
+            return self.settings.get_project_default(name, default)
+        elif w == 'global_variant':
+            return self.settings.get_global_variant(self.choices['variant'],
+                                                    name, default)
+        elif w == 'project_variant':
+            return self.settings.get_project_variant(self.choices['variant'],
+                                                     name, default)
+        elif w == 'project_package_default':
+            return self.settings.get_project_package_default(
+                self.choices['package'], name, default)
+        elif w == 'project_package_variant':
+            return self.settings.get_project_package_variant(
+                self.choices['package'], self.choices['variant'], name, default)
+        elif w == 'project_package_target':
+            return self.settings.get_project_package_target(
+                self.choices['package'], self.choices['target'], name, default)
         else:
-            raise AssertionError(self.choices['which'])
+            raise AssertionError(w)
 
     def set_setting(self, name, value):
         """Set a setting, honoring the "which" selection."""
-        if self.choices['which'] == 'variant':
-            self.settings.set_with_variant(self.choices['package'],
-                                           self.choices['variant'],
-                                           name,
-                                           value)
-        elif self.choices['which'] in ('default', 'target'):
-            self.settings.set_with_target(self.choices['package'],
-                                          self.choices['target'],
-                                          name,
-                                          value)
+        w = self.choices['which']
+        if w == 'global_default':
+            return self.settings.set_global_default(name, value)
+        elif w == 'project_default':
+            return self.settings.set_project_default(name, value)
+        elif w == 'global_variant':
+            return self.settings.set_global_variant(self.choices['variant'],
+                                                    name, value)
+        elif w == 'project_variant':
+            return self.settings.set_project_variant(self.choices['variant'],
+                                                     name, value)
+        elif w == 'project_package_default':
+            return self.settings.set_project_package_default(
+                self.choices['package'], name, value)
+        elif w == 'project_package_variant':
+            return self.settings.set_project_package_variant(
+                self.choices['package'], self.choices['variant'], name, value)
+        elif w == 'project_package_target':
+            return self.settings.set_project_package_target(
+                self.choices['package'], self.choices['target'], name, value)
         else:
-            raise AssertionError(self.choices['which'])
+            raise AssertionError(w)
+
+    toolchain_allows_default = True
+
+    def items_toolchain(self):
+        items = []
+        if self.toolchain_allows_default:
+            items.append(('Use Default Toolchain', None))
+        toolchains = self._toolchain_list()
+        current = self.get_setting('toolchain')
+        items.extend([(x, x) for x in toolchains])
+        result = {
+            'items': items,
+        }
+        if self.toolchain_allows_default or current:
+            result['default'] = current
+        return result
+
+    def _toolchain_list(self):
+        output = rust_proc.check_output(self.window,
+                                        'rustup toolchain list'.split(),
+                                        None)
+        output = output.splitlines()
+        system_default = index_with(output, lambda x: x.endswith(' (default)'))
+        if system_default != -1:
+            # Strip the " (default)" text.
+            output[system_default] = output[system_default][:-10]
+        # Rustup supports some shorthand of either `channel` or `channel-date`
+        # without the trailing target info.
+        #
+        # Complete list of available toolchains is available at:
+        # https://static.rust-lang.org/dist/index.html
+        # (See https://github.com/rust-lang-nursery/rustup.rs/issues/215)
+        shorthands = []
+        channels = ['nightly', 'beta', 'stable', '\d\.\d{1,2}\.\d']
+        pattern = '(%s)(?:-(\d{4}-\d{2}-\d{2}))?(?:-(.*))' % '|'.join(channels)
+        for toolchain in output:
+            m = re.match(pattern, toolchain)
+            # Should always match.
+            if m:
+                channel = m.group(1)
+                date = m.group(2)
+                if date:
+                    shorthand = '%s-%s' % (channel, date)
+                else:
+                    shorthand = channel
+                if shorthand not in shorthands:
+                    shorthands.append(shorthand)
+        result = shorthands + output
+        result.sort()
+        return result
 
 
 class CargoConfigPackage(CargoConfigBase):
@@ -354,7 +449,7 @@ class CargoConfigPackage(CargoConfigBase):
 class CargoSetProfile(CargoConfigBase):
 
     config_name = 'Profile'
-    sequence = ['package', 'which', 'profile']
+    sequence = ['which', 'profile']
 
     def items_profile(self):
         default = self.get_setting('release', False)
@@ -382,33 +477,37 @@ class CargoSetTarget(CargoConfigBase):
 
     def items_target(self):
         items = super(CargoSetTarget, self).items_target()
-        items.insert(1, ('Automatic Detection', 'auto'))
-        default = self.settings.get_with_variant(self.choices['package'],
-                                                 self.choices['variant'],
-                                                 'target')
-        return {
-            'items': items,
-            'default': default
+        items.insert(0, ('Automatic Detection', 'auto'))
+        default = self.settings.get_project_package_variant(
+            self.choices['package'], self.choices['variant'], 'target')
+        result = {
+            'items': items
         }
+        if default:
+            result['default'] = default
+        return result
 
     def done(self):
-        self.settings.set_with_variant(self.choices['package'],
-                                       self.choices['variant'],
-                                       'target',
-                                       self.choices['target'])
+        self.settings.set_project_package_variant(self.choices['package'],
+                                                  self.choices['variant'],
+                                                  'target',
+                                                  self.choices['target'])
 
 
 class CargoSetTriple(CargoConfigBase):
 
     config_name = 'Triple'
-    sequence = ['package', 'which', 'target_triple']
+    sequence = ['which', 'toolchain', 'target_triple']
+    toolchain_allows_default = False
 
     def items_target_triple(self):
         # Could check if rustup is not installed, to run
         # "rustc --print target-list", but that does not tell
         # us which targets are installed.
-        triples = rust_proc.check_output(self.window,
-            'rustup target list'.split(), self.choices['package'])\
+
+        # The target list depends on the toolchain used.
+        cmd = 'rustup target list --toolchain=%s' % self.choices['toolchain']
+        triples = rust_proc.check_output(self.window, cmd.split(), None)\
             .splitlines()
         current = self.get_setting('target_triple')
         result = [('Use Default', None)]
@@ -434,50 +533,7 @@ class CargoSetTriple(CargoConfigBase):
 class CargoSetToolchain(CargoConfigBase):
 
     config_name = 'Toolchain'
-    sequence = ['package', 'which', 'toolchain']
-
-    def items_toolchain(self):
-        items = [('Use Default Toolchain', None)]
-        toolchains = self._toolchain_list()
-        current = self.get_setting('toolchain')
-        items.extend([(x, x) for x in toolchains])
-        return {
-            'items': items,
-            'default': current
-        }
-
-    def _toolchain_list(self):
-        output = rust_proc.check_output(self.window,
-                                        'rustup toolchain list'.split(),
-                                        self.choices['package'])
-        output = output.splitlines()
-        system_default = index_with(output, lambda x: x.endswith(' (default)'))
-        if system_default != -1:
-            output[system_default] = output[system_default][:-10]
-        # Rustup supports some shorthand of either `channel` or `channel-date`
-        # without the trailing target info.
-        #
-        # Complete list of available toolchains is available at:
-        # https://static.rust-lang.org/dist/index.html
-        # (See https://github.com/rust-lang-nursery/rustup.rs/issues/215)
-        shorthands = []
-        channels = ['nightly', 'beta', 'stable', '\d\.\d{1,2}\.\d']
-        pattern = '(%s)(?:-(\d{4}-\d{2}-\d{2}))?(?:-(.*))' % '|'.join(channels)
-        for toolchain in output:
-            m = re.match(pattern, toolchain)
-            # Should always match.
-            if m:
-                channel = m.group(1)
-                date = m.group(2)
-                if date:
-                    shorthand = '%s-%s' % (channel, date)
-                else:
-                    shorthand = channel
-                if shorthand not in shorthands:
-                    shorthands.append(shorthand)
-        result = shorthands + output
-        result.sort()
-        return result
+    sequence = ['which', 'toolchain']
 
     def done(self):
         self.set_setting('toolchain', self.choices['toolchain'])
@@ -486,7 +542,8 @@ class CargoSetToolchain(CargoConfigBase):
 class CargoSetFeatures(CargoConfigBase):
 
     config_name = 'Features'
-    sequence = ['package', 'which', 'no_default_features', 'features']
+    sequence = ['which', 'no_default_features', 'features']
+    which_requires_package = True
 
     def items_no_default_features(self):
         current = self.get_setting('no_default_features', False)
@@ -538,17 +595,17 @@ class CargoSetDefaultPath(CargoConfigBase):
         items.insert(0, (['No Default',
             'Build will attempt to detect from the current view, or pop up a selection panel.'],
              None))
-        result['default'] = self.settings.get('default_path')
+        result['default'] = self.settings.get_project_base('default_path')
         return result
 
     def done(self):
-        self.settings.set('default_path', self.choices['package'])
+        self.settings.set_project_base('default_path', self.choices['package'])
 
 
 class CargoSetEnvironmentEditor(CargoConfigBase):
 
     config_name = 'Environment'
-    sequence = ['package', 'which']
+    sequence = ['which']
 
     def done(self):
         view = self.window.new_file()
@@ -576,7 +633,7 @@ class CargoSetEnvironmentEditor(CargoConfigBase):
         view.set_syntax_file('Packages/JavaScript/JSON.sublime-syntax')
         view.settings().set('rust_environment_editor', True)
         view.settings().set('rust_environment_editor_settings', {
-            'package': self.choices['package'],
+            'package': self.choices.get('package'),
             'which': self.choices['which'],
             'variant': self.choices.get('variant'),
             'target': self.choices.get('target'),
@@ -589,7 +646,7 @@ class CargoSetEnvironment(CargoConfigBase):
     on-close callback to actually set the environment."""
 
     config_name = 'Environment'
-    sequence = ['package', 'which', 'env']
+    sequence = ['which', 'env']
 
     def items_env(self):
         return []
@@ -613,19 +670,19 @@ class EnvironmentSaveHandler(sublime_plugin.EventListener):
         except:
             sublime.error_message('Value was not valid JSON, try again.')
             view.window().run_command('cargo_set_environment_editor', {
-                'package': settings['package'],
+                'package': settings.get('package'),
                 'which': settings['which'],
-                'variant': settings['variant'],
-                'target': settings['target'],
+                'variant': settings.get('variant'),
+                'target': settings.get('target'),
                 'contents': contents,
             })
             return
 
         view.window().run_command('cargo_set_environment', {
-            'package': settings['package'],
+            'package': settings.get('package'),
             'which': settings['which'],
-            'variant': settings['variant'],
-            'target': settings['target'],
+            'variant': settings.get('variant'),
+            'target': settings.get('target'),
             'env': result,
         })
 
@@ -633,7 +690,7 @@ class EnvironmentSaveHandler(sublime_plugin.EventListener):
 class CargoSetArguments(CargoConfigBase):
 
     config_name = 'Extra Command-line Arguments'
-    sequence = ['package', 'which', 'before_after', 'args']
+    sequence = ['which', 'before_after', 'args']
 
     def items_before_after(self):
         return [
@@ -686,14 +743,6 @@ class CargoConfigure(CargoConfigBase):
             CargoSetArguments(self.window).run()
         elif which == 'package':
             CargoSetDefaultPath(self.window).run()
-        else:
-            raise AssertionError(which)
-
-    def selected_which(self, which):
-        if which == 'variant':
-            return ['package', 'variant', 'toolchain']
-        elif which == 'target':
-            return ['package', 'target', 'toolchain']
         else:
             raise AssertionError(which)
 
