@@ -3,6 +3,7 @@ import queue
 import sys
 import os
 import unittest
+import threading
 import time
 # Used for debugging.
 from pprint import pprint
@@ -123,7 +124,9 @@ class TestBase(unittest.TestCase):
                 q.put(None)
 
         try:
-            sublime.set_timeout_async(async_test_view, 0)
+            t = threading.Thread(target=async_test_view)
+            t.start()
+            t.join()
             msg = q.get()
             if msg:
                 raise msg
