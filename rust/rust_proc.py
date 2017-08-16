@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 import shellenv
+import traceback
 
 from . import util
 
@@ -298,12 +299,19 @@ class RustProc(object):
                     try:
                         self.listener.on_json(self, result)
                     except:
-                        self._cleanup()
-                        raise
+                        self.listener.on_error(self,
+                            'Rust Enhanced Internal Error: %s' % (
+                                traceback.format_exc(),))
             else:
                 if self.json_stop_pattern and \
                         re.match(self.json_stop_pattern, line):
                     # Stop looking for JSON open curly bracket.
+                    self.decode_json = False
+                if line.startswith('--- stderr'):
+                    # Rust 1.19 had a bug
+                    # (https://github.com/rust-lang/cargo/issues/4223) where
+                    # it was incorrectly printing stdout from the compiler
+                    # (fixed in 1.20).
                     self.decode_json = False
                 # Sublime always uses \n internally.
                 line = line.replace('\r\n', '\n')

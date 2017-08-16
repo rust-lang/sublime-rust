@@ -83,6 +83,15 @@ class TestSyntaxCheck(TestBase):
             methods.append('check')
         else:
             print('Skipping check, need rust >= 1.16.')
+        if semver.match(self.rustc_version, '>=1.19.0'):
+            # -Zno-trans now requires nightly
+            self._override_setting('cargo_build', {
+                'variants': {
+                    'no-trans': {
+                        'toolchain': 'nightly'
+                    }
+                }
+            })
         for path in to_test:
             path = os.path.join('tests', path)
             self._with_open_file(path, self._test_messages,
@@ -134,6 +143,15 @@ class TestSyntaxCheck(TestBase):
         self._get_rust_thread().join()
         expected_messages = self._collect_expected_regions(view)
 
+        # Refresh based on the toolchain used.
+        window = sublime.active_window()
+        manifest_path = util.find_cargo_manifest(view.file_name())
+        cs = cargo_settings.CargoSettings(window)
+        cs.load()
+        toolchain = cs.get_computed(manifest_path, method, None, 'toolchain')
+        self.rustc_version = util.get_rustc_version(window, manifest_path,
+            toolchain=toolchain)
+
         def restriction_check(restrictions):
             if not restrictions:
                 return True
@@ -162,14 +180,14 @@ class TestSyntaxCheck(TestBase):
                         self.assertIn(emsg_info['level_text'], content)
                         break
                 else:
-                    raise AssertionError('Did not find expected message "%s:%s" for region %r:%r for file %r' % (
+                    raise AssertionError('Did not find expected message "%s:%s" for region %r:%r for file %r method=%r\nAvailable phantoms=%r' % (
                         emsg_info['level'], emsg_info['message'],
                         emsg_info['begin'], emsg_info['end'],
-                        view.file_name()))
+                        view.file_name(), method, phantoms))
                 del phantoms[i]
         if len(phantoms):
-            raise AssertionError('Got extra phantoms for %r: %r' % (
-                view.file_name(), phantoms))
+            raise AssertionError('Got extra phantoms for %r (method=%s): %r' % (
+                view.file_name(), method, phantoms))
 
         # Check regions.
         found_regions = set()
@@ -181,8 +199,9 @@ class TestSyntaxCheck(TestBase):
                 if r in region_set:
                     found_regions.add(r)
                 else:
-                    raise AssertionError('Did not find expected region %r,%r for file %r' % (
-                        emsg_info['begin'], emsg_info['end'], view.file_name()))
+                    raise AssertionError('Did not find expected region %r,%r for file %r method %r\nActual regions=%r' % (
+                        emsg_info['begin'], emsg_info['end'], view.file_name(),
+                        method, region_set))
         if len(region_set) != len(found_regions):
             extra_regions = region_set - found_regions
             raise AssertionError('Got extra regions for %r: %r' % (
