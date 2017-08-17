@@ -38,6 +38,12 @@
     // "none" - No outlining.
     "rust_region_style": "outline",
 
+    // For errors/warnings, what kind of icon to use in the gutter.
+    // "shape" - Shape-based icons.
+    // "circle" - Simple circle icons.
+    // "none" - Do not place icons in the gutter.
+    "rust_gutter_style": "shape",
+
     // If your cargo project has several build targets, it's possible to specify mapping of
     // source code filenames to the target names to enable syntax checking.
     // "projects": {

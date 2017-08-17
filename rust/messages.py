@@ -34,7 +34,9 @@ def clear_messages(window):
     for view in window.views():
         view.erase_phantoms('rust-syntax-phantom')
         view.erase_regions('rust-error')
-        view.erase_regions('rust-info')
+        view.erase_regions('rust-warning')
+        view.erase_regions('rust-note')
+        view.erase_regions('rust-help')
 
 
 def add_message(window, path, span, level, is_main, message):
@@ -99,33 +101,56 @@ def draw_all_region_highlights(window):
 def _draw_region_highlights(view, messages):
     if util.get_setting('rust_region_style', 'outline') == 'none':
         return
-    error_regions = []
-    info_regions = []
-    error_region_set = set()
+
+    regions = {
+        'error': [],
+        'warning': [],
+        'note': [],
+        'help': [],
+    }
     for message in messages:
         region = _span_to_region(view, message['span'])
-        if message['level'] == 'error':
-            error_regions.append(region)
-            error_region_set.add((region.a, region.b))
+        if message['level'] not in regions:
+            print('RustEnhanced: Unknown message level %r encountered.' % message['level'])
+            message['level'] = 'error'
+        regions[message['level']].append(region)
+
+    # Remove lower-level regions that are identical to higher-level regions.
+    def filter_out(to_filter, to_check):
+        def check_in(region):
+            for r in regions[to_check]:
+                if r == region:
+                    return False
+            return True
+        regions[to_filter] = list(filter(check_in, regions[to_filter]))
+    filter_out('help', 'note')
+    filter_out('help', 'warning')
+    filter_out('help', 'error')
+    filter_out('note', 'warning')
+    filter_out('note', 'error')
+    filter_out('warning', 'error')
+
+    package_name = __package__.split('.')[0]
+    gutter_style = util.get_setting('rust_gutter_style', 'shape')
+
+    # Do this in reverse order so that errors show on-top.
+    for level in ['help', 'note', 'warning', 'error']:
+        # Unfortunately you cannot specify colors, but instead scopes as
+        # defined in the color theme.  If the scope is not defined, then it
+        # will show up as foreground color (white in dark themes).  I just use
+        # "info" as an undefined scope (empty string will remove regions).
+        # "invalid" will typically show up as red.
+        if level == 'error':
+            scope = 'invalid'
         else:
-            info_regions.append(region)
-    # Filter out identical info regions.
-    info_regions = list(filter(lambda x: (x.a, x.b) not in error_region_set,
-                               info_regions))
-
-    # Unfortunately you cannot specify colors, but instead scopes as
-    # defined in the color theme.  If the scope is not defined, then it
-    # will show up as foreground color (white in dark themes).  I just use
-    # "info" as an undefined scope (empty string will remove regions).
-    # "invalid" will typically show up as red.
-
-    # Is DRAW_EMPTY necessary?  Is it possible to have a zero-length span?
-    _sublime_add_regions(
-        view, 'rust-error', error_regions, 'invalid', '',
-        sublime.DRAW_NO_FILL | sublime.DRAW_EMPTY)
-    _sublime_add_regions(
-        view, 'rust-info', info_regions, 'info', '',
-        sublime.DRAW_NO_FILL | sublime.DRAW_EMPTY)
+            scope = 'info'
+        key = 'rust-%s' % level
+        icon = 'Packages/%s/images/gutter/%s-%s.png' % (
+            package_name, gutter_style, level)
+        if regions[level]:
+            _sublime_add_regions(
+                view, key, regions[level], scope, icon,
+                sublime.DRAW_NO_FILL | sublime.DRAW_EMPTY)
 
 
 def _show_phantom(view, level, span, message):

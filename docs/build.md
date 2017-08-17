@@ -55,6 +55,7 @@ General settings (see [Settings](../README.md#settings)) for how messages are di
 | `rust_syntax_help_color` | `"var(--bluish)"` | Color of help messages. |
 | `rust_phantom_style` | `"normal"` | How to display inline messages.  Either `normal` or `none`. |
 | `rust_region_style` | `"outline"` | How to highlight messages.  Either `outline` or `none`. |
+| `rust_gutter_style` | `"shape"` | Type of icon to show in the gutter.  Either `shape`, `circle`, or `none`. |
 
 It also supports Sublime's build settings:
 
