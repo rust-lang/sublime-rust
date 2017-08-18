@@ -3,7 +3,9 @@ extern crate dcrate;
 
 // This is an example of an error in a macro from an external crate.  These
 // messages do not have a file_name value, and thus will only be displayed in
-// the console.
+// the console (when building).  On-save syntax highlighting will display them
+// at the bottom of the "root" source file.
+
 example_bad_syntax!{}
 // end-msg: ERR /expected one of .*, found `:`/
 // end-msg: ERR Errors occurred in macro <example_bad_syntax macros> from external crate
