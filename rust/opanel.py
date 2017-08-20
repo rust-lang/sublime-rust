@@ -88,7 +88,7 @@ class OutputListener(rust_proc.ProcListener):
             self._display_debug(proc)
         else:
             self._append('[Finished in %.1fs]' % proc.elapsed)
-        messages.draw_all_region_highlights(self.window)
+        messages.messages_finished(self.window)
 
     def on_terminated(self, proc):
         self._append('[Build interrupted]')

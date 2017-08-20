@@ -87,7 +87,13 @@ def has_message_for_path(window, path):
     return path in paths
 
 
-def draw_all_region_highlights(window):
+def messages_finished(window):
+    """This should be called after all messages have been added."""
+    _draw_all_region_highlights(window)
+    _sort_messages(window)
+
+
+def _draw_all_region_highlights(window):
     """Drawing region outlines must be deferred until all the messages have
     been received since Sublime does not have an API to incrementally add
     them."""
@@ -213,6 +219,37 @@ def _sublime_add_phantom(view, key, region, content, layout, on_navigate):
 def _sublime_add_regions(view, key, regions, scope, icon, flags):
     """Pulled out to assist testing."""
     view.add_regions(key, regions, scope, icon, flags)
+
+
+def _sort_messages(window):
+    """Sorts messages so that errors are shown first when using Next/Prev
+    commands."""
+    wid = window.id()
+    try:
+        window_info = WINDOW_MESSAGES[wid]
+    except KeyError:
+        return
+    messages_by_path = window_info['paths']
+    items = []
+    for path, messages in messages_by_path.items():
+        for message in messages:
+            level = {
+                'error': 0,
+                'warning': 1,
+                'note': 2,
+                'help': 3,
+            }.get(message['level'], 0)
+            if message['span']:
+                lineno = message['span'][0][0]
+            else:
+                lineno = 99999999
+            items.append((level, path, lineno, message))
+    items.sort(key=lambda x: x[:3])
+    messages_by_path = collections.OrderedDict()
+    for _, path, _, message in items:
+        messages = messages_by_path.setdefault(path, [])
+        messages.append(message)
+    window_info['paths'] = messages_by_path
 
 
 def show_next_message(window, levels):

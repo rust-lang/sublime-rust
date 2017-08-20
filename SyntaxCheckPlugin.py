@@ -106,7 +106,7 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
                 self.get_rustc_messages()
             except rust_proc.ProcessTerminatedError:
                 return
-            messages.draw_all_region_highlights(self.window)
+            messages.messages_finished(self.window)
         finally:
             self.view.erase_status('rust-check')
 
