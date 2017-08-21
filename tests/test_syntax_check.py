@@ -100,6 +100,8 @@ class TestSyntaxCheck(TestBase):
             ('error-tests/tests/remote_note_1.rs', 'error-tests/tests/remote_note_1_mod.rs'),
             'error-tests/tests/macro-expansion-outside-1.rs',
             'error-tests/tests/macro-expansion-outside-2.rs',
+            ('error-tests/tests/macro-expansion-inside-1.rs', 'error-tests/tests/macro_expansion_inside_mod1.rs'),
+            ('error-tests/tests/macro-expansion-inside-2.rs', 'error-tests/tests/macro_expansion_inside_mod2.rs'),
             # Workspace tests.
             'workspace/workspace1/src/lib.rs',
             'workspace/workspace1/src/anothermod/mod.rs',
