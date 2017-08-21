@@ -103,6 +103,7 @@ class TestSyntaxCheck(TestBase):
             ('error-tests/tests/macro-expansion-inside-1.rs', 'error-tests/tests/macro_expansion_inside_mod1.rs'),
             ('error-tests/tests/macro-expansion-inside-2.rs', 'error-tests/tests/macro_expansion_inside_mod2.rs'),
             ('error-tests/tests/error_across_mod.rs', 'error-tests/tests/error_across_mod_f.rs'),
+            'error-tests/tests/derive-error.rs',
             # Workspace tests.
             'workspace/workspace1/src/lib.rs',
             'workspace/workspace1/src/anothermod/mod.rs',
