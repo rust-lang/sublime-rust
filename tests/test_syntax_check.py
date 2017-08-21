@@ -20,8 +20,16 @@ class TestSyntaxCheck(TestBase):
 
         Each of the listed files has comments that annotate where a message
         should appear.  Single-line messages use carets to specify where the
-        message should appear on the previous line.  Use multiple comments if
-        there are multiple messages.  Example:
+        message should appear on the previous line.  Immediately following is
+        the level of the message:
+
+            //  ^^^^ERR error example
+            //  ^^^^WARN warning example
+            //  ^^^^NOTE note example
+            //  ^^^^HELP help example
+            //  ^^^^MSG message with no level
+
+        Use multiple comments if there are multiple messages.  Example:
 
             //     ^^^^ERR binary operation
             //     ^^^^NOTE an implementation of
@@ -56,7 +64,7 @@ class TestSyntaxCheck(TestBase):
 
         - `test`: This message only appears in a cfg(test) block.
         - `no-trans`: This message only appears with no-trans method.
-        - `!no-trans`: This message does not appear in no-trans method.
+        - `check`: This message only appears with check method.
         - semver: Any semver string to match against the rustc version.
 
         These tests are somewhat fragile, as new versions of Rust change the
@@ -112,7 +120,7 @@ class TestSyntaxCheck(TestBase):
                     }
                 }
             })
-        for path in to_test:
+        for paths in to_test:
             if not isinstance(paths, tuple):
                 paths = (paths,)
             paths = [os.path.join('tests', p) for p in paths]
@@ -203,9 +211,9 @@ class TestSyntaxCheck(TestBase):
                         # blocks (see
                         # https://github.com/rust-lang/cargo/issues/3431)
                         return False
-                elif check == '!no-trans':
-                    # This message does not show up in no-trans.
-                    if method == 'no-trans':
+                elif check == 'check':
+                    # This message only shows up in check.
+                    if method != 'check':
                         return False
                 elif check == 'no-trans':
                     # This message only shows up in no-trans.
@@ -274,6 +282,7 @@ class TestSyntaxCheck(TestBase):
             'ERR': 'error',
             'NOTE': 'note',
             'HELP': 'help',
+            'MSG': '',
         }
         # Multi-line spans.
         region_map = {}  # Map the last row number to a (begin,end) region.
@@ -284,7 +293,7 @@ class TestSyntaxCheck(TestBase):
             region_map[row] = (region.begin() + 9, region.end() - 7)
 
         # Tilde identifies the message for the multi-line span just above.
-        pattern = r'// *~(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
+        pattern = r'// *~(WARN|ERR|HELP|NOTE|MSG)(\([^)]+\))? (.+)'
         regions = view.find_all(pattern)
         last_line = None  # Used to handle multiple messages on the same line.
         last_line_offset = 1
@@ -315,7 +324,7 @@ class TestSyntaxCheck(TestBase):
         # Single-line spans.
         last_line = None
         last_line_offset = 1
-        pattern = r'//( *)(\^+)(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
+        pattern = r'//( *)(\^+)(WARN|ERR|HELP|NOTE|MSG)(\([^)]+\))? (.+)'
         regions = view.find_all(pattern)
         for region in regions:
             text = view.substr(region)
@@ -339,7 +348,7 @@ class TestSyntaxCheck(TestBase):
             })
 
         # Messages that appear at the end of the file.
-        pattern = r'// *end-msg: *(WARN|ERR|HELP|NOTE)(\([^)]+\))? (.+)'
+        pattern = r'// *end-msg: *(WARN|ERR|HELP|NOTE|MSG)(\([^)]+\))? (.+)'
         regions = view.find_all(pattern)
         for region in regions:
             text = view.substr(region)
