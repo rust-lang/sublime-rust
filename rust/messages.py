@@ -50,7 +50,7 @@ def add_message(window, path, span, level, is_main, message):
     :param level: The Rust message level ('error', 'note', etc.).
     :param is_main: If True, this is a top-level message.  False is used for
         attached detailed diagnostic information, child notes, etc.
-    :param message: The message to display.
+    :param message: The phantom string to display.
     """
     if 'macros>' in path:
         # Macros from external crates will be displayed in the console
@@ -411,7 +411,24 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
             # 'compiler-artifact' or 'build-script-executed'.
             return
 
+    # Each message dictionary contains the following:
+    # - 'text': The text of the message.
+    # - 'level': The level (a string such as 'error').
+    # - 'span_path': Absolute path to the file for this message.
+    # - 'span_region': Sublime region where the message is.  Tuple of
+    #   ((line_start, column_start), (line_end, column_end)), 0-based.  None
+    #   if no region.
+    # - 'is_main': Boolean of whether or not this is the main message.  Only
+    #   the `main_message` should be True.
+    # - 'help_link': Optional string of an HTML link for additional
+    #   information on the message.
+    # - 'links': Optional string of HTML code that contains links to other
+    #   messages (populated by _create_cross_links).  Should only be set in
+    #   `main_message`.
+    # - 'back_link': Optional string of HTML code that is a link back to the
+    #   main message (populated by _create_cross_links).
     main_message = {}
+    # List of message dictionaries, belonging to the main message.
     additional_messages = []
     _collect_rust_messages(window, cwd, info, target_path, msg_cb, {},
         main_message, additional_messages)
@@ -454,15 +471,17 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
                     font-weight: bold;
                 }}
             </style>
-            <div class="{cls}">{level}: {msg}{help_link}{back_link}<a href="hide">\xD7</a></div>
-            {links}
+            {content}
         </body>""" % (
         util.get_setting('rust_syntax_error_color', 'var(--redish)'),
         util.get_setting('rust_syntax_warning_color', 'var(--yellowish)'),
         util.get_setting('rust_syntax_note_color', 'var(--greenish)'),
         util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
     )
+    content_template = '<div class="{cls}">{level}{msg}{help_link}{back_link}<a href="hide">\xD7</a></div>'
+    links_template = '<div class="rust-links">{indent}{links}</div>'
 
+    last_level = None
     for message in messages:
         level = message['level']
         cls = {
@@ -471,6 +490,12 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
             'note': 'rust-note',
             'help': 'rust-help',
         }.get(level, 'rust-error')
+        indent = '&nbsp;' * (len(level) + 2)
+        if level == last_level:
+            level_text = indent
+        else:
+            level_text = '%s: ' % (level,)
+        last_level = level
 
         # Rust performs some pretty-printing for things like suggestions,
         # attempt to retain some of the formatting.  This isn't perfect
@@ -481,23 +506,35 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
                 return '<a href="%s">%s</a>' % (txt, txt)
             else:
                 return html.escape(txt, quote=False).\
-                    replace('\n', '<br>').replace(' ', '&nbsp;')
+                    replace('\n', '<br>' + indent).replace(' ', '&nbsp;')
         parts = re.split(LINK_PATTERN, message['text'])
         escaped_text = ''.join(map(escape_and_link, enumerate(parts)))
-        content = msg_template.format(
+
+        content = content_template.format(
             cls=cls,
-            level=level,
+            level=level_text,
             msg=escaped_text,
             help_link=message.get('help_link', ''),
             back_link=message.get('back_link', ''),
-            links=message.get('links', ''),
         )
+        phantom_text = msg_template.format(content=content)
         add_message(window, message['span_path'], message['span_region'],
-                    level, message['is_main'], content)
+                    level, message['is_main'], phantom_text)
         if msg_cb:
             msg_cb(message['span_path'],
                    message['span_region'],
                    message['is_main'], message['text'], level)
+    if main_message.get('links'):
+        content = links_template.format(
+            indent='&nbsp;' * (len(main_message['level']) + 2),
+            links=main_message['links']
+        )
+        phantom_text = msg_template.format(content=content)
+        add_message(window,
+                    main_message['span_path'],
+                    main_message['span_region'],
+                    main_message['level'],
+                    False, phantom_text)
 
 
 def _collect_rust_messages(window, cwd, info, target_path,
@@ -783,7 +820,7 @@ def _create_cross_links(main_message, additional_messages):
             msg['back_link'] = back_link
 
     if links:
-        link_text = '\n<div class="rust-links">' + '\n'.join(links) + '</div>'
+        link_text = '\n'.join(links)
     else:
         link_text = ''
     main_message['links'] = link_text
