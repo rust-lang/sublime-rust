@@ -157,10 +157,9 @@ def _show_phantom(view, level, span, message):
     if util.get_setting('rust_phantom_style', 'normal') == 'none':
         return
     region = _span_to_region(view, span)
-    # For some reason, with LAYOUT_BELOW, if you have a multi-line
-    # region, the phantom is only displayed under the first line.  I
-    # think it makes more sense for the phantom to appear below the
-    # last line.
+    # For some reason if you have a multi-line region, the phantom is only
+    # displayed under the first line.  I think it makes more sense for the
+    # phantom to appear below the last line.
     start = view.rowcol(region.begin())
     end = view.rowcol(region.end())
     if start[0] != end[0]:
@@ -182,7 +181,7 @@ def _show_phantom(view, level, span, message):
         view,
         'rust-syntax-phantom', region,
         message,
-        sublime.LAYOUT_BELOW,
+        sublime.LAYOUT_BLOCK,
         click_handler
     )
 
