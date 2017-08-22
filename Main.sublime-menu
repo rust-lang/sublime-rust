@@ -15,14 +15,13 @@
                         "children":
                         [
                             {
-                                "command": "open_file",
-                                "args": {"file": "${packages}/Rust Enhanced/RustEnhanced.sublime-settings"},
-                                "caption": "Settings – Default"
-                            },
-                            {
-                                "command": "open_file",
-                                "args": {"file": "${packages}/User/RustEnhanced.sublime-settings"},
-                                "caption": "Settings – User"
+                                "caption": "Settings",
+                                "command": "edit_settings",
+                                "args":
+                                {
+                                    "base_file": "${packages}/Rust Enhanced/RustEnhanced.sublime-settings",
+                                    "default": "{\n\t$0\n}\n"
+                                }
                             }
                         ]
                     }

@@ -23,4 +23,13 @@
         "caption": "Rust: Configure Cargo Build",
         "command": "cargo_configure"
     },
+    {
+        "caption": "Preferences: Rust Enhanced Settings",
+        "command": "edit_settings",
+        "args":
+        {
+            "base_file": "${packages}/Rust Enhanced/RustEnhanced.sublime-settings",
+            "default": "{\n\t$0\n}\n"
+        }
+    }
 ]
