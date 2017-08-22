@@ -145,8 +145,11 @@ def _draw_region_highlights(view, messages):
         else:
             scope = 'info'
         key = 'rust-%s' % level
-        icon = 'Packages/%s/images/gutter/%s-%s.png' % (
-            package_name, gutter_style, level)
+        if gutter_style == 'none':
+            icon = ''
+        else:
+            icon = 'Packages/%s/images/gutter/%s-%s.png' % (
+                package_name, gutter_style, level)
         if regions[level]:
             _sublime_add_regions(
                 view, key, regions[level], scope, icon,
