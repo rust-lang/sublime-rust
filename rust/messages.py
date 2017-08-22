@@ -496,16 +496,13 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
             level_text = '%s: ' % (level,)
         last_level = level
 
-        # Rust performs some pretty-printing for things like suggestions,
-        # attempt to retain some of the formatting.  This isn't perfect
-        # (doesn't line up perfectly), not sure why.
         def escape_and_link(i_txt):
             i, txt = i_txt
             if i % 2:
                 return '<a href="%s">%s</a>' % (txt, txt)
             else:
                 return html.escape(txt, quote=False).\
-                    replace('\n', '<br>' + indent).replace(' ', '&nbsp;')
+                    replace('\n', '<br>' + indent)
         parts = re.split(LINK_PATTERN, message['text'])
         escaped_text = ''.join(map(escape_and_link, enumerate(parts)))
 
