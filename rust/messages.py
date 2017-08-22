@@ -481,6 +481,7 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
     links_template = '<div class="rust-links">{indent}{links}</div>'
 
     last_level = None
+    last_path = None
     for message in messages:
         level = message['level']
         cls = {
@@ -490,11 +491,12 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
             'help': 'rust-help',
         }.get(level, 'rust-error')
         indent = '&nbsp;' * (len(level) + 2)
-        if level == last_level:
+        if level == last_level and message['span_path'] == last_path:
             level_text = indent
         else:
             level_text = '%s: ' % (level,)
         last_level = level
+        last_path = message['span_path']
 
         def escape_and_link(i_txt):
             i, txt = i_txt
