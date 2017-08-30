@@ -1051,3 +1051,9 @@ impl<T> From<AsRef<T>> for CliError<T> { }
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.impl
 //                         ^^^^^^^^ entity.name.impl
 //                                 ^^^ meta.generic
+
+fn legal_dates_iter() -> Box<Iterator<Item = Date<UTC>>> {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function.return-type meta.generic
+//                                         ^ keyword.operator
+    unimplemented!()
+}

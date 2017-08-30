@@ -417,7 +417,7 @@ contexts:
     - match: '{{identifier}}'
     - match: ':|,'
       scope: punctuation.separator.rust
-    - match: '\+|\bas\b'
+    - match: '\+|\bas\b|='
       scope: keyword.operator.rust
     - match: '\S'
       scope: invalid.illegal.rust
