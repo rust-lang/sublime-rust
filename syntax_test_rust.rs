@@ -1057,3 +1057,12 @@ fn legal_dates_iter() -> Box<Iterator<Item = Date<UTC>>> {
 //                                         ^ keyword.operator
     unimplemented!()
 }
+
+fn numbers() -> impl Iterator<Item = u64> {
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function.return-type
+//              ^^^^ meta.function.return-type storage.type.impl
+//                   ^^^^^^^^ meta.function.return-type support.type
+//                           ^^^^^^^^^^^^ meta.function.return-type meta.generic
+    Generator(move || for a in (0..10) { yield a; } })
+//                                       ^^^^^ keyword.control
+}

@@ -124,7 +124,7 @@ contexts:
     - match: \b(crate|extern|use|where)\b
       scope: keyword.other.rust
 
-    - match: \b(break|else|for|if|loop|match|while|continue)\b
+    - match: \b(break|else|for|if|loop|match|while|continue|yield)\b
       scope: keyword.control.rust
 
     - match: \breturn\b
@@ -298,6 +298,13 @@ contexts:
       scope: support.type.rust 
 
   return-type:
+    - match: '\bimpl\b'
+      scope: storage.type.impl.rust
+      push:
+        - include: comments
+        - include: impl-generic
+        - match: '(?=\S)'
+          pop: true
     - match: '->'
       scope: punctuation.separator.rust
       push:
