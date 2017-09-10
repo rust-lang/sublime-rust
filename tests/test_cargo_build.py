@@ -21,11 +21,6 @@ if sys.platform == 'win32':
 
 class TestCargoBuild(TestBase):
 
-    def _run_build_wait(self, command='build', **kwargs):
-        self._run_build(command, **kwargs)
-        # Wait for it to finish.
-        self._get_rust_thread().join()
-
     def _get_build_output(self, window):
         opanel = window.find_output_panel(plugin.rust.opanel.PANEL_NAME)
         output = opanel.substr(sublime.Region(0, opanel.size()))

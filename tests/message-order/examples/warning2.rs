@@ -79,6 +79,6 @@
 
 
 
-fn unused_in_2() {
+/*WARN 3*/fn unused_in_2() {
 
 }
