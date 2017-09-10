@@ -136,8 +136,9 @@ class TestBase(unittest.TestCase):
             if msg:
                 raise msg
         finally:
-            window.focus_view(view)
-            window.run_command('close_file')
+            if view.window():
+                window.focus_view(view)
+                window.run_command('close_file')
 
     def _cargo_clean(self, view_or_path):
         if isinstance(view_or_path, sublime.View):

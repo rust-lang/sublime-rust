@@ -66,6 +66,8 @@ class TestMessageOrder(TestBase):
         window = view.window()
         self._run_build_wait(command)
 
+        to_close = []
+
         def check_sequence(direction):
             omsgs = messages if direction == 'next' else reversed(messages)
             levels = ('all', 'error', 'warning') if inline else ('all',)
@@ -86,6 +88,7 @@ class TestMessageOrder(TestBase):
                         # moment to update.
                         time.sleep(0.1)
                         next_view = window.active_view()
+                        to_close.append(next_view)
                         self.assertEqual(next_view.file_name(), next_filename)
                         region = next_view.sel()[0]
                         rowcol = next_view.rowcol(region.begin())
@@ -111,6 +114,11 @@ class TestMessageOrder(TestBase):
             self._cargo_clean(view)
             self._run_build_wait(command)
             check_sequence('prev')
+
+        for close_view in to_close:
+            if close_view.window():
+                window.focus_view(close_view)
+                window.run_command('close_file')
 
     def _collect_message_order(self, paths):
         """Scan test files for comments that indicate the order of messages.
