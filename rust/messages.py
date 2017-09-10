@@ -224,6 +224,10 @@ def _sublime_add_regions(view, key, regions, scope, icon, flags):
 def _sort_messages(window):
     """Sorts messages so that errors are shown first when using Next/Prev
     commands."""
+    # Undocumented config variable to disable sorting in case there are
+    # problems with it.
+    if not util.get_setting('rust_sort_messages', True):
+        return
     wid = window.id()
     try:
         window_info = WINDOW_MESSAGES[wid]
