@@ -232,13 +232,19 @@ class CargoEventListener(sublime_plugin.EventListener):
 class RustNextMessageCommand(sublime_plugin.WindowCommand):
 
     def run(self, levels='all'):
-        messages.show_next_message(self.window, levels)
+        if util.get_setting('show_errors_inline', True):
+            messages.show_next_message(self.window, levels)
+        else:
+            self.window.run_command('next_result')
 
 
 class RustPrevMessageCommand(sublime_plugin.WindowCommand):
 
     def run(self, levels='all'):
-        messages.show_prev_message(self.window, levels)
+        if util.get_setting('show_errors_inline', True):
+            messages.show_prev_message(self.window, levels)
+        else:
+            self.window.run_command('prev_result')
 
 
 class RustCancelCommand(sublime_plugin.WindowCommand):

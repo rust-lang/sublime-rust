@@ -12,10 +12,15 @@ PANEL_NAME = 'exec'
 def create_output_panel(window, cwd):
     output_view = window.create_output_panel(PANEL_NAME)
     s = output_view.settings()
-    # FILENAME:LINE: MESSAGE
-    # Two dots to handle Windows DRIVE:
-    #  XXX: Verify
-    s.set('result_file_regex', '^[^:]+: (..[^:]*):([0-9]+): (.*)$')
+    if util.get_setting('show_errors_inline', True):
+        # FILENAME:LINE: MESSAGE
+        # Two dots to handle Windows DRIVE:
+        s.set('result_file_regex', '^[^:]+: (..[^:]*):([0-9]+): (.*)$')
+    else:
+        build_pattern = '[ \\t]*-->[ \\t]*([^<\n]*):([0-9]+):([0-9]+)'
+        test_pattern = ', ([^,<\n]*\\.[A-z]{2}):([0-9]+)'
+        pattern = '(?|%s|%s)' % (build_pattern, test_pattern)
+        s.set('result_file_regex', pattern)
     # Used for resolving relative paths.
     s.set('result_base_dir', cwd)
     s.set('word_wrap', True)  # XXX Or False?
@@ -89,6 +94,9 @@ class OutputListener(rust_proc.ProcListener):
         else:
             self._append('[Finished in %.1fs]' % proc.elapsed)
         messages.messages_finished(self.window)
+        # Tell Sublime to find all of the lines with pattern from
+        # result_file_regex.
+        self.output_view.find_all_results()
 
     def on_terminated(self, proc):
         self._append('[Build interrupted]')

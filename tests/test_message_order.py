@@ -35,7 +35,9 @@ class TestMessageOrder(TestBase):
             /*ERR 1*/
             /*WARN 2*/
 
-        The number is the order the message should appear.
+        The number is the order the message should appear.  Two numbers can be
+        specified, where the second number is the "unsorted" sequence (the
+        order the message is emitted from rustc).
         """
         to_test = [
             ('examples/ex_warning1.rs',
@@ -45,27 +47,40 @@ class TestMessageOrder(TestBase):
         for paths in to_test:
             rel_paths = [os.path.join('tests/message-order', path)
                 for path in paths]
-            messages = self._collect_message_order(rel_paths)
-            self.assertTrue(messages)
+            sorted_msgs, unsorted_msgs = self._collect_message_order(rel_paths)
+            self.assertTrue(sorted_msgs)
+            self.assertTrue(unsorted_msgs)
+            self._override_setting('show_errors_inline', True)
             self._with_open_file(rel_paths[0], self._test_message_order,
-                messages=messages)
+                messages=sorted_msgs, inline=True)
+            self._override_setting('show_errors_inline', False)
+            self._with_open_file(rel_paths[0],
+                self._test_message_order, messages=unsorted_msgs,
+                inline=False)
 
-    def _test_message_order(self, view, messages):
+    def _test_message_order(self, view, messages, inline):
         self._cargo_clean(view)
         window = view.window()
         self._run_build_wait()
 
         def check_sequence(direction):
             omsgs = messages if direction == 'next' else reversed(messages)
-            for levels in ('all', 'error', 'warning'):
+            levels = ('all', 'error', 'warning') if inline else ('all',)
+            times = 2 if inline else 1
+            for level in levels:
                 # Run through all messages twice to verify it starts again.
-                for _ in range(2):
+                for _ in range(times):
                     for next_filename, next_level, next_row_col in omsgs:
-                        if (levels == 'error' and next_level != 'ERR') or \
-                           (levels == 'warning' and next_level != 'WARN'):
+                        if inline and (
+                           (level == 'error' and next_level != 'ERR') or
+                           (level == 'warning' and next_level != 'WARN')):
                             continue
                         window.run_command('rust_' + direction + '_message',
-                            {'levels': levels})
+                            {'levels': level})
+                        # Sublime doesn't always immediately move the active
+                        # view when 'next_result' is called, so give it a
+                        # moment to update.
+                        time.sleep(0.1)
                         next_view = window.active_view()
                         self.assertEqual(next_view.file_name(), next_filename)
                         region = next_view.sel()[0]
@@ -73,43 +88,53 @@ class TestMessageOrder(TestBase):
                         self.assertEqual(rowcol, next_row_col)
 
         check_sequence('next')
-        # Reset back to first.
-        window.run_command('rust_next_message')
-        # Run backwards twice, too.
-        check_sequence('prev')
-        # Test starting backwards.
-        window.focus_view(view)
-        self._cargo_clean(view)
-        self._run_build_wait()
-        check_sequence('prev')
+        if inline:
+            # Reset back to first.
+            window.run_command('rust_next_message')
+            # Run backwards twice, too.
+            check_sequence('prev')
+            # Test starting backwards.
+            window.focus_view(view)
+            self._cargo_clean(view)
+            self._run_build_wait()
+            check_sequence('prev')
 
     def _collect_message_order(self, paths):
         """Scan test files for comments that indicate the order of messages.
 
         :param paths: List of paths relative to the plugin.
 
-        :returns: Returns a list in order of tuples (path, level, (row, col)).
+        :returns: Returns a tuple of two lists.  The first list is the sorted
+            order of messages.  The first list is the unsorted order of
+            messages.  Each list has tuples (path, level, (row, col)).
         """
         result = []
         for path in paths:
             self._with_open_file(path, self._collect_message_order_view,
                 result=result)
         # Sort the result.
-        result.sort()
+        sorted_result = sorted(result, key=lambda x: x[0])
+        unsorted_result = sorted(result, key=lambda x: x[1])
         # Verify that the markup was entered correctly.
-        self.assertEqual([x[0] for x in result],
-            list(range(1, len(result) + 1)))
+        self.assertEqual([x[0] for x in sorted_result],
+            list(range(1, len(sorted_result) + 1)))
         # Strip the sequence number.
-        return [x[1:] for x in result]
+        return ([x[2:] for x in sorted_result],
+                [x[2:] for x in unsorted_result])
 
     def _collect_message_order_view(self, view, result):
-        pattern = r'/\*(ERR|WARN) ([0-9]+)\*/'
+        pattern = r'/\*(ERR|WARN) ([0-9]+)( [0-9]+)?\*/'
         regions = view.find_all(pattern)
         for region in regions:
             text = view.substr(region)
             m = re.match(pattern, text)
             rowcol = view.rowcol(region.end())
-            result.append((int(m.group(2)), view.file_name(),
+            sort_index = int(m.group(2))
+            if m.group(3):
+                unsorted = int(m.group(3))
+            else:
+                unsorted = sort_index
+            result.append((sort_index, unsorted, view.file_name(),
                 m.group(1), rowcol))
 
     def test_no_messages(self):
