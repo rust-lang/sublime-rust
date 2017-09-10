@@ -3,6 +3,7 @@
 import sublime
 
 import os
+import re
 from . import rust_proc, messages, util
 
 # Use the same panel name that Sublime's build system uses so that "Show Build
@@ -57,16 +58,42 @@ class OutputListener(rust_proc.ProcListener):
     # Sublime view used for output.
     output_view = None
 
-    def __init__(self, window, base_path):
+    def __init__(self, window, base_path, command_name):
         self.window = window
         self.base_path = base_path
+        self.command_name = command_name
 
     def on_begin(self, proc):
         self.output_view = create_output_panel(self.window, self.base_path)
         self._append('[Running: %s]' % (' '.join(proc.cmd),))
 
     def on_data(self, proc, data):
+        region_start = self.output_view.size()
         self._append(data, nl=False)
+        # Check for test errors.
+        if self.command_name == 'test':
+            # Re-fetch the data to handle things like \t expansion.
+            appended = self.output_view.substr(
+                sublime.Region(region_start, self.output_view.size()))
+            m = re.search(r', ([^,<\n]*\.[A-z]{2}):([0-9]+):([0-9]+)',
+                appended)
+            if m:
+                path = os.path.join(self.base_path, m.group(1))
+                lineno = int(m.group(2)) - 1
+                # Region columns appear to the left, so this is +1.
+                col = int(m.group(3))
+                span = ((lineno, col), (lineno, col))
+                # +2 to skip ", "
+                build_region = sublime.Region(region_start + m.start() + 2,
+                                              region_start + m.end())
+
+                # Use callback so the build output window scrolls to this
+                # point.
+                def on_test_cb(message):
+                    message['output_panel_region'] = build_region
+
+                messages.add_message(self.window, path, span, 'error', True,
+                    None, None, on_test_cb)
 
     def on_error(self, proc, message):
         self._append(message)

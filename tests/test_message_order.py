@@ -22,6 +22,9 @@ class TestMessageOrder(TestBase):
         window.run_command('cargo_set_target', {'target': 'auto',
                                                 'variant': 'build',
                                                 'package': pkg})
+        window.run_command('cargo_set_target', {'target': 'auto',
+                                                'variant': 'test',
+                                                'package': pkg})
 
     def test_message_order(self):
         """Test message order.
@@ -32,35 +35,36 @@ class TestMessageOrder(TestBase):
         The files are annotated with comments to indicate where each message
         should appear and in which order.  The annotations should look like:
 
-            /*ERR 1*/
-            /*WARN 2*/
+            /*ERR 1 "build_output_selection_inline" "build_output_selection_raw"*/
+            /*WARN 1 "build_output_selection_inline" "build_output_selection_raw"*/
 
         The number is the order the message should appear.  Two numbers can be
-        specified, where the second number is the "unsorted" sequence (the
-        order the message is emitted from rustc).
+        specified separated with a comma, where the second number is the
+        "unsorted" sequence (the order the message is emitted from rustc).
         """
         to_test = [
-            ('examples/ex_warning1.rs',
+            ('build', 'examples/ex_warning1.rs',
                 'examples/warning1.rs', 'examples/warning2.rs'),
-            ('tests/test_all_levels.rs',),
+            ('build', 'tests/test_all_levels.rs',),
+            ('test', 'tests/test_test_output.rs',),
         ]
-        for paths in to_test:
+        for command, *paths in to_test:
             rel_paths = [os.path.join('tests/message-order', path)
                 for path in paths]
             sorted_msgs, unsorted_msgs = self._collect_message_order(rel_paths)
             self.assertTrue(sorted_msgs)
             self.assertTrue(unsorted_msgs)
             self._with_open_file(rel_paths[0], self._test_message_order,
-                messages=sorted_msgs, inline=True)
+                messages=sorted_msgs, inline=True, command=command)
             self._with_open_file(rel_paths[0],
                 self._test_message_order, messages=unsorted_msgs,
-                inline=False)
+                inline=False, command=command)
 
-    def _test_message_order(self, view, messages, inline):
+    def _test_message_order(self, view, messages, inline, command):
         self._override_setting('show_errors_inline', inline)
         self._cargo_clean(view)
         window = view.window()
-        self._run_build_wait()
+        self._run_build_wait(command)
 
         def check_sequence(direction):
             omsgs = messages if direction == 'next' else reversed(messages)
@@ -105,7 +109,7 @@ class TestMessageOrder(TestBase):
             # Test starting backwards.
             window.focus_view(view)
             self._cargo_clean(view)
-            self._run_build_wait()
+            self._run_build_wait(command)
             check_sequence('prev')
 
     def _collect_message_order(self, paths):
@@ -133,7 +137,7 @@ class TestMessageOrder(TestBase):
                 [x[2:] for x in unsorted_result])
 
     def _collect_message_order_view(self, view, result):
-        pattern = r'/\*(ERR|WARN) ([0-9,]+) "([^"]+)" "([^"]+)"\*/'
+        pattern = r'/\*(ERR|WARN) ([0-9,]+) "([^"]+)"(?: "([^"]+)")?\*/'
         regions = view.find_all(pattern)
 
         def path_fixup(p):
@@ -152,7 +156,10 @@ class TestMessageOrder(TestBase):
                 sort_index = int(m.group(2))
                 unsorted = sort_index
             inline_highlight = path_fixup(m.group(3))
-            raw_highlight = path_fixup(m.group(4))
+            if m.group(4):
+                raw_highlight = path_fixup(m.group(4))
+            else:
+                raw_highlight = inline_highlight
             result.append((sort_index, unsorted, view.file_name(),
                 m.group(1), rowcol, inline_highlight, raw_highlight))
 

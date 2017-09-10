@@ -111,12 +111,15 @@ def add_message(window, path, span, level, is_main, text, markup_text, msg_cb):
         }
     messages = messages_by_path.setdefault(path, [])
 
-    phantom_text = PHANTOM_TEMPLATE.format(content=markup_text,
-        error_color=util.get_setting('rust_syntax_error_color', 'var(--redish)'),
-        warning_color=util.get_setting('rust_syntax_warning_color', 'var(--yellowish)'),
-        note_color=util.get_setting('rust_syntax_note_color', 'var(--greenish)'),
-        help_color=util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
-    )
+    if markup_text:
+        phantom_text = PHANTOM_TEMPLATE.format(content=markup_text,
+            error_color=util.get_setting('rust_syntax_error_color', 'var(--redish)'),
+            warning_color=util.get_setting('rust_syntax_warning_color', 'var(--yellowish)'),
+            note_color=util.get_setting('rust_syntax_note_color', 'var(--greenish)'),
+            help_color=util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
+        )
+    else:
+        phantom_text = None
     to_add = {
         'path': path,
         'level': level,
@@ -218,6 +221,8 @@ def _draw_region_highlights(view, messages):
 
 def _show_phantom(view, level, span, message):
     if util.get_setting('rust_phantom_style', 'normal') == 'none':
+        return
+    if not message:
         return
     region = _span_to_region(view, span)
     # For some reason if you have a multi-line region, the phantom is only
