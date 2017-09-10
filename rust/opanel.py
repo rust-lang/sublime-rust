@@ -1,5 +1,7 @@
 """Module displaying build output in a Sublime output panel."""
 
+import sublime
+
 import os
 from . import rust_proc, messages, util
 
@@ -17,7 +19,7 @@ def create_output_panel(window, cwd):
         # Two dots to handle Windows DRIVE:
         s.set('result_file_regex', '^[^:]+: (..[^:]*):([0-9]+): (.*)$')
     else:
-        build_pattern = '[ \\t]*-->[ \\t]*([^<\n]*):([0-9]+):([0-9]+)'
+        build_pattern = '^[ \\t]*-->[ \\t]*([^<\n]*):([0-9]+):([0-9]+)'
         test_pattern = ', ([^,<\n]*\\.[A-z]{2}):([0-9]+)'
         pattern = '(?|%s|%s)' % (build_pattern, test_pattern)
         s.set('result_file_regex', pattern)
@@ -74,17 +76,24 @@ class OutputListener(rust_proc.ProcListener):
             messages.add_rust_messages(self.window, proc.cwd, obj['message'],
                                        None, self.msg_cb)
 
-    def msg_cb(self, path, span_region, is_main, message, level):
+    def msg_cb(self, message):
+        level = message['level']
+        region_start = self.output_view.size() + len(level) + 2
+        path = message['path']
         if path:
             if self.base_path and path.startswith(self.base_path):
                 path = os.path.relpath(path, self.base_path)
-            if span_region:
-                self._append('%s: %s:%d: %s' % (level, path,
-                    span_region[0][0], message))
+            if message['span']:
+                highlight_text = '%s:%d' % (path, message['span'][0][0] + 1)
             else:
-                self._append('%s: %s: %s' % (level, path, message))
+                highlight_text = path
+            self._append('%s: %s: %s' % (level, highlight_text, message['text']))
+            region = sublime.Region(region_start,
+                                    region_start + len(highlight_text))
         else:
-            self._append('%s: %s' % (level, message))
+            self._append('%s: %s' % (level, message['text']))
+            region = sublime.Region(region_start)
+        message['output_panel_region'] = region
 
     def on_finished(self, proc, rc):
         if rc:

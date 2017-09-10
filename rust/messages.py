@@ -10,7 +10,7 @@ import re
 import webbrowser
 from pprint import pprint
 
-from . import util
+from . import util, opanel
 
 # Key is window id.
 # Value is a dictionary: {
@@ -29,6 +29,47 @@ WINDOW_MESSAGES = {}
 LINK_PATTERN = r'(https?://[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-zA-Z]{2,6}\b[-a-zA-Z0-9@:%_+.~#?&/=]*)'
 
 
+PHANTOM_TEMPLATE = """
+<body id="rust-message">
+    <style>
+        span {{
+            font-family: monospace;
+        }}
+        .rust-error {{
+            color: {error_color};
+        }}
+        .rust-warning {{
+            color: {warning_color};
+        }}
+        .rust-note {{
+            color: {note_color};
+        }}
+        .rust-help {{
+            color: {help_color};
+        }}
+        .rust-link {{
+            background-color: var(--background);
+            color: var(--bluish);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            padding: 0.1rem 0.3rem;
+            border: 1px solid var(--bluish);
+        }}
+        .rust-links {{
+            margin: 0.4rem 0rem;
+        }}
+        a {{
+            text-decoration: inherit;
+            padding: 0.35rem 0.5rem 0.45rem 0.5rem;
+            position: relative;
+            font-weight: bold;
+        }}
+    </style>
+{content}
+</body>
+"""
+
+
 def clear_messages(window):
     WINDOW_MESSAGES.pop(window.id(), None)
     for view in window.views():
@@ -39,7 +80,7 @@ def clear_messages(window):
         view.erase_regions('rust-help')
 
 
-def add_message(window, path, span, level, is_main, message):
+def add_message(window, path, span, level, is_main, text, markup_text, msg_cb):
     """Add a message to be displayed.
 
     :param window: The Sublime window.
@@ -50,7 +91,9 @@ def add_message(window, path, span, level, is_main, message):
     :param level: The Rust message level ('error', 'note', etc.).
     :param is_main: If True, this is a top-level message.  False is used for
         attached detailed diagnostic information, child notes, etc.
-    :param message: The phantom string to display.
+    :param text: The raw text of the message without any minihtml markup.
+    :param markup_text: The message to display with minihtml markup.
+    :param msg_cb: Callback that will be given the message.  May be None.
     """
     if 'macros>' in path:
         # Macros from external crates will be displayed in the console
@@ -67,11 +110,20 @@ def add_message(window, path, span, level, is_main, message):
             'msg_index': (-1, -1)
         }
     messages = messages_by_path.setdefault(path, [])
+
+    phantom_text = PHANTOM_TEMPLATE.format(content=markup_text,
+        error_color=util.get_setting('rust_syntax_error_color', 'var(--redish)'),
+        warning_color=util.get_setting('rust_syntax_warning_color', 'var(--yellowish)'),
+        note_color=util.get_setting('rust_syntax_note_color', 'var(--greenish)'),
+        help_color=util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
+    )
     to_add = {
+        'path': path,
         'level': level,
         'span': span,
         'is_main': is_main,
-        'message': message,
+        'text': text,
+        'phantom_text': phantom_text,
     }
     if to_add in messages:
         # Don't add duplicates.
@@ -79,7 +131,9 @@ def add_message(window, path, span, level, is_main, message):
     messages.append(to_add)
     view = window.find_open_file(path)
     if view:
-        _show_phantom(view, level, span, message)
+        _show_phantom(view, level, span, phantom_text)
+    if msg_cb:
+        msg_cb(to_add)
 
 
 def has_message_for_path(window, path):
@@ -276,16 +330,18 @@ def _show_message(window, levels, current_idx):
     paths = window_info['paths']
     path, messages = _ith_iter_item(paths.items(), current_idx[0])
     view = window.find_open_file(path)
+    msg = messages[current_idx[1]]
+    _scroll_build_panel(window, msg)
     if view:
-        _scroll_to_message(view, messages, current_idx)
+        _scroll_to_message(view, msg)
     else:
         # show_at_center is buggy with newly opened views (see
         # https://github.com/SublimeTextIssues/Core/issues/538).
         # ENCODED_POSITION is 1-based.
-        msg = messages[current_idx[1]]
         row, col = msg['span'][0]
         view = window.open_file('%s:%d:%d' % (path, row + 1, col + 1),
                                 sublime.ENCODED_POSITION)
+        # Block until the view is loaded.
         _show_message_wait(view, levels, messages, current_idx)
 
 
@@ -298,11 +354,25 @@ def _show_message_wait(view, levels, messages, current_idx):
     # should handle displaying the messages.
 
 
-def _scroll_to_message(view, messages, current_idx):
+def _scroll_build_panel(window, message):
+    """If the build output panel is open, scroll the output to the message
+    selected."""
+    if 'output_panel_region' in message:
+        view = window.find_output_panel(opanel.PANEL_NAME)
+        if view:
+            view.sel().clear()
+            region = message['output_panel_region']
+            view.sel().add(region)
+            view.show(region)
+            # Force panel to update.
+            view.add_regions('bug', [region], 'bug', 'dot', sublime.HIDDEN)
+            view.erase_regions('bug')
+
+
+def _scroll_to_message(view, message):
     """Scroll view to the message."""
     view.window().focus_view(view)
-    msg = messages[current_idx[1]]
-    r = _span_to_region(view, msg['span'])
+    r = _span_to_region(view, message['span'])
     view.sel().clear()
     view.sel().add(r.a)
     view.show_at_center(r)
@@ -327,7 +397,7 @@ def _show_messages_for_view(view, messages):
         _show_phantom(view,
                       message['level'],
                       message['span'],
-                      message['message'])
+                      message['phantom_text'])
     _draw_region_highlights(view, messages)
 
 
@@ -435,15 +505,16 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
     - `info`: Dictionary of messages from rustc or cargo.
     - `target_path`: Absolute path to the top-level source file of the target
       (lib.rs, main.rs, etc.).  May be None if it is not known.
-    - `msg_cb`: Function called for each message (if not None).  Parameters
-      are:
-          - `path`: Full path to the file.  None if no file associated.
-          - `span_region`: Sublime (0-based) offsets into the file for the
-            region `((line_start, col_start), (line_end, col_end))`.  None if
-            no region.
-          - `is_main`: If True, a top-level message.
-          - `message`: Text of the message.
-          - `level`: Rust level ('error', 'warning', 'note', etc.)
+    - `msg_cb`: Function called for each message (if not None).  It is given a
+      single parameter, a dictionary of the message to display with the
+      following keys:
+        - `path`: Full path to the file.  None if no file associated.
+        - `span`: Sublime (0-based) offsets into the file for the region
+          `((line_start, col_start), (line_end, col_end))`.  None if no
+          region.
+        - `level`: Rust level ('error', 'warning', 'note', etc.)
+        - `is_main`: If True, a top-level message.
+        - `text`: Raw text of the message without markup.
     """
     # cargo check emits in a slightly different format.
     if 'reason' in info:
@@ -478,49 +549,6 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
 
     messages = _create_cross_links(main_message, additional_messages)
 
-    msg_template = """
-        <body id="rust-message">
-            <style>
-                span {{
-                    font-family: monospace;
-                }}
-                .rust-error {{
-                    color: %s;
-                }}
-                .rust-warning {{
-                    color: %s;
-                }}
-                .rust-note {{
-                    color: %s;
-                }}
-                .rust-help {{
-                    color: %s;
-                }}
-                .rust-link {{
-                    background-color: var(--background);
-                    color: var(--bluish);
-                    text-decoration: none;
-                    border-radius: 0.5rem;
-                    padding: 0.1rem 0.3rem;
-                    border: 1px solid var(--bluish);
-                }}
-                .rust-links {{
-                    margin: 0.4rem 0rem;
-                }}
-                a {{
-                    text-decoration: inherit;
-                    padding: 0.35rem 0.5rem 0.45rem 0.5rem;
-                    position: relative;
-                    font-weight: bold;
-                }}
-            </style>
-            {content}
-        </body>""" % (
-        util.get_setting('rust_syntax_error_color', 'var(--redish)'),
-        util.get_setting('rust_syntax_warning_color', 'var(--yellowish)'),
-        util.get_setting('rust_syntax_note_color', 'var(--greenish)'),
-        util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
-    )
     content_template = '<div class="{cls}">{level}{msg}{help_link}{back_link}<a href="hide">\xD7</a></div>'
     links_template = '<div class="rust-links">{indent}{links}</div>'
 
@@ -559,24 +587,20 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
             help_link=message.get('help_link', ''),
             back_link=message.get('back_link', ''),
         )
-        phantom_text = msg_template.format(content=content)
         add_message(window, message['span_path'], message['span_region'],
-                    level, message['is_main'], phantom_text)
-        if msg_cb:
-            msg_cb(message['span_path'],
-                   message['span_region'],
-                   message['is_main'], message['text'], level)
+                    level, message['is_main'], message['text'], content,
+                    msg_cb)
+
     if main_message.get('links'):
         content = links_template.format(
             indent='&nbsp;' * (len(main_message['level']) + 2),
             links=main_message['links']
         )
-        phantom_text = msg_template.format(content=content)
         add_message(window,
                     main_message['span_path'],
                     main_message['span_region'],
                     main_message['level'],
-                    False, phantom_text)
+                    False, None, content, None)
 
 
 def _collect_rust_messages(window, cwd, info, target_path,
@@ -711,8 +735,16 @@ def _collect_rust_messages(window, cwd, info, target_path,
                     fake_span = {'file_name': target_path}
                     set_primary_message(fake_span, imsg)
                 else:
+                    # Not displayed as a phantom since we don't know where to
+                    # put it.
                     if msg_cb:
-                        msg_cb(None, None, True, imsg, info['level'])
+                        msg_cb({
+                            'path': None,
+                            'level': info['level'],
+                            'span': None,
+                            'is_main': True,
+                            'text': imsg,
+                        })
 
     def find_span_r(span, expansion=None):
         if span['expansion']:

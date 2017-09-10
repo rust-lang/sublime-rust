@@ -50,15 +50,14 @@ class TestMessageOrder(TestBase):
             sorted_msgs, unsorted_msgs = self._collect_message_order(rel_paths)
             self.assertTrue(sorted_msgs)
             self.assertTrue(unsorted_msgs)
-            self._override_setting('show_errors_inline', True)
             self._with_open_file(rel_paths[0], self._test_message_order,
                 messages=sorted_msgs, inline=True)
-            self._override_setting('show_errors_inline', False)
             self._with_open_file(rel_paths[0],
                 self._test_message_order, messages=unsorted_msgs,
                 inline=False)
 
     def _test_message_order(self, view, messages, inline):
+        self._override_setting('show_errors_inline', inline)
         self._cargo_clean(view)
         window = view.window()
         self._run_build_wait()
@@ -70,7 +69,8 @@ class TestMessageOrder(TestBase):
             for level in levels:
                 # Run through all messages twice to verify it starts again.
                 for _ in range(times):
-                    for next_filename, next_level, next_row_col in omsgs:
+                    for (next_filename, next_level, next_row_col,
+                         inline_highlight, raw_highlight) in omsgs:
                         if inline and (
                            (level == 'error' and next_level != 'ERR') or
                            (level == 'warning' and next_level != 'WARN')):
@@ -86,6 +86,15 @@ class TestMessageOrder(TestBase):
                         region = next_view.sel()[0]
                         rowcol = next_view.rowcol(region.begin())
                         self.assertEqual(rowcol, next_row_col)
+                        # Verify the output panel is highlighting the correct
+                        # thing.
+                        build_panel = window.find_output_panel(
+                            plugin.rust.opanel.PANEL_NAME)
+                        panel_text = build_panel.substr(build_panel.sel()[0])
+                        if inline:
+                            self.assertEqual(panel_text, inline_highlight)
+                        else:
+                            self.assertEqual(panel_text, raw_highlight)
 
         check_sequence('next')
         if inline:
@@ -106,7 +115,8 @@ class TestMessageOrder(TestBase):
 
         :returns: Returns a tuple of two lists.  The first list is the sorted
             order of messages.  The first list is the unsorted order of
-            messages.  Each list has tuples (path, level, (row, col)).
+            messages.  Each list has tuples (path, level, (row, col),
+            inline_highlight, raw_highlight).
         """
         result = []
         for path in paths:
@@ -123,19 +133,28 @@ class TestMessageOrder(TestBase):
                 [x[2:] for x in unsorted_result])
 
     def _collect_message_order_view(self, view, result):
-        pattern = r'/\*(ERR|WARN) ([0-9]+)( [0-9]+)?\*/'
+        pattern = r'/\*(ERR|WARN) ([0-9,]+) "([^"]+)" "([^"]+)"\*/'
         regions = view.find_all(pattern)
+
+        def path_fixup(p):
+            if sys.platform == 'win32':
+                return p.replace('/', '\\')
+            else:
+                return p
+
         for region in regions:
             text = view.substr(region)
             m = re.match(pattern, text)
             rowcol = view.rowcol(region.end())
-            sort_index = int(m.group(2))
-            if m.group(3):
-                unsorted = int(m.group(3))
+            if ',' in m.group(2):
+                sort_index, unsorted = map(int, m.group(2).split(','))
             else:
+                sort_index = int(m.group(2))
                 unsorted = sort_index
+            inline_highlight = path_fixup(m.group(3))
+            raw_highlight = path_fixup(m.group(4))
             result.append((sort_index, unsorted, view.file_name(),
-                m.group(1), rowcol))
+                m.group(1), rowcol, inline_highlight, raw_highlight))
 
     def test_no_messages(self):
         self._with_open_file('tests/message-order/examples/ex_no_messages.rs',

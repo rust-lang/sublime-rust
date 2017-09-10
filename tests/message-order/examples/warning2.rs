@@ -79,6 +79,6 @@
 
 
 
-/*WARN 3*/fn unused_in_2() {
+/*WARN 3 "examples/warning2.rs:82" "  --> examples/warning2.rs:82:72"*/fn unused_in_2() {
 
 }
