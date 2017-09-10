@@ -124,7 +124,8 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         if method == 'clippy':
             # Clippy does not support cargo target filters, must be run for
             # all targets.
-            cmd = settings.get_command(method, command_info, self.cwd)
+            cmd = settings.get_command(method, command_info, self.cwd,
+                force_json=True)
             p = rust_proc.RustProc()
             p.run(self.window, cmd['command'], self.cwd, self, env=cmd['env'])
             p.wait()
@@ -135,7 +136,8 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         targets = td.determine_targets(self.triggered_file_name)
         for (target_src, target_args) in targets:
             cmd = settings.get_command(method, command_info, self.cwd,
-                initial_settings={'target': ' '.join(target_args)})
+                initial_settings={'target': ' '.join(target_args)},
+                force_json=True)
             if method == 'no-trans':
                 cmd['command'].extend(['--', '-Zno-trans', '-Zunstable-options'])
                 if (util.get_setting('rust_syntax_checking_include_tests', True) and

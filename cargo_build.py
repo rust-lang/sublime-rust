@@ -229,19 +229,26 @@ class CargoEventListener(sublime_plugin.EventListener):
                 lambda: messages.show_messages_for_view(view), 1)
 
 
-class RustNextMessageCommand(sublime_plugin.WindowCommand):
+class NextPrevBase(sublime_plugin.WindowCommand):
+
+    def _has_inline(self):
+        return util.get_setting('show_errors_inline', True) or \
+            self.window.id() in messages.WINDOW_MESSAGES
+
+
+class RustNextMessageCommand(NextPrevBase):
 
     def run(self, levels='all'):
-        if util.get_setting('show_errors_inline', True):
+        if self._has_inline():
             messages.show_next_message(self.window, levels)
         else:
             self.window.run_command('next_result')
 
 
-class RustPrevMessageCommand(sublime_plugin.WindowCommand):
+class RustPrevMessageCommand(NextPrevBase):
 
     def run(self, levels='all'):
-        if util.get_setting('show_errors_inline', True):
+        if self._has_inline():
             messages.show_prev_message(self.window, levels)
         else:
             self.window.run_command('prev_result')

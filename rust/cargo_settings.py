@@ -350,7 +350,7 @@ class CargoSettings(object):
         return result
 
     def get_command(self, cmd_name, cmd_info,
-                    settings_path, initial_settings={}):
+                    settings_path, initial_settings={}, force_json=False):
         """Generates the command arguments for running Cargo.
 
         :param cmd_name: The name of the command, the key used to select a
@@ -361,6 +361,7 @@ class CargoSettings(object):
             directory.
         :keyword initial_settings: Initial settings to inject which override
             all other settings.
+        :keyword force_json: If True, will force JSON output.
 
         :Returns: A dictionary with the keys:
             - `command`: The command to run as a list of strings.
@@ -400,8 +401,8 @@ class CargoSettings(object):
             if v:
                 result.append('--release')
 
-        if cmd_info.get('allows_json', False) and \
-                util.get_setting('show_errors_inline', True):
+        if force_json or (cmd_info.get('allows_json', False) and
+                util.get_setting('show_errors_inline', True)):
             result.append('--message-format=json')
 
         # features
