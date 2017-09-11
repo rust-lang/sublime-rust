@@ -79,6 +79,11 @@ class OutputListener(rust_proc.ProcListener):
                 appended)
             if m:
                 path = os.path.join(self.base_path, m.group(1))
+                if not os.path.exists(path):
+                    # Panics outside of the crate display a path to that
+                    # crate's source file (such as libcore), which is probably
+                    # not available.
+                    return
                 lineno = int(m.group(2)) - 1
                 # Region columns appear to the left, so this is +1.
                 col = int(m.group(3))

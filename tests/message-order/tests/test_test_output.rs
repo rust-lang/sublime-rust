@@ -52,3 +52,10 @@ fn slow() {
     // This just prints a simple warning.
     std::thread::sleep(std::time::Duration::from_secs(65));
 }
+
+#[test]
+fn panic_outside_crate() {
+    // This (unfortunately) should not show up as an error when running tests
+    // since Rust prints the path to src/libcore/result.rs.
+    Err::<i32, &str>("err").unwrap();
+}
