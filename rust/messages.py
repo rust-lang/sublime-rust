@@ -10,7 +10,7 @@ import re
 import webbrowser
 from pprint import pprint
 
-from . import util, opanel
+from . import util
 
 # Key is window id.
 # Value is a dictionary: {
@@ -363,6 +363,8 @@ def _scroll_build_panel(window, message):
     """If the build output panel is open, scroll the output to the message
     selected."""
     if 'output_panel_region' in message:
+        # Defer cyclic import.
+        from . import opanel
         view = window.find_output_panel(opanel.PANEL_NAME)
         if view:
             view.sel().clear()
