@@ -233,8 +233,7 @@ class CargoEventListener(sublime_plugin.EventListener):
 class NextPrevBase(sublime_plugin.WindowCommand):
 
     def _has_inline(self):
-        return util.get_setting('show_errors_inline', True) or \
-            self.window.id() in messages.WINDOW_MESSAGES
+        return self.window.id() in messages.WINDOW_MESSAGES
 
 
 class RustNextMessageCommand(NextPrevBase):
