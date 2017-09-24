@@ -1,6 +1,7 @@
 {
     "target": "cargo_exec",
     "selector": "source.rust",
+    "keyfiles": ["Cargo.toml"],
     "command": "build",
 
     "variants": [
