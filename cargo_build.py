@@ -228,6 +228,16 @@ class CargoEventListener(sublime_plugin.EventListener):
             sublime.set_timeout(
                 lambda: messages.show_messages_for_view(view), 1)
 
+    def on_query_context(self, view, key, operator, operand, match_all):
+        # Used by the Escape-key keybinding to dismiss inline phantoms.
+        if key == 'rust_has_messages':
+            has_messages = view.window().id() in messages.WINDOW_MESSAGES
+            if operator == sublime.OP_EQUAL:
+                return operand == has_messages
+            elif operator == sublime.OP_NOT_EQUAL:
+                return operand != has_messages
+        return None
+
 
 class RustNextMessageCommand(sublime_plugin.WindowCommand):
 
@@ -253,3 +263,11 @@ class RustCancelCommand(sublime_plugin.WindowCommand):
         # Also call Sublime's cancel command, in case the user is using a
         # normal Sublime build.
         self.window.run_command('cancel_build')
+
+
+class RustDismissMessagesCommand(sublime_plugin.WindowCommand):
+
+    """Removes all inline messages."""
+
+    def run(self):
+        messages.clear_messages(self.window)

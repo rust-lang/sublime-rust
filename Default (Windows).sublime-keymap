@@ -14,4 +14,10 @@
             {"key": "selector", "operator":"equal", "operand": "source.rust"}
         ]
     },
+    {"keys": ["escape"], "command": "rust_dismiss_messages", "context":
+        [
+            {"key": "selector", "operator":"equal", "operand": "source.rust"},
+            {"key": "rust_has_messages", "operator": "equal", "operand": true}
+        ]
+    },
 ]
