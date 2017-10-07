@@ -770,7 +770,7 @@ impl<'a, T: MyTrait + OtherTrait> PrintInOption for T where
 //                  ^ keyword.operator
 //                                              ^^^ keyword.other
 //                                                  ^ entity.name.impl
-//                                                    ^^^^^ keyword.other
+//                                                    ^^^^^ meta.where keyword.other
     Option<T>: Debug {
 //^^^^^^^^^^^^^^^^^^^^ meta.impl
     fn print_in_option(self) {
@@ -948,7 +948,7 @@ pub fn new<T>() -> Fibonacci<T>
 
 pub fn new<T>() -> Fibonacci<T>
     where for <'a> &'a T: Add<Output = T>,
-//  ^^^^^ keyword.other.rust
+//  ^^^^^ meta.where keyword.other.rust
 //        ^^^ keyword.other.rust
 //            ^ punctuation.definition.generic.begin.rust
 //             ^^ storage.modifier.lifetime.rust
@@ -1066,3 +1066,35 @@ fn numbers() -> impl Iterator<Item = u64> {
     Generator(move || for a in (0..10) { yield a; } })
 //                                       ^^^^^ keyword.control
 }
+
+pub struct IterHolder<A> where A: Number {
+//                   ^^^ meta.struct meta.generic
+//                       ^^^^^ meta.struct meta.where keyword.other
+//                                ^^^^^^ meta.struct meta.where
+//                                       ^ meta.struct punctuation.definition.block.begin.rust
+    num: A
+}
+
+pub struct IterHolder<A>
+//                   ^^^ meta.struct meta.generic
+where
+//   <- meta.struct meta.where keyword.other
+    A: Number {
+//     ^^^^^^ meta.struct meta.where
+    num: A
+}
+
+struct A<T>(T) where T: AsRef<str>;
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.struct
+//                            ^^^ meta.struct meta.where storage.type
+//                                ^ punctuation.terminator
+//             ^^^^^ meta.struct meta.where keyword.other
+pub struct A<T>(T)
+//^^^^^^^^^^^^ meta.struct
+//  ^^^^^^ meta.struct storage.type
+where
+//^^^ meta.struct meta.where keyword.other
+    T: AsRef<str>;
+//^^^^^^^^^^^^^^^ meta.struct
+//           ^^^ meta.struct meta.where storage.type
+//               ^ punctuation.terminator

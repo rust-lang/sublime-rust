@@ -489,8 +489,10 @@ contexts:
   struct-body:
     - meta_scope: meta.struct.rust
     - include: comments
+    - match: '(?=\bwhere\b)'
+      push: impl-where
     - match: '(?=\()'
-      set: struct-tuple
+      push: struct-tuple
     - match: '(?=\{)'
       set: struct-classic
     - match: '(?=;)'
@@ -663,7 +665,7 @@ contexts:
     - match: '(?=\{)'
       set: impl-body
     - match: '(?=\bwhere\b)'
-      set: impl-where
+      push: impl-where
     - match: '{{identifier}}(?=<)'
       scope: entity.name.impl.rust
       push: generic-angles
@@ -677,10 +679,10 @@ contexts:
       scope: storage.modifier.lifetime.rust
 
   impl-where:
-    - meta_scope: meta.impl.rust
+    - meta_scope: meta.where.rust
     - include: comments
-    - match: '(?=\{)'
-      set: impl-body
+    - match: '(?=(\{|;))'
+      pop: true
     - match: \bwhere\b
       scope: keyword.other.rust
     - match: \bfor\b
@@ -688,14 +690,14 @@ contexts:
       push:
         - match: '(?=<)'
           push: generic-angles
-        - include: basic-identifiers
+        - include: type-any-identifier
         - match: '&'
           scope: keyword.operator.rust
         - match: '''{{identifier}}(?!\'')\b'
           scope: storage.modifier.lifetime.rust
         - match: '(?=\S)'
           pop: true
-    - include: basic-identifiers
+    - include: type-any-identifier
     - match: ':'
       scope: punctuation.separator.rust
 
@@ -755,7 +757,7 @@ contexts:
       pop: true
 
   fn-where:
-    - meta_scope: meta.function.rust
+    - meta_scope: meta.function.rust meta.where.rust
     - include: comments
     - match: '(?=\{)'
       set: fn-body
@@ -766,14 +768,14 @@ contexts:
       push:
         - match: '(?=<)'
           push: generic-angles
-        - include: basic-identifiers
+        - include: type-any-identifiers
         - match: '&'
           scope: keyword.operator.rust
         - match: '''{{identifier}}(?!\'')\b'
           scope: storage.modifier.lifetime.rust
         - match: '(?=\S)'
           pop: true
-    - include: basic-identifiers
+    - include: type-any-identifiers
     - match: ':'
       scope: punctuation.separator.rust
     - match: ';'
