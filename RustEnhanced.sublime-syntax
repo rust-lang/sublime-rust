@@ -215,7 +215,7 @@ contexts:
       scope: keyword.operator.rust
       push: after-operator
 
-    - match: '='
+    - match: '=(?!=)'
       scope: keyword.operator.rust
       push: after-operator
 
@@ -226,7 +226,22 @@ contexts:
       scope: punctuation.separator.rust
       push: after-operator
 
-    - match: '\.\.\.|\.\.||[-=<>&|!~@?+*/%^''#$]|\b_\b'
+    - match: '\.\.\.'
+      scope: keyword.operator.rust
+
+    - match: '\.\.'
+      scope: keyword.operator.rust
+
+    - match: '<<=|>>=|<<|>>'
+      scope: keyword.operator.rust
+
+    - match: '>=|<=|==|!=|&&|\|\|'
+      scope: keyword.operator.rust
+
+    - match: '\*=|/=|+=|-=|%=|\^='
+      scope: keyword.operator.rust
+
+    - match: '[-=<>&|!~@?+*/%^''#$]'
       scope: keyword.operator.rust
 
   attribute:

@@ -502,7 +502,7 @@ let o = match n {
 //        ^^ keyword.operator
 //           ^^^^^^^ string.quoted.double
     _ => "lots",
-//  ^ keyword.operator
+//  ^ source.rust
 //    ^^ keyword.operator
 };
 
@@ -574,7 +574,7 @@ match my_func() {
 //         ^^^ keyword.operator
 //                                  ^^ constant.other.placeholder
     _ => println!("Full number"),
-//  ^ keyword.operator
+//  ^ source.rust
 //    ^^ keyword.operator
 }
 // <- meta.block punctuation.definition.block.end
