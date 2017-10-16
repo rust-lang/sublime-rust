@@ -1,0 +1,5 @@
+<snippet>
+    <content><![CDATA[#[${1:attribute}(${2:target})]]]></content>
+    <tabTrigger>#</tabTrigger>
+    <scope>source.rust</scope>
+</snippet>

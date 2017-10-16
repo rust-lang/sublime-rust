@@ -1,0 +1,6 @@
+<snippet>
+    <content><![CDATA[#![plugin(${1:name})]]]></content>
+    <tabTrigger>plugin</tabTrigger>
+    <scope>source.rust</scope>
+    <description>#![plugin(…)]</description>
+</snippet>

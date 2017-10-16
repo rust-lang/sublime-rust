@@ -1,0 +1,6 @@
+<snippet>
+    <content><![CDATA[continue;]]></content>
+    <tabTrigger>continue</tabTrigger>
+    <scope>source.rust meta.block.rust</scope>
+    <description>continue;</description>
+</snippet>

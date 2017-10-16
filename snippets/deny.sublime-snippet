@@ -1,0 +1,6 @@
+<snippet>
+    <content><![CDATA[#[deny(${1:lint})]]]></content>
+    <tabTrigger>deny</tabTrigger>
+    <scope>source.rust</scope>
+    <description>#[deny(…)]</description>
+</snippet>

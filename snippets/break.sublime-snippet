@@ -1,0 +1,6 @@
+<snippet>
+    <content><![CDATA[break;]]></content>
+    <tabTrigger>break</tabTrigger>
+    <scope>source.rust meta.block.rust</scope>
+    <description>break;</description>
+</snippet>

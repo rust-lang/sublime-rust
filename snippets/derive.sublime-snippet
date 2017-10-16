@@ -1,0 +1,6 @@
+<snippet>
+    <content><![CDATA[#[derive(${1:Debug})]]]></content>
+    <tabTrigger>derive</tabTrigger>
+    <scope>source.rust</scope>
+    <description>#[derive(…)]</description>
+</snippet>
