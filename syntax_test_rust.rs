@@ -1098,3 +1098,10 @@ where
 //^^^^^^^^^^^^^^^ meta.struct
 //           ^^^ meta.struct meta.where storage.type
 //               ^ punctuation.terminator
+
+fn foo<F: FnMut(i32, i32 /*asd*/) -> i32>(f: F) {
+//                       ^^^^^^^ meta.generic comment
+    let lam = |time: i32 /* comment */, other: i32| {
+//                       ^^^^^^^^^^^^^ meta.function.parameters comment
+    };
+}

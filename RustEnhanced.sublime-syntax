@@ -446,6 +446,7 @@ contexts:
       pop: true
 
   type-any-identifier:
+    - include: comments
     - include: support-type
     - include: return-type
     - match: '&'
