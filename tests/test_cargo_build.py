@@ -21,11 +21,6 @@ if sys.platform == 'win32':
 
 class TestCargoBuild(TestBase):
 
-    def _get_build_output(self, window):
-        opanel = window.find_output_panel(plugin.rust.opanel.PANEL_NAME)
-        output = opanel.substr(sublime.Region(0, opanel.size()))
-        return output
-
     def setUp(self):
         super(TestCargoBuild, self).setUp()
         self._cargo_clean(multi_target_root)
@@ -430,7 +425,7 @@ class TestCargoBuild(TestBase):
 
     def _test_ambiguous_auto_build2(self, view):
         window = view.window()
-        self.quick_panel_items = ['--test test1', '--test test2']
+        self.quick_panel_items = ['--test test1', '--test test2', '--test test_context']
         self.quick_panel_index = 0
         self._run_build_wait('auto')
         output = self._get_build_output(window)

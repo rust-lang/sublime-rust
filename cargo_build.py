@@ -284,3 +284,183 @@ class RustDismissMessagesCommand(sublime_plugin.WindowCommand):
 
     def run(self):
         messages.clear_messages(self.window)
+
+
+class RustListMessagesCommand(sublime_plugin.WindowCommand):
+
+    """Shows a quick panel with a list of all messages."""
+
+    def run(self):
+        messages.list_messages(self.window)
+
+
+# Patterns used to help find test function names.
+# This is far from perfect, but should be good enough.
+SPACE = r'[ \t]'
+OPT_COMMENT = r"""(?:
+    (?: [ \t]* //.*)
+  | (?: [ \t]* /\*.*\*/ [ \t]* )
+)?"""
+IDENT = r"""(?:
+    [a-z A-Z] [a-z A-Z 0-9 _]*
+  | _         [a-z A-Z 0-9 _]+
+)"""
+TEST_PATTERN = r"""(?x)
+    {SPACE}* \# {SPACE}* \[ {SPACE}* {WHAT} {SPACE}* \] {SPACE}*
+    (?:
+        (?: {SPACE}* \#\[  [^]]+  \] {OPT_COMMENT} \n )
+      | (?: {OPT_COMMENT} \n )
+    )*
+    .* fn {SPACE}+ ({IDENT}+)
+"""
+
+
+def _target_to_test(what, view, on_done):
+    """Helper used to determine build target from given view."""
+    td = target_detect.TargetDetector(view.window())
+    targets = td.determine_targets(view.file_name())
+    if len(targets) == 0:
+        sublime.error_message('Error: Could not determine target to %s.' % what)
+    elif len(targets) == 1:
+        on_done(' '.join(targets[0][1]))
+    else:
+        # Can't determine a single target, let the user choose one.
+        display_items = [' '.join(x[1]) for x in targets]
+
+        def quick_on_done(idx):
+            on_done(targets[idx][1])
+
+        view.window().show_quick_panel(display_items, quick_on_done)
+
+
+def _pt_to_test_name(what, pt, view):
+    """Helper used to convert Sublime point to a test/bench function name."""
+    fn_names = []
+    pat = TEST_PATTERN.format(WHAT=what, **globals())
+    regions = view.find_all(pat, 0, r'\1', fn_names)
+    if not regions:
+        sublime.error_message('Could not find a Rust %s function.' % what)
+        return None
+    # Assuming regions are in ascending order.
+    indices = [i for (i, r) in enumerate(regions) if r.a <= pt]
+    if not indices:
+        sublime.error_message('No %s functions found about the current point.' % what)
+        return None
+    return fn_names[indices[-1]]
+
+
+def _cargo_test_pt(what, pt, view):
+    """Helper used to run a test for a given point in the given view."""
+    def do_test(target):
+        test_fn_name = _pt_to_test_name(what, pt, view)
+        if test_fn_name:
+            view.window().run_command('cargo_exec', args={
+                'command': what,
+                'settings': {
+                    'target': target,
+                    'extra_run_args': test_fn_name
+                }
+            })
+
+    _target_to_test(what, view, do_test)
+
+
+class CargoHere(sublime_plugin.WindowCommand):
+
+    """Base class for mouse-here commands.
+
+    Subclasses set `what` attribute.
+    """
+
+    what = None
+
+    def run(self, event):
+        view = self.window.active_view()
+        if not view:
+            return
+        pt = view.window_to_text((event['x'], event['y']))
+        _cargo_test_pt(self.what, pt, view)
+
+    def want_event(self):
+        return True
+
+
+class CargoTestHereCommand(CargoHere):
+
+    """Determines the test name at the current mouse position, and runs just
+    that test."""
+
+    what = 'test'
+
+
+class CargoBenchHereCommand(CargoHere):
+
+    """Determines the benchmark at the current mouse position, and runs just
+    that benchmark."""
+
+    what = 'bench'
+
+
+class CargoTestAtCursorCommand(sublime_plugin.TextCommand):
+
+    """Determines the test name at the current cursor position, and runs just
+    that test."""
+
+    def run(self, edit):
+        pt = self.view.sel()[0].begin()
+        _cargo_test_pt('test', pt, self.view)
+
+
+class CargoCurrentFile(sublime_plugin.WindowCommand):
+
+    """Base class for current file commands.
+
+    Subclasses set `what` attribute.
+    """
+
+    what = None
+
+    def run(self):
+        print('current file')
+        def _test_file(target):
+            print('target is %r' % target)
+            self.window.run_command('cargo_exec', args={
+                'command': self.what,
+                'settings': {
+                    'target': target
+                }
+            })
+
+        view = self.window.active_view()
+        _target_to_test(self.what, view, _test_file)
+
+
+class CargoTestCurrentFileCommand(CargoCurrentFile):
+
+    """Runs all tests in the current file."""
+
+    what = 'test'
+
+
+class CargoBenchCurrentFileCommand(CargoCurrentFile):
+
+    """Runs all benchmarks in the current file."""
+
+    what = 'bench'
+
+
+class CargoRunCurrentFileCommand(CargoCurrentFile):
+
+    """Runs the current file."""
+
+    what = 'run'
+
+
+class CargoBenchAtCursorCommand(sublime_plugin.TextCommand):
+
+    """Determines the benchmark name at the current cursor position, and runs
+    just that benchmark."""
+
+    def run(self, edit):
+        pt = self.view.sel()[0].begin()
+        _cargo_test_pt('bench', pt, self.view)

@@ -31,5 +31,25 @@
             "base_file": "${packages}/Rust Enhanced/RustEnhanced.sublime-settings",
             "default": "{\n\t$0\n}\n"
         }
-    }
+    },
+    {
+        "caption": "Rust: List All Messages",
+        "command": "rust_list_messages"
+    },
+    {
+        "caption": "Rust: Run Test At Cursor",
+        "command": "cargo_test_at_cursor"
+    },
+    {
+        "caption": "Rust: Run Tests In Current File",
+        "command": "cargo_test_current_file"
+    },
+    {
+        "caption": "Rust: Run Benchmark At Cursor",
+        "command": "cargo_bench_at_cursor"
+    },
+    {
+        "caption": "Rust: Run Benchmarks In Current File",
+        "command": "cargo_bench_current_file"
+    },
 ]

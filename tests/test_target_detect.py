@@ -32,7 +32,8 @@ class TestTargetDetect(TestBase):
             # Shared module in test, not possible to easily determine which
             # test it belongs to.
             ('tests/common/helpers.rs', [('tests/test1.rs', '--test test1'),
-                                         ('tests/test2.rs', '--test test2')]),
+                                         ('tests/test2.rs', '--test test2'),
+                                         ('tests/test_context.rs', '--test test_context')]),
             # proc-macro kind
             ('pmacro/src/lib.rs', [('pmacro/src/lib.rs', '--lib')]),
             # Different lib types.

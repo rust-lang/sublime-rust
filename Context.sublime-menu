@@ -1,0 +1,116 @@
+// XXX
+// run/test/bench with args?
+//
+[
+    {
+        "caption": "Rust",
+        "id": "rust_context",
+        "children": [
+            {
+                "caption": "Cargo",
+                "id": "rust_context_cargo",
+                "children": [
+                    {
+                        "caption": "Clean",
+                        "command": "cargo_exec",
+                        "args": {
+                            "command": "clean"
+                        }
+                    },
+                    {
+                        "caption": "Check",
+                        "command": "cargo_exec",
+                        "args": {
+                            "command": "check"
+                        }
+                    },
+                    {
+                        "caption": "-",
+                    },
+                    {
+                        "caption": "Test Here",
+                        "command": "cargo_test_here",
+                    },
+                    {
+                        "caption": "Test Current File",
+                        "command": "cargo_test_current_file",
+                    },
+                    {
+                        "caption": "Test All",
+                        "command": "cargo_exec",
+                        "args": {
+                            "command": "test"
+                        }
+                    },
+                    {
+                        "caption": "-",
+                    },
+                    {
+                        "caption": "Bench Here",
+                        "command": "cargo_bench_here",
+                    },
+                    {
+                        "caption": "Bench Current File",
+                        "command": "cargo_bench_current_file",
+                    },
+                    {
+                        "caption": "Bench All",
+                        "command": "cargo_exec",
+                        "args": {
+                            "command": "bench"
+                        }
+                    },
+                    {
+                        "caption": "-",
+                    },
+                    {
+                        "caption": "Run This File",
+                        "command": "cargo_run_current_file",
+                    },
+                    {
+                        "caption": "Doc",
+                        "command": "cargo_exec",
+                        "args": {
+                            "command": "doc",
+                        }
+                    },
+                    {
+                        "caption": "Cancel Build",
+                        "command": "rust_cancel"
+                    }
+                ]
+            },
+            {
+                "caption": "-",
+            },
+            {
+                "caption": "Clear Messages",
+                "command": "rust_dismiss_messages",
+            },
+            {
+                "caption": "List All Messages",
+                "command": "rust_list_messages",
+            },
+            {
+                "caption": "-",
+            },
+            {
+                "caption": "Open Settings",
+                "command": "edit_settings",
+                "args":
+                {
+                    "base_file": "${packages}/Rust Enhanced/RustEnhanced.sublime-settings",
+                    "default": "{\n\t$0\n}\n"
+                }
+            },
+            {
+                "caption": "Configure Cargo Build",
+                "command": "cargo_configure",
+            },
+            {
+                "caption": "On-Save Checking",
+                "command": "toggle_rust_syntax_setting",
+            },
+        ]
+    }
+]

@@ -99,6 +99,11 @@ class TestBase(unittest.TestCase):
         # Wait for it to finish.
         self._get_rust_thread().join()
 
+    def _get_build_output(self, window):
+        opanel = window.find_output_panel(plugin.rust.opanel.PANEL_NAME)
+        output = opanel.substr(sublime.Region(0, opanel.size()))
+        return output
+
     def _with_open_file(self, filename, f, **kwargs):
         """Opens filename (relative to the plugin) in a new view, calls
         f(view) to perform the tests.

@@ -19,10 +19,18 @@ from . import util
 # }
 # `path` is the absolute path to the file.
 # Each msg_dict has the following:
-# - `level`
-# - `span`
-# - `is_main`
-# - `message`
+# - `level`: Message level as a string such as "error", or "info".
+# - `span`: Location of the message (0-based):
+#   `((line_start, col_start), (line_end, col_end))`
+#   May be `None` to indicate no particular spot.
+# - `is_main`: If True, this is a top-level message.  False is used for
+#   attached detailed diagnostic information, child notes, etc.
+# - `path`: Absolute path to the file.
+# - `text`: The raw text of the message without any minihtml markup.
+# - `phantom_text`: The string used for showing phantoms that includes the
+#   minihtml markup.
+# - `output_panel_region`: Optional Sublime Region object that indicates the
+#   region in the build output panel that corresponds with this message.
 WINDOW_MESSAGES = {}
 
 
@@ -317,15 +325,15 @@ def _sort_messages(window):
 
 def show_next_message(window, levels):
     current_idx = _advance_next_message(window, levels)
-    _show_message(window, levels, current_idx)
+    _show_message(window, current_idx)
 
 
 def show_prev_message(window, levels):
     current_idx = _advance_prev_message(window, levels)
-    _show_message(window, levels, current_idx)
+    _show_message(window, current_idx)
 
 
-def _show_message(window, levels, current_idx):
+def _show_message(window, current_idx, transient=False, force_open=False):
     if current_idx is None:
         return
     try:
@@ -334,26 +342,39 @@ def _show_message(window, levels, current_idx):
         return
     paths = window_info['paths']
     path, messages = _ith_iter_item(paths.items(), current_idx[0])
-    view = window.find_open_file(path)
     msg = messages[current_idx[1]]
     _scroll_build_panel(window, msg)
-    if view:
-        _scroll_to_message(view, msg)
-    else:
-        # show_at_center is buggy with newly opened views (see
-        # https://github.com/SublimeTextIssues/Core/issues/538).
-        # ENCODED_POSITION is 1-based.
-        row, col = msg['span'][0]
+    view = None
+    if not transient and not force_open:
+        view = window.find_open_file(path)
+        if view:
+            _scroll_to_message(view, msg, transient)
+    if not view:
+        flags = sublime.ENCODED_POSITION
+        if transient:
+            # FORCE_GROUP is undocumented.  It forces the view to open in the
+            # current group, even if the view is already open in another
+            # group.  This is necessary to prevent the quick panel from losing
+            # focus. See:
+            # https://github.com/SublimeTextIssues/Core/issues/1041
+            flags |= sublime.TRANSIENT | sublime.FORCE_GROUP
+        if msg['span']:
+            # show_at_center is buggy with newly opened views (see
+            # https://github.com/SublimeTextIssues/Core/issues/538).
+            # ENCODED_POSITION is 1-based.
+            row, col = msg['span'][0]
+        else:
+            row, col = (999999999, 1)
         view = window.open_file('%s:%d:%d' % (path, row + 1, col + 1),
-                                sublime.ENCODED_POSITION)
+                                flags)
         # Block until the view is loaded.
-        _show_message_wait(view, levels, messages, current_idx)
+        _show_message_wait(view, messages, current_idx)
 
 
-def _show_message_wait(view, levels, messages, current_idx):
+def _show_message_wait(view, messages, current_idx):
     if view.is_loading():
         def f():
-            _show_message_wait(view, levels, messages, current_idx)
+            _show_message_wait(view, messages, current_idx)
         sublime.set_timeout(f, 10)
     # The on_load event handler will call show_messages_for_view which
     # should handle displaying the messages.
@@ -376,9 +397,10 @@ def _scroll_build_panel(window, message):
             view.erase_regions('bug')
 
 
-def _scroll_to_message(view, message):
+def _scroll_to_message(view, message, transient):
     """Scroll view to the message."""
-    view.window().focus_view(view)
+    if not transient:
+        view.window().focus_view(view)
     r = _span_to_region(view, message['span'])
     view.sel().clear()
     view.sel().add(r.a)
@@ -502,6 +524,48 @@ def _is_matching_level(levels, msg_dict):
         return True
     else:
         return False
+
+
+def _relative_path(window, path):
+    """Convert an absolute path to a relative path used for a truncated
+    display."""
+    for folder in window.folders():
+        if path.startswith(folder):
+            return os.path.relpath(path, folder)
+    return path
+
+
+def list_messages(window):
+    """Show a list of all messages."""
+    try:
+        win_info = WINDOW_MESSAGES[window.id()]
+    except KeyError:
+        # XXX: Or dialog?
+        window.show_quick_panel(["No messages available"], None)
+        return
+    panel_items = []
+    jump_to = []
+    for path_idx, (path, msgs) in enumerate(win_info['paths'].items()):
+        for msg_idx, msg_dict in enumerate(msgs):
+            if not msg_dict['is_main']:
+                continue
+            jump_to.append((path_idx, msg_idx))
+            if msg_dict['span']:
+                path_label = '%s:%s' % (
+                    _relative_path(window, path),
+                    msg_dict['span'][0][0] + 1)
+            else:
+                path_label = _relative_path(window, path)
+            item = [msg_dict['text'], path_label]
+            panel_items.append(item)
+
+    def on_done(idx):
+        _show_message(window, jump_to[idx], force_open=True)
+
+    def on_highlighted(idx):
+        _show_message(window, jump_to[idx], transient=True)
+
+    window.show_quick_panel(panel_items, on_done, 0, 0, on_highlighted)
 
 
 def add_rust_messages(window, cwd, info, target_path, msg_cb):
