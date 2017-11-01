@@ -21,6 +21,13 @@
                 }
             },
             {
+                "caption": "Clippy",
+                "command": "cargo_exec",
+                "args": {
+                    "command": "clippy"
+                }
+            },
+            {
                 "caption": "-",
             },
             {
