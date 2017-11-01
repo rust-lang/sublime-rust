@@ -136,7 +136,7 @@ def add_message(window, path, span, level, is_main, text, markup_text, msg_cb):
         'text': text,
         'phantom_text': phantom_text,
     }
-    if to_add in messages:
+    if _is_duplicate(to_add, messages):
         # Don't add duplicates.
         return
     messages.append(to_add)
@@ -145,6 +145,17 @@ def add_message(window, path, span, level, is_main, text, markup_text, msg_cb):
         _show_phantom(view, level, span, phantom_text)
     if msg_cb:
         msg_cb(to_add)
+
+
+def _is_duplicate(to_add, messages):
+    # Primarily to avoid comparing the `output_panel_region` key.
+    for message in messages:
+        for key, value in to_add.items():
+            if message[key] != value:
+                break
+        else:
+            return True
+    return False
 
 
 def has_message_for_path(window, path):
