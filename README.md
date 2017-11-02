@@ -93,6 +93,10 @@ Projects with multiple build targets are supported too (--lib, --bin, --example,
    }
 ```
 
+## Context Menu
+The Sublime context menu includes a Rust entry with a variety of commands.
+See [context menu docs](docs/context.md) for more information.
+
 ## Settings
 To customize the settings, use the command from the Sublime menu:
 
