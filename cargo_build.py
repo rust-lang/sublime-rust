@@ -358,7 +358,7 @@ def _cargo_test_pt(what, pt, view):
                 'command': what,
                 'settings': {
                     'target': target,
-                    'extra_run_args': test_fn_name
+                    'extra_run_args': '--exact ' + test_fn_name
                 }
             })
 

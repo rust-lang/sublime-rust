@@ -39,7 +39,7 @@ class TestContext(TestBase):
         self._get_rust_thread().join()
         output = self._get_build_output(view.window())
         self.assertRegex(output,
-            r'\[Running: cargo test --test test_context --message-format=json -- test1\]')
+            r'\[Running: cargo test --test test_context --message-format=json -- --exact test1\]')
 
     def test_cargo_test_at_cursor(self):
         self._with_open_file('tests/multi-targets/tests/test_context.rs',
@@ -54,7 +54,7 @@ class TestContext(TestBase):
         self._get_rust_thread().join()
         output = self._get_build_output(view.window())
         self.assertRegex(output,
-            r'\[Running: cargo test --test test_context --message-format=json -- expected_panic1\]')
+            r'\[Running: cargo test --test test_context --message-format=json -- --exact expected_panic1\]')
 
     def test_cargo_test_current_file(self):
         self._with_open_file('tests/multi-targets/tests/test_context.rs',
@@ -80,7 +80,7 @@ class TestContext(TestBase):
         self._get_rust_thread().join()
         output = self._get_build_output(view.window())
         self.assertRegex(output,
-            r'\[Running: cargo bench --bench bench_context --message-format=json -- bench2\]')
+            r'\[Running: cargo bench --bench bench_context --message-format=json -- --exact bench2\]')
 
     def test_cargo_bench_at_cursor(self):
         self._with_open_file('tests/multi-targets/benches/bench_context.rs',
@@ -95,7 +95,7 @@ class TestContext(TestBase):
         self._get_rust_thread().join()
         output = self._get_build_output(view.window())
         self.assertRegex(output,
-            r'\[Running: cargo bench --bench bench_context --message-format=json -- bench2\]')
+            r'\[Running: cargo bench --bench bench_context --message-format=json -- --exact bench2\]')
 
     def test_cargo_bench_current_file(self):
         self._with_open_file('tests/multi-targets/benches/bench_context.rs',
