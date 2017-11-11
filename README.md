@@ -5,13 +5,14 @@
 This is a Sublime Text 3 package which supports Rust starting with version 1.0,
 it makes no attempt at supporting earlier incompatible versions.
 
-As of version 1.0.0 this package will no longer support Sublime Text 2. At the time of writing, ST3 is almost reaching stable, and we recommend migrating to that version if you need Rust Support.
-
-This package used to be called 'Rust', but as of version 3, Sublime now comes with Rust built-in.  The built-in version on Sublime is actually just a snapshot of this package [with some fixes](https://github.com/sublimehq/Packages/issues/178#issuecomment-197050427).
-This package is still active and will continue to update and release, so if you want up to date features, and extra tools (such as syntax checking or building) we recommend using this package. It should override the default Rust within Sublime.
-Syntax changes which happen here will eventually be pushed upstream into Sublime Core Packages repo, but extra features will stay here.
+This package used to be called 'Rust', but as of version 3, Sublime now comes with Rust built-in.  The built-in version on Sublime is actually just a snapshot of this package [with some fixes](https://github.com/sublimehq/Packages/issues/178#issuecomment-197050427) from quite some time ago.
+This package is still active and will continue to update and release, so if you want up to date features, and extra tools (such as syntax checking or building) we recommend using this package. It does not automatically override the built-in Rust package so you will have to disable it, and check "Rust Enhanced" is set.
+There is currently no plan to push upstream changes back into the Sublime Core Packages repo, and extra features will stay here.
 
 For syntax highlighting for Cargo files. Its recommended installing this with the TOML package.
+
+![Alt text](docs/img/running_tests.gif?raw=true "Running Tests with Rust Enhanced")
+![Alt text](docs/img/showing_errors.gif?raw=true "Highlighting errors and warnings with Rust Enhanced")
 
 ## Installation
 
