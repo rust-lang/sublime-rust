@@ -11,7 +11,7 @@ There is currently no plan to push upstream changes back into the Sublime Core P
 
 For syntax highlighting for Cargo files. Its recommended installing this with the TOML package.
 
-![Alt text](docs/img/running_tests.gif?raw=true "Running Tests with Rust Enhanced") ![Alt text](docs/img/showing_errors.gif?raw=true "Highlighting errors and warnings with Rust Enhanced")
+<img src="docs/img/running_tests.gif?raw=true" alt="Running Tests with Rust Enhanced" width=430 style="margin-right:10px"> <img src="docs/img/showing_errors.gif?raw=true" alt="Highlighting errors and warnings with Rust Enhanced" width=430>
 
 ## Installation
 
