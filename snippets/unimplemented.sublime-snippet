@@ -1,0 +1,8 @@
+<snippet>
+    <content><![CDATA[
+unimplemented!()
+]]></content>
+    <tabTrigger>unimplemented</tabTrigger>
+    <scope>source.rust</scope>
+    <description>unimplemented!(…)</description>
+</snippet>
