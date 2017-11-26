@@ -62,6 +62,7 @@ This relies on Cargo and Rust (>= 1.8.0) being installed and on your system path
 | `rust_syntax_checking` | `true` | Enable the on-save syntax checking. |
 | `rust_syntax_checking_method` | `"check"` | The method used for checking your code (see below). |
 | `rust_syntax_checking_include_tests` | `true` | Enable checking of test code within `#[cfg(test)]` sections (only for `no-trans` method). |
+| `rust_syntax_hide_warnings` | `false` | Don't show warnings when syntax checking |
 
 The available checking methods are:
 
@@ -92,14 +93,15 @@ Projects with multiple build targets are supported too (--lib, --bin, --example,
        }
    }
 ```
-### RLS
+## RLS 
 [RLS (Rust Language Server)](https://github.com/rust-lang-nursery/rls) Support is experimental and won't be available just yet.   
 This is because the RLS Server is still in Alpha and the Sublime LSP plugin is work in progress. However, if you are interested in playing with RLS early, here are the steps.   
 * Setup Rust Language Server - Instructions here https://github.com/rust-lang-nursery/rls
 * Check its ready to use by running `rustup run nightly rls --version` if you get a version back its up and running.
-* Now install LSP https://github.com/tomv564/LSP
+* Now install LSP https://github.com/tomv564/LSP (follow the git install option, the [package control install didn't work properly for me](https://github.com/tomv564/LSP/issues/215)
 * Once you’ve got LSP installed, go Sublime preferences —> Package settings —> LSP , and paste this into user settings (the right-hand pane): https://gist.github.com/urschrei/b0427f513dc78a9e32329e4bc8a65846  Soon this step won't be needed once our changes are merged in.
-* Once LSP is installed, enable it for Rust (you can do this globally or within your project)
+* Once LSP is installed, enable it for Rust using LSP: Enable Language Server Globally | Project
+* You should see rls initialized in the status bar at the bottom, it should be working at this point.
 
 ## Settings
 To customize the settings, use the command from the Sublime menu:
