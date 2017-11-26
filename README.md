@@ -92,6 +92,14 @@ Projects with multiple build targets are supported too (--lib, --bin, --example,
        }
    }
 ```
+### RLS
+[RLS (Rust Language Server)](https://github.com/rust-lang-nursery/rls) Support is experimental and won't be available just yet.   
+This is because the RLS Server is still in Alpha and the Sublime LSP plugin is work in progress. However, if you are interested in playing with RLS early, here are the steps.   
+* Setup Rust Language Server - Instructions here https://github.com/rust-lang-nursery/rls
+* Check its ready to use by running `rustup run nightly rls --version` if you get a version back its up and running.
+* Now install LSP https://github.com/tomv564/LSP
+* Once you’ve got LSP installed, go Sublime preferences —> Package settings —> LSP , and paste this into user settings (the right-hand pane): https://gist.github.com/urschrei/b0427f513dc78a9e32329e4bc8a65846  Soon this step won't be needed once our changes are merged in.
+* Once LSP is installed, enable it for Rust (you can do this globally or within your project)
 
 ## Settings
 To customize the settings, use the command from the Sublime menu:
@@ -101,23 +109,8 @@ To customize the settings, use the command from the Sublime menu:
 Additionally, you can customize settings per-project by adding settings to your `.sublime-project` file under the `"settings"` key.
 
 ## Development
-
-The files are written in the JSON format supported by the Sublime Text
-package [AAAPackageDev](https://github.com/SublimeText/AAAPackageDev),
-because the format is much easier to read / edit
-than the xml based plist format.
-
-So install that package and then work on the .JSON-* files. There is a
-build system that comes with that package, so if everything is set up
-right, you should just be able to trigger the build (F7) and get the
-corresponding .tmLanguage / .tmPreferences files. It will also display
-errors if you have not formatted the file correctly.
-
-One impact of using this indirect format is that you usually have to double
-escape anything in the match patterns, ie, "\\(" has to be "\\\\(" as otherwise
-it will try to interpret '\\(' as a JSON escape code (which doesn't exist).
-
-We have just moved to the new .sublime-syntax file, which only supports ST3 and upwards. Any PR's should be updating this file and not the old tmLanguage file.
+Development is quite simple, just check out this project to your Sublime Text 3 packages folder, and switch to using this one.   
+Syntax definitions are defined in the `RustEnahcned.sublime-syntax` file.
 
 ## Credits
 
