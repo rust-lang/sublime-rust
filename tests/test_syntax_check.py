@@ -223,6 +223,9 @@ class TestSyntaxCheck(TestBase):
                     # This message only shows up in no-trans.
                     if method != 'no-trans':
                         return False
+                elif check == 'nightly':
+                    # This message only shows on nightly.
+                    return 'nightly' in self.rustc_version
                 else:
                     if not semver.match(self.rustc_version, check):
                         return False
@@ -254,8 +257,8 @@ class TestSyntaxCheck(TestBase):
                         view.file_name(), method, phantoms))
                 del phantoms[i]
         if len(phantoms):
-            raise AssertionError('Got extra phantoms for %r (method=%s): %r' % (
-                view.file_name(), method, phantoms))
+            raise AssertionError('Got extra phantoms for %r (method=%s, version=%s): %r' % (
+                view.file_name(), method, self.rustc_version, phantoms))
 
         # Check regions.
         found_regions = set()

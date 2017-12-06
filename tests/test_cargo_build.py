@@ -12,11 +12,21 @@ multi_target_root = os.path.join(plugin_path,
 
 
 def exe(s):
-    return s
-
-if sys.platform == 'win32':
-    def exe(s):
+    """Wrapper around a filename to add .exe extension on windows."""
+    if sys.platform == 'win32':
         return s + '.exe'
+    else:
+        return s
+
+
+def version(filename, check_version):
+    """Wrapper around a filename to make it optional based on the rustc version."""
+    rustc_version = util.get_rustc_version(sublime.active_window(),
+                                           plugin_path)
+    if semver.match(rustc_version, check_version):
+        return filename
+    else:
+        return None
 
 
 class TestCargoBuild(TestBase):
@@ -42,19 +52,40 @@ class TestCargoBuild(TestBase):
 
     def _test_build_with_target(self, view):
         targets = [
-            ('--bin bin1', [exe('bin1'), 'libmulti_targets.rlib']),
-            ('--bin bin2', [exe('bin2'), 'libmulti_targets.rlib']),
-            ('--bin otherbin', [exe('otherbin'), 'libmulti_targets.rlib']),
-            ('--bin multi-targets', [exe('multi-targets'),
-                                     'libmulti_targets.rlib']),
-            ('--lib', ['libmulti_targets.rlib']),
+            ('--bin bin1', [
+                exe('bin1'),
+                version('bin1.d', '>=1.21.0'),
+                'libmulti_targets.rlib']),
+            ('--bin bin2', [
+                exe('bin2'),
+                version('bin2.d', '>=1.21.0'),
+                'libmulti_targets.rlib']),
+            ('--bin otherbin', [
+                exe('otherbin'),
+                version('otherbin.d', '>=1.21.0'),
+                'libmulti_targets.rlib']),
+            ('--bin multi-targets', [
+                exe('multi-targets'),
+                version('multi-targets.d', '>=1.21.0'),
+                'libmulti_targets.rlib']),
+            ('--lib', [
+                'libmulti_targets.rlib',
+                version('libmulti_targets.d', '>=1.21.0')]),
             # Not clear to me why it produces ex1-* files.
-            ('--example ex1', [exe('examples/ex1'), exe('examples/ex1-*'),
-                               'libmulti_targets.rlib']),
-            # I'm actually uncertain why Cargo builds all bins here.
-            ('--test test1', [exe('bin1'), exe('bin2'), exe('multi-targets'),
-                              exe('otherbin'), exe('feats'), exe('penv'),
-                              'libmulti_targets.rlib', 'test1-*']),
+            ('--example ex1', [
+                exe('examples/ex1'),
+                exe('examples/ex1-*'),
+                version('examples/ex1.d', '>=1.21.0'),
+                'libmulti_targets.rlib']),
+            ('--test test1', [
+                exe('bin1'),
+                exe('bin2'),
+                exe('multi-targets'),
+                exe('otherbin'),
+                exe('feats'),
+                exe('penv'),
+                'libmulti_targets.rlib',
+                'test1-*']),
             # bench requires nightly
         ]
         window = view.window()
@@ -72,6 +103,8 @@ class TestCargoBuild(TestBase):
                 not x.startswith('.') and
                 not x.endswith('.pdb')]
             files.sort()
+            # Remove any option (None) entries.
+            expected_files = list(filter(None, expected_files))
             expected_files.sort()
             for file, expected_file in zip(files, expected_files):
                 if not fnmatch.fnmatch(file, expected_file):
@@ -201,8 +234,8 @@ class TestCargoBuild(TestBase):
         window = view.window()
         self._run_build_wait('test')
         output = self._get_build_output(window)
-        self.assertRegex(output, '(?m)^test sample_test1 \.\.\. ok$')
-        self.assertRegex(output, '(?m)^test sample_test2 \.\.\. ok$')
+        self.assertRegex(output, r'(?m)^test sample_test1 \.\.\. ok$')
+        self.assertRegex(output, r'(?m)^test sample_test2 \.\.\. ok$')
 
     def test_test_with_args(self):
         """Test "Test (with args) variant."""
@@ -214,14 +247,14 @@ class TestCargoBuild(TestBase):
         self._run_build_wait('test',
             settings={'extra_run_args': 'sample_test2'})
         output = self._get_build_output(window)
-        self.assertNotRegex(output, '(?m)^test sample_test1 \.\.\. ')
-        self.assertRegex(output, '(?m)^test sample_test2 \.\.\. ok')
+        self.assertNotRegex(output, r'(?m)^test sample_test1 \.\.\. ')
+        self.assertRegex(output, r'(?m)^test sample_test2 \.\.\. ok')
 
     def test_check(self):
         """Test "Check" variant."""
         rustc_version = util.get_rustc_version(sublime.active_window(),
                                                plugin_path)
-        if plugin.rust.semver.match(rustc_version, '<1.16.0'):
+        if semver.match(rustc_version, '<1.16.0'):
             print('Skipping "Check" test, need rustc >= 1.16')
             return
         self._with_open_file('tests/error-tests/examples/err_ex.rs',
@@ -246,8 +279,8 @@ class TestCargoBuild(TestBase):
                                                    'toolchain': 'nightly'})
         self._run_build_wait('bench')
         output = self._get_build_output(window)
-        self.assertRegex(output, '(?m)^test example1 \.\.\. bench:')
-        self.assertRegex(output, '(?m)^test example2 \.\.\. bench:')
+        self.assertRegex(output, r'(?m)^test example1 \.\.\. bench:')
+        self.assertRegex(output, r'(?m)^test example2 \.\.\. bench:')
 
     def test_clean(self):
         """Test "Clean" variant."""
