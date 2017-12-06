@@ -9,7 +9,6 @@ import itertools
 import os
 import re
 import webbrowser
-from pprint import pprint
 
 from . import util
 
@@ -720,16 +719,21 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
                 # end of the message, which we don't want.
                 return html.escape(txt.strip(), quote=False).\
                     replace('\n', '<br>' + indent)
-        parts = re.split(LINK_PATTERN, message['text'])
-        escaped_text = ''.join(map(escape_and_link, enumerate(parts)))
 
-        content = content_template.format(
-            cls=cls,
-            level=level_text,
-            msg=escaped_text,
-            help_link=message.get('help_link', ''),
-            back_link=message.get('back_link', ''),
-        )
+        if message['text']:
+            parts = re.split(LINK_PATTERN, message['text'])
+            escaped_text = ''.join(map(escape_and_link, enumerate(parts)))
+
+            content = content_template.format(
+                cls=cls,
+                level=level_text,
+                msg=escaped_text,
+                help_link=message.get('help_link', ''),
+                back_link=message.get('back_link', ''),
+            )
+        else:
+            content = None
+
         add_message(window, message['span_path'], message['span_region'],
                     level, message['is_main'], message['text'], content,
                     msg_cb)
@@ -963,7 +967,10 @@ def _collect_rust_messages(window, cwd, info, target_path,
         # to happen when the span is_primary.
         #
         # This can also happen for macro expansions.
-        if label:
+        #
+        # Label with an empty string can happen for messages that have
+        # multiple spans (starting in 1.21).
+        if label != None:
             # Display the label for this Span.
             add_additional(span, label, info['level'])
         if span['suggested_replacement']:
