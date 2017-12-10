@@ -3,6 +3,7 @@
 import sublime
 
 import collections
+import functools
 import html
 import itertools
 import os
@@ -27,7 +28,7 @@ from . import util
 #   attached detailed diagnostic information, child notes, etc.
 # - `path`: Absolute path to the file.
 # - `text`: The raw text of the message without any minihtml markup.
-# - `phantom_text`: The string used for showing phantoms that includes the
+# - `minihtml_text`: The string used for showing phantoms that includes the
 #   minihtml markup.
 # - `output_panel_region`: Optional Sublime Region object that indicates the
 #   region in the build output panel that corresponds with this message.
@@ -37,44 +38,51 @@ WINDOW_MESSAGES = {}
 LINK_PATTERN = r'(https?://[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-zA-Z]{2,6}\b[-a-zA-Z0-9@:%_+.~#?&/=]*)'
 
 
-PHANTOM_TEMPLATE = """
+CSS_TEMPLATE = """
+<style>
+    span {{
+        font-family: monospace;
+    }}
+    .rust-error {{
+        color: {error_color};
+    }}
+    .rust-warning {{
+        color: {warning_color};
+    }}
+    .rust-note {{
+        color: {note_color};
+    }}
+    .rust-help {{
+        color: {help_color};
+    }}
+    .rust-link {{
+        background-color: var(--background);
+        color: var(--bluish);
+        text-decoration: none;
+        border-radius: 0.5rem;
+        padding: 0.1rem 0.3rem;
+        border: 1px solid var(--bluish);
+    }}
+    .rust-links {{
+        margin: 0.4rem 0rem;
+    }}
+    a {{
+        text-decoration: inherit;
+        padding: 0.35rem 0.5rem 0.45rem 0.5rem;
+        position: relative;
+        font-weight: bold;
+    }}
+    {extra_css}
+</style>
 <body id="rust-message">
-    <style>
-        span {{
-            font-family: monospace;
-        }}
-        .rust-error {{
-            color: {error_color};
-        }}
-        .rust-warning {{
-            color: {warning_color};
-        }}
-        .rust-note {{
-            color: {note_color};
-        }}
-        .rust-help {{
-            color: {help_color};
-        }}
-        .rust-link {{
-            background-color: var(--background);
-            color: var(--bluish);
-            text-decoration: none;
-            border-radius: 0.5rem;
-            padding: 0.1rem 0.3rem;
-            border: 1px solid var(--bluish);
-        }}
-        .rust-links {{
-            margin: 0.4rem 0rem;
-        }}
-        a {{
-            text-decoration: inherit;
-            padding: 0.35rem 0.5rem 0.45rem 0.5rem;
-            position: relative;
-            font-weight: bold;
-        }}
-    </style>
 {content}
 </body>
+"""
+
+POPUP_CSS = """
+    body {
+        margin: 0.25em;
+    }
 """
 
 
@@ -88,7 +96,7 @@ def clear_messages(window):
         view.erase_regions('rust-help')
 
 
-def add_message(window, path, span, level, is_main, text, markup_text, msg_cb):
+def add_message(window, path, span, level, is_main, text, minihtml_text, msg_cb):
     """Add a message to be displayed.
 
     :param window: The Sublime window.
@@ -100,7 +108,7 @@ def add_message(window, path, span, level, is_main, text, markup_text, msg_cb):
     :param is_main: If True, this is a top-level message.  False is used for
         attached detailed diagnostic information, child notes, etc.
     :param text: The raw text of the message without any minihtml markup.
-    :param markup_text: The message to display with minihtml markup.
+    :param minihtml_text: The message to display with minihtml markup.
     :param msg_cb: Callback that will be given the message.  May be None.
     """
     if 'macros>' in path:
@@ -119,22 +127,13 @@ def add_message(window, path, span, level, is_main, text, markup_text, msg_cb):
         }
     messages = messages_by_path.setdefault(path, [])
 
-    if markup_text:
-        phantom_text = PHANTOM_TEMPLATE.format(content=markup_text,
-            error_color=util.get_setting('rust_syntax_error_color', 'var(--redish)'),
-            warning_color=util.get_setting('rust_syntax_warning_color', 'var(--yellowish)'),
-            note_color=util.get_setting('rust_syntax_note_color', 'var(--greenish)'),
-            help_color=util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
-        )
-    else:
-        phantom_text = None
     to_add = {
         'path': path,
         'level': level,
         'span': span,
         'is_main': is_main,
         'text': text,
-        'phantom_text': phantom_text,
+        'minihtml_text': minihtml_text,
     }
     if _is_duplicate(to_add, messages):
         # Don't add duplicates.
@@ -142,7 +141,7 @@ def add_message(window, path, span, level, is_main, text, markup_text, msg_cb):
     messages.append(to_add)
     view = window.find_open_file(path)
     if view:
-        _show_phantom(view, level, span, phantom_text)
+        _show_phantom(view, level, span, minihtml_text)
     if msg_cb:
         msg_cb(to_add)
 
@@ -238,11 +237,75 @@ def _draw_region_highlights(view, messages):
                 sublime.DRAW_NO_FILL | sublime.DRAW_EMPTY)
 
 
-def _show_phantom(view, level, span, message):
-    if util.get_setting('rust_phantom_style', 'normal') == 'none':
+def _wrap_css(content, extra_css=''):
+    """Takes the given minihtml content and places it inside a <body> with the
+    appropriate CSS."""
+    return CSS_TEMPLATE.format(content=content,
+        error_color=util.get_setting('rust_syntax_error_color', 'var(--redish)'),
+        warning_color=util.get_setting('rust_syntax_warning_color', 'var(--yellowish)'),
+        note_color=util.get_setting('rust_syntax_note_color', 'var(--greenish)'),
+        help_color=util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
+        extra_css=extra_css,
+    )
+
+
+def message_popup(view, point, hover_zone):
+    """Displays a popup if there is a message at the given point."""
+    paths = WINDOW_MESSAGES.get(view.window().id(), {}).get('paths', {})
+    msgs = paths.get(view.file_name(), [])
+
+    if hover_zone == sublime.HOVER_GUTTER:
+        # Collect all messages on this line.
+        row = view.rowcol(point)[0]
+
+        def filter_row(msg):
+            span = msg['span']
+            if span:
+                return row >= span[0][0] and row <= span[1][0]
+            else:
+                last_row = view.rowcol(view.size())[0]
+                return row == last_row
+
+        msgs = filter(filter_row, msgs)
+    else:
+        # Collect all messages covering this point.
+        def filter_point(msg):
+            span = msg['span']
+            if span:
+                start_pt = view.text_point(*span[0])
+                end_pt = view.text_point(*span[1])
+                return point >= start_pt and point <= end_pt
+            else:
+                return point == view.size()
+
+        msgs = filter(filter_point, msgs)
+
+    if msgs:
+        to_show = '\n'.join(msg['minihtml_text'] for msg in msgs)
+        minihtml = _wrap_css(to_show, extra_css=POPUP_CSS)
+        on_nav = functools.partial(_click_handler, view, hide_popup=True)
+        max_width = view.em_width() * 79
+        view.show_popup(minihtml, sublime.COOPERATE_WITH_AUTO_COMPLETE,
+            point, max_width=max_width, on_navigate=on_nav)
+
+
+def _click_handler(view, url, hide_popup=False):
+    if url == 'hide':
+        clear_messages(view.window())
+        if hide_popup:
+            view.hide_popup()
+    elif url.startswith('file:///'):
+        view.window().open_file(url[8:], sublime.ENCODED_POSITION)
+    else:
+        webbrowser.open_new(url)
+
+
+def _show_phantom(view, level, span, minihtml_text):
+    if util.get_setting('rust_phantom_style', 'normal') != 'normal':
         return
-    if not message:
+    if not minihtml_text:
         return
+
     region = _span_to_region(view, span)
     # For some reason if you have a multi-line region, the phantom is only
     # displayed under the first line.  I think it makes more sense for the
@@ -256,20 +319,12 @@ def _show_phantom(view, level, span, message):
             region.end()
         )
 
-    def click_handler(url):
-        if url == 'hide':
-            clear_messages(view.window())
-        elif url.startswith('file:///'):
-            view.window().open_file(url[8:], sublime.ENCODED_POSITION)
-        else:
-            webbrowser.open_new(url)
-
     _sublime_add_phantom(
         view,
         'rust-syntax-phantom', region,
-        message,
+        _wrap_css(minihtml_text),
         sublime.LAYOUT_BLOCK,
-        click_handler
+        functools.partial(_click_handler, view)
     )
 
 
@@ -437,7 +492,7 @@ def _show_messages_for_view(view, messages):
         _show_phantom(view,
                       message['level'],
                       message['span'],
-                      message['phantom_text'])
+                      message['minihtml_text'])
     _draw_region_highlights(view, messages)
 
 

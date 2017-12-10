@@ -30,6 +30,7 @@
 
     // For errors/warnings, how to show the inline message.
     // "normal" - Shows the message inline.
+    // "popup" - Show popup on mouse hover.
     // "none" - Do not show the message inline.
     "rust_phantom_style": "normal",
 

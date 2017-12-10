@@ -464,3 +464,23 @@ class CargoBenchAtCursorCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         pt = self.view.sel()[0].begin()
         _cargo_test_pt('bench', pt, self.view)
+
+
+class CargoMessageHover(sublime_plugin.ViewEventListener):
+
+    """Displays a popup if `rust_phantom_style` is "popup" when the mouse
+    hovers over a message region.
+
+    Limitation:  If you edit the file and shift the region, the hover feature
+    will not recognize the new region.  This means that the popup will only
+    show in the old location.
+    """
+
+    @classmethod
+    def is_applicable(cls, settings):
+        s = settings.get('syntax')
+        return s == 'Packages/Rust Enhanced/RustEnhanced.sublime-syntax'
+
+    def on_hover(self, point, hover_zone):
+        if util.get_setting('rust_phantom_style', 'normal') == 'popup':
+            messages.message_popup(self.view, point, hover_zone)
