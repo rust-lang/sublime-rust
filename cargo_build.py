@@ -479,7 +479,8 @@ class CargoMessageHover(sublime_plugin.ViewEventListener):
     @classmethod
     def is_applicable(cls, settings):
         s = settings.get('syntax')
-        return s == 'Packages/Rust Enhanced/RustEnhanced.sublime-syntax'
+        package_name = __package__.split('.')[0]
+        return s == 'Packages/%s/RustEnhanced.sublime-syntax' % (package_name,)
 
     def on_hover(self, point, hover_zone):
         if util.get_setting('rust_phantom_style', 'normal') == 'popup':
