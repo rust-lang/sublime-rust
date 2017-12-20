@@ -148,7 +148,7 @@ def add_message(window, path, span, level, is_main, text, minihtml_text, msg_cb)
 
 
 def _is_duplicate(to_add, messages):
-    # Ignore 'phantom_text' and 'output_panel_region' keys.
+    # Ignore 'minihtml_text' and 'output_panel_region' keys.
     keys = ('path', 'span', 'is_main', 'level', 'text')
     for message in messages:
         for key in keys:
