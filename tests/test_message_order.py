@@ -41,6 +41,12 @@ class TestMessageOrder(TestBase):
         The number is the order the message should appear.  Two numbers can be
         specified separated with a comma, where the second number is the
         "unsorted" sequence (the order the message is emitted from rustc).
+
+        The "inline" message is the message in the build output panel that
+        should be displayed when inline phantoms are being used.  The "raw"
+        version is what is displayed when inline phantoms are not being used.
+        These value is a regular expressions tested against region in the
+        output panel.
         """
         to_test = [
             ('build', 'examples/ex_warning1.rs',
@@ -99,9 +105,9 @@ class TestMessageOrder(TestBase):
                             plugin.rust.opanel.PANEL_NAME)
                         panel_text = build_panel.substr(build_panel.sel()[0])
                         if inline:
-                            self.assertEqual(panel_text, inline_highlight)
+                            self.assertRegex(panel_text, inline_highlight)
                         else:
-                            self.assertEqual(panel_text, raw_highlight)
+                            self.assertRegex(panel_text, raw_highlight)
 
         check_sequence('next')
         if inline:
@@ -150,7 +156,8 @@ class TestMessageOrder(TestBase):
 
         def path_fixup(p):
             if sys.platform == 'win32':
-                return p.replace('/', '\\')
+                # Double backslash since it is a regex.
+                return p.replace('/', '\\\\')
             else:
                 return p
 

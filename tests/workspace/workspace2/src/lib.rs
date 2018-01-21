@@ -9,7 +9,7 @@ pub fn f() {
 //                  ^ERR mismatched types
 //                  ^NOTE expected type `&Trait`
 //                  ^NOTE(<1.16.0) found type
-//                  ^HELP(>=1.18.0,<1.24.0-nightly) try with `&x`
-//                  ^HELP(>=1.24.0-nightly) consider borrowing here
-//                  ^HELP(>=1.24.0-nightly) &x
+//                  ^HELP(>=1.18.0,<1.24.0-beta) try with `&x`
+//                  ^HELP(>=1.24.0-beta) consider borrowing here
+//                  ^HELP(>=1.24.0-beta) &x
 }

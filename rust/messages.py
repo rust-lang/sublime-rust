@@ -636,11 +636,11 @@ def list_messages(window):
     window.show_quick_panel(panel_items, on_done, 0, 0, on_highlighted)
 
 
-def add_rust_messages(window, cwd, info, target_path, msg_cb):
+def add_rust_messages(window, base_path, info, target_path, msg_cb):
     """Add messages from Rust JSON to Sublime views.
 
     - `window`: Sublime Window object.
-    - `cwd`: Directory where cargo/rustc was run.
+    - `base_path`: Base path used for resolving relative paths from Rust.
     - `info`: Dictionary of messages from rustc or cargo.
     - `target_path`: Absolute path to the top-level source file of the target
       (lib.rs, main.rs, etc.).  May be None if it is not known.
@@ -684,7 +684,7 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
     # List of message dictionaries, belonging to the main message.
     additional_messages = []
 
-    _collect_rust_messages(window, cwd, info, target_path, msg_cb, {},
+    _collect_rust_messages(window, base_path, info, target_path, msg_cb, {},
         main_message, additional_messages)
 
     messages = _create_cross_links(main_message, additional_messages)
@@ -750,7 +750,7 @@ def add_rust_messages(window, cwd, info, target_path, msg_cb):
                     False, None, content, None)
 
 
-def _collect_rust_messages(window, cwd, info, target_path,
+def _collect_rust_messages(window, base_path, info, target_path,
                            msg_cb, parent_info,
                            main_message, additional_messages):
     """
@@ -831,7 +831,7 @@ def _collect_rust_messages(window, cwd, info, target_path,
         return
 
     def make_span_path(span):
-        return os.path.realpath(os.path.join(cwd, span['file_name']))
+        return os.path.realpath(os.path.join(base_path, span['file_name']))
 
     def make_span_region(span):
         # Sublime text is 0 based whilst the line/column info from
@@ -981,7 +981,7 @@ def _collect_rust_messages(window, cwd, info, target_path,
 
     # Recurse into children (which typically hold notes).
     for child in info['children']:
-        _collect_rust_messages(window, cwd, child, target_path,
+        _collect_rust_messages(window, base_path, child, target_path,
                                msg_cb, parent_info.copy(),
                                main_message, additional_messages)
 

@@ -11,8 +11,9 @@
 // error-pattern: parameters were supplied
 
 /*BEGIN*/fn f(x: isize) {
+//       ^^^^^^^^^^^^^^ERR(>=1.24.0-beta) defined here
 }/*END*/
-// ~ERR defined here
+// ~ERR(<1.24.0-beta) defined here
 
 // children without spans, spans with no labels
 // Should display error (with link) and a note of expected type.

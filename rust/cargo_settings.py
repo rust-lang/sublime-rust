@@ -350,7 +350,8 @@ class CargoSettings(object):
         return result
 
     def get_command(self, cmd_name, cmd_info,
-                    settings_path, initial_settings={}, force_json=False):
+                    settings_path, working_dir,
+                    initial_settings={}, force_json=False):
         """Generates the command arguments for running Cargo.
 
         :param cmd_name: The name of the command, the key used to select a
@@ -358,7 +359,9 @@ class CargoSettings(object):
         :param cmd_info: Dictionary from `CARGO_COMMANDS` with rules on how to
             construct the command.
         :param settings_path: The absolute path to the Cargo project root
-            directory.
+            directory or script.
+        :param working_dir: The directory where Cargo is to be run (typically
+            the project root).
         :keyword initial_settings: Initial settings to inject which override
             all other settings.
         :keyword force_json: If True, will force JSON output.
@@ -366,6 +369,10 @@ class CargoSettings(object):
         :Returns: A dictionary with the keys:
             - `command`: The command to run as a list of strings.
             - `env`: Dictionary of environment variables (or None).
+            - `msg_rel_path`: The root path to use for relative paths in
+              messages.
+            - `rustc_version`: The version of rustc being used as a string,
+              such as '1.25.0-nightly'.
 
             Returns None if the command cannot be constructed.
         """
@@ -453,7 +460,22 @@ class CargoSettings(object):
         if not env:
             env = None
 
+        # Determine the base path for paths in messages.
+        #
+        # Starting in Rust 1.24, all messages and symbols are relative to the
+        # workspace root instead of the package root.
+        metadata = util.get_cargo_metadata(self.window, working_dir, toolchain)
+        if metadata and 'workspace_root' in metadata:
+            # 'workspace_root' key added in 1.24.
+            msg_rel_path = metadata['workspace_root']
+        else:
+            msg_rel_path = working_dir
+
+        rustc_version = util.get_rustc_version(self.window, working_dir, toolchain=toolchain)
+
         return {
             'command': result,
             'env': env,
+            'msg_rel_path': msg_rel_path,
+            'rustc_version': rustc_version,
         }

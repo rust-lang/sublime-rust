@@ -6,27 +6,29 @@ fn passing() {
 
 #[test]
 fn basic_error1() {
-    /*ERR 1 "tests/test_test_output.rs:9:46"*/assert!(false);
+    // . is used for the column because Rust 1.24 changed the column indexing
+    // to be 1-based.
+    /*ERR 1 "tests/test_test_output.rs:11:4."*/assert!(false);
 }
 
 #[test]
 fn basic_error2() {
-    /*ERR 2 "tests/test_test_output.rs:14:47"*/assert_eq!(1, 0);
+    /*ERR 2 "tests/test_test_output.rs:16:4."*/assert_eq!(1, 0);
 }
 
 #[test]
 fn basic_error3() {
-    /*ERR 3 "tests/test_test_output.rs:19:47"*/assert_ne!(1, 1);
+    /*ERR 3 "tests/test_test_output.rs:21:4."*/assert_ne!(1, 1);
 }
 
 #[test]
 fn custom_message() {
-    /*ERR 4 "tests/test_test_output.rs:24:47"*/assert!(false, "Custom message");
+    /*ERR 4 "tests/test_test_output.rs:26:4."*/assert!(false, "Custom message");
 }
 
 #[test]
 fn manual_panic() {
-    /*ERR 5 "tests/test_test_output.rs:29:47"*/panic!("manual panic");
+    /*ERR 5 "tests/test_test_output.rs:31:4."*/panic!("manual panic");
 }
 
 #[test]

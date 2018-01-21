@@ -10,7 +10,7 @@ extern crate dcrate;
 // ~ERR(>=1.20.0) /expected one of .*, found `:`/
 // ~ERR(>=1.20.0) this error originates in a macro outside of the current crate
 // ~ERR(>=1.20.0) /expected one of .* here/
-// ~ERR(>=1.20.0,<1.24.0-nightly) unexpected token
+// ~ERR(>=1.20.0,<1.24.0-beta) unexpected token
 // ~ERR(>=1.20.0) /expected one of .*, found `:`/
 // ~ERR(>=1.20.0) expected one of
 // end-msg: ERR(check,>=1.19.0,<1.20.0-beta) /expected one of .*, found `:`/

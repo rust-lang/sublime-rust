@@ -181,7 +181,7 @@ class TestInterrupt(TestBase):
         self._run_build()
         build_t = self._get_rust_thread()
         self._wrap_terminate(build_t)
-        time.sleep(4)
+        time.sleep(5)
         self.assertEqual(self._files(),
             [pattern + '-start-1',
              pattern + '-end-1'])

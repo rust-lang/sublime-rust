@@ -9,7 +9,7 @@ import re
 import sublime
 import sublime_plugin
 from .cargo_settings import CargoSettings, CARGO_COMMANDS
-from .util import index_with
+from .util import index_with, get_cargo_metadata
 from . import rust_proc, util
 
 # Keep track of recent choices to set the default value.
@@ -54,7 +54,7 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
 
     # Dictionary of choices passed into the command, instead of using
     # interactive UI.
-    input = None
+    cmd_input = None
 
     # Sequence of questions to ask.
     sequence = None
@@ -90,7 +90,7 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
         self.sequence_index = 0
         # Copy, since WindowCommand reuses objects.
         self._sequence = self.sequence[:]
-        self.input = kwargs
+        self.cmd_input = kwargs
         self.settings = CargoSettings(self.window)
         self.settings.load()
         self.show_next_question()
@@ -123,8 +123,8 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
                     self._sequence[i:i] = next
             self.show_next_question()
 
-        if q in self.input:
-            make_choice(self.input[q])
+        if q in self.cmd_input:
+            make_choice(self.cmd_input[q])
         else:
             try:
                 item_info = getattr(self, 'items_' + q)()
@@ -286,11 +286,11 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
         """Choice to select at which level the setting should be saved at."""
         # This is a bit of a hack so that when called programmatically you
         # don't have to specify 'which'.
-        if 'which' not in self.input:
-            if 'variant' in self.input:
-                self.input['which'] = 'project_package_variant'
-            elif 'target' in self.input:
-                self.input['which'] = 'project_package_target'
+        if 'which' not in self.cmd_input:
+            if 'variant' in self.cmd_input:
+                self.cmd_input['which'] = 'project_package_variant'
+            elif 'target' in self.cmd_input:
+                self.cmd_input['which'] = 'project_package_target'
 
         variant_extra = 'cargo build, cargo run, cargo test, etc.'
         target_extra = '--bin, --example, --test, etc.'
@@ -615,9 +615,9 @@ class CargoSetEnvironmentEditor(CargoConfigBase):
                // Enter environment variables here in JSON syntax.
                // Close this view when done to commit the settings.
                """)
-        if 'contents' in self.input:
+        if 'contents' in self.cmd_input:
             # Used when parsing fails to attempt to edit again.
-            template = self.input['contents']
+            template = self.cmd_input['contents']
         elif default:
             template += sublime.encode_value(default, True)
         else:
@@ -948,33 +948,3 @@ class CargoCreateNewBuild(CargoConfigBase):
         pkg_name = __name__.split('.')[0]
         resource = 'Packages/%s/RustEnhanced.sublime-build' % pkg_name
         return sublime.decode_value(sublime.load_resource(resource))
-
-
-def get_cargo_metadata(window, cwd):
-    """Load Cargo metadata.
-
-    :returns: None on failure, otherwise a dictionary from Cargo:
-        - packages: List of packages:
-            - name
-            - manifest_path: Path to Cargo.toml.
-            - targets: List of target dictionaries:
-                - name: Name of target.
-                - src_path: Path of top-level source file.  May be a
-                  relative path.
-                - kind: List of kinds.  May contain multiple entries if
-                  `crate-type` specifies multiple values in Cargo.toml.
-                  Lots of different types of values:
-                    - Libraries: 'lib', 'rlib', 'dylib', 'cdylib', 'staticlib',
-                      'proc-macro'
-                    - Executables: 'bin', 'test', 'example', 'bench'
-                    - build.rs: 'custom-build'
-
-    :raises ProcessTermiantedError: Process was terminated by another thread.
-    """
-    output = rust_proc.slurp_json(window,
-                                  'cargo metadata --no-deps'.split(),
-                                  cwd=cwd)
-    if output:
-        return output[0]
-    else:
-        return None

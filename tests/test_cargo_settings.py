@@ -16,7 +16,7 @@ class TestCargoSettings(TestBase):
 
         def check_cmd(expected_cmd):
             cmd = settings.get_command('build',
-                cmd_info, manifest_dir)['command']
+                cmd_info, manifest_dir, manifest_dir)['command']
             self.assertEqual(cmd, expected_cmd.split())
 
         cmd = 'cargo build --message-format=json'

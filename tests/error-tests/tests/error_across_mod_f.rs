@@ -1,3 +1,4 @@
 /*BEGIN*/pub fn f() {
+//       ^^^^^^^^^^ERR(>=1.24.0-beta) defined here
 }/*END*/
-// ~ERR defined here
+// ~ERR(<1.24.0-beta) defined here

@@ -54,28 +54,22 @@ class TestCargoBuild(TestBase):
         targets = [
             ('--bin bin1', [
                 exe('bin1'),
-                version('bin1.d', '>=1.21.0'),
                 'libmulti_targets.rlib']),
             ('--bin bin2', [
                 exe('bin2'),
-                version('bin2.d', '>=1.21.0'),
                 'libmulti_targets.rlib']),
             ('--bin otherbin', [
                 exe('otherbin'),
-                version('otherbin.d', '>=1.21.0'),
                 'libmulti_targets.rlib']),
             ('--bin multi-targets', [
                 exe('multi-targets'),
-                version('multi-targets.d', '>=1.21.0'),
                 'libmulti_targets.rlib']),
             ('--lib', [
-                'libmulti_targets.rlib',
-                version('libmulti_targets.d', '>=1.21.0')]),
+                'libmulti_targets.rlib']),
             # Not clear to me why it produces ex1-* files.
             ('--example ex1', [
                 exe('examples/ex1'),
                 exe('examples/ex1-*'),
-                version('examples/ex1.d', '>=1.21.0'),
                 'libmulti_targets.rlib']),
             ('--test test1', [
                 exe('bin1'),
@@ -101,6 +95,7 @@ class TestCargoBuild(TestBase):
             files = [x for x in files if
                 os.path.isfile(os.path.join(debug, x)) and
                 not x.startswith('.') and
+                not x.endswith('.d') and
                 not x.endswith('.pdb')]
             files.sort()
             # Remove any option (None) entries.
@@ -151,7 +146,7 @@ class TestCargoBuild(TestBase):
         settings.load()
         cmd_info = cargo_settings.CARGO_COMMANDS['build']
         manifest_dir = util.find_cargo_manifest(view.file_name())
-        cmd = settings.get_command('build', cmd_info, manifest_dir)['command']
+        cmd = settings.get_command('build', cmd_info, manifest_dir, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', 'build', '--target', 'a-b-c',
                                '--message-format=json'])
 
@@ -170,7 +165,7 @@ class TestCargoBuild(TestBase):
         settings.load()
         cmd_info = cargo_settings.CARGO_COMMANDS['build']
         manifest_dir = util.find_cargo_manifest(view.file_name())
-        cmd = settings.get_command('build', cmd_info, manifest_dir)['command']
+        cmd = settings.get_command('build', cmd_info, manifest_dir, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', '+nightly', 'build',
                                '--message-format=json'])
 
@@ -181,7 +176,7 @@ class TestCargoBuild(TestBase):
         settings.load()
         cmd_info = cargo_settings.CARGO_COMMANDS['build']
         manifest_dir = util.find_cargo_manifest(view.file_name())
-        cmd = settings.get_command('build', cmd_info, manifest_dir)['command']
+        cmd = settings.get_command('build', cmd_info, manifest_dir, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', 'build',
                                '--message-format=json'])
 
@@ -193,7 +188,7 @@ class TestCargoBuild(TestBase):
                                                 'target': '--bin bin1'})
         settings.load()
         manifest_dir = util.find_cargo_manifest(view.file_name())
-        cmd = settings.get_command('build', cmd_info, manifest_dir)['command']
+        cmd = settings.get_command('build', cmd_info, manifest_dir, manifest_dir)['command']
         self.assertEqual(cmd, ['cargo', '+nightly', 'build', '--bin', 'bin1',
                                '--message-format=json'])
 
@@ -418,7 +413,7 @@ class TestCargoBuild(TestBase):
         """Test "auto" build."""
         tests = [
             # This should probably automatically use nightly?
-            ('benches/bench1.rs', r'may not be used on the stable release channel'),
+            ('benches/bench1.rs', r'may not be used on the (stable|beta) release channel'),
             ('examples/ex1.rs', r'(?m)^ex1$'),
             ('src/bin/bin1.rs', r'(?m)^bin1$'),
             ('src/altmain.rs', r'(?m)^altmain$'),

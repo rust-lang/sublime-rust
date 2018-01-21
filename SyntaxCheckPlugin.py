@@ -73,8 +73,10 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
     view = None
     # Absolute path to the view that triggered the check.
     triggered_file_name = None
-    # Directory of `triggered_file_name`.
+    # Directory where cargo will be run.
     cwd = None
+    # Base path for relative paths in messages.
+    msg_rel_path = None
     # This flag is used to terminate early. In situations where we can't
     # auto-detect the appropriate Cargo target, we compile multiple targets.
     # If we receive any messages for the current view, we might as well stop.
@@ -125,7 +127,8 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
             # Clippy does not support cargo target filters, must be run for
             # all targets.
             cmd = settings.get_command(method, command_info, self.cwd,
-                force_json=True)
+                self.cwd, force_json=True)
+            self.msg_rel_path = cmd['msg_rel_path']
             p = rust_proc.RustProc()
             p.run(self.window, cmd['command'], self.cwd, self, env=cmd['env'])
             p.wait()
@@ -135,9 +138,10 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         td = target_detect.TargetDetector(self.window)
         targets = td.determine_targets(self.triggered_file_name)
         for (target_src, target_args) in targets:
-            cmd = settings.get_command(method, command_info, self.cwd,
+            cmd = settings.get_command(method, command_info, self.cwd, self.cwd,
                 initial_settings={'target': ' '.join(target_args)},
                 force_json=True)
+            self.msg_rel_path = cmd['msg_rel_path']
             if method == 'no-trans':
                 cmd['command'].extend(['--', '-Zno-trans', '-Zunstable-options'])
                 if (util.get_setting('rust_syntax_checking_include_tests', True) and
@@ -173,7 +177,7 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         print('Rust Error: %s' % message)
 
     def on_json(self, proc, obj):
-        messages.add_rust_messages(self.window, self.cwd, obj,
+        messages.add_rust_messages(self.window, self.msg_rel_path, obj,
                                    self.current_target_src, msg_cb=None)
         if messages.has_message_for_path(self.window,
                                          self.triggered_file_name):

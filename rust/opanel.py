@@ -4,7 +4,7 @@ import sublime
 
 import os
 import re
-from . import rust_proc, messages, util
+from . import rust_proc, messages, util, semver
 
 # Use the same panel name that Sublime's build system uses so that "Show Build
 # Results" will open the same panel.  I don't see any particular reason why
@@ -12,7 +12,7 @@ from . import rust_proc, messages, util
 PANEL_NAME = 'exec'
 
 
-def create_output_panel(window, cwd):
+def create_output_panel(window, base_dir):
     output_view = window.create_output_panel(PANEL_NAME)
     s = output_view.settings()
     if util.get_setting('show_errors_inline', True):
@@ -25,7 +25,7 @@ def create_output_panel(window, cwd):
         pattern = '(?|%s|%s)' % (build_pattern, test_pattern)
         s.set('result_file_regex', pattern)
     # Used for resolving relative paths.
-    s.set('result_base_dir', cwd)
+    s.set('result_base_dir', base_dir)
     s.set('word_wrap', True)  # XXX Or False?
     s.set('line_numbers', False)
     s.set('gutter', False)
@@ -58,10 +58,11 @@ class OutputListener(rust_proc.ProcListener):
     # Sublime view used for output.
     output_view = None
 
-    def __init__(self, window, base_path, command_name):
+    def __init__(self, window, base_path, command_name, rustc_version):
         self.window = window
         self.base_path = base_path
         self.command_name = command_name
+        self.rustc_version = rustc_version
 
     def on_begin(self, proc):
         self.output_view = create_output_panel(self.window, self.base_path)
@@ -87,6 +88,9 @@ class OutputListener(rust_proc.ProcListener):
                 lineno = int(m.group(2)) - 1
                 # Region columns appear to the left, so this is +1.
                 col = int(m.group(3))
+                # Rust 1.24 changed column numbering to be 1-based.
+                if semver.match(self.rustc_version, '>=1.24.0-beta'):
+                    col -= 1
                 span = ((lineno, col), (lineno, col))
                 # +2 to skip ", "
                 build_region = sublime.Region(region_start + m.start() + 2,
@@ -105,7 +109,7 @@ class OutputListener(rust_proc.ProcListener):
 
     def on_json(self, proc, obj):
         if 'message' in obj:
-            messages.add_rust_messages(self.window, proc.cwd, obj['message'],
+            messages.add_rust_messages(self.window, self.base_path, obj['message'],
                                        None, self.msg_cb)
 
     def msg_cb(self, message):

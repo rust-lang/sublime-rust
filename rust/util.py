@@ -110,3 +110,38 @@ def active_view_is_rust(window=None, view=None):
     if not view.file_name():
         return False
     return 'source.rust' in view.scope_name(0)
+
+
+def get_cargo_metadata(window, cwd, toolchain=None):
+    """Load Cargo metadata.
+
+    :returns: None on failure, otherwise a dictionary from Cargo:
+        - packages: List of packages:
+            - name
+            - manifest_path: Path to Cargo.toml.
+            - targets: List of target dictionaries:
+                - name: Name of target.
+                - src_path: Path of top-level source file.  May be a
+                  relative path.
+                - kind: List of kinds.  May contain multiple entries if
+                  `crate-type` specifies multiple values in Cargo.toml.
+                  Lots of different types of values:
+                    - Libraries: 'lib', 'rlib', 'dylib', 'cdylib', 'staticlib',
+                      'proc-macro'
+                    - Executables: 'bin', 'test', 'example', 'bench'
+                    - build.rs: 'custom-build'
+
+    :raises ProcessTermiantedError: Process was terminated by another thread.
+    """
+    from . import rust_proc
+    cmd = ['cargo']
+    if toolchain:
+        cmd.append('+' + toolchain)
+    cmd.extend(['metadata', '--no-deps'])
+    output = rust_proc.slurp_json(window,
+                                  cmd,
+                                  cwd=cwd)
+    if output:
+        return output[0]
+    else:
+        return None

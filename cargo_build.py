@@ -191,13 +191,15 @@ class CargoExecThread(rust_thread.RustThread):
         cmd = self.settings.get_command(self.command_name,
                                         self.command_info,
                                         self.settings_path,
+                                        self.working_dir,
                                         self.initial_settings)
         if not cmd:
             return
         messages.clear_messages(self.window)
         p = rust_proc.RustProc()
-        listener = opanel.OutputListener(self.window, self.working_dir,
-                                         self.command_name)
+        listener = opanel.OutputListener(self.window, cmd['msg_rel_path'],
+                                         self.command_name,
+                                         cmd['rustc_version'])
         decode_json = util.get_setting('show_errors_inline', True) and \
             self.command_info.get('allows_json', False)
         try:
