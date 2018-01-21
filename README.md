@@ -116,7 +116,7 @@ Additionally, you can customize settings per-project by adding settings to your 
 
 ## Development
 Development is quite simple, just check out this project to your Sublime Text 3 packages folder, and switch to using this one.   
-Syntax definitions are defined in the `RustEnahcned.sublime-syntax` file.
+Syntax definitions are defined in the `RustEnhanced.sublime-syntax` file.
 
 ## Credits
 
