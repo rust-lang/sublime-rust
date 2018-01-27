@@ -251,14 +251,14 @@ impl fmt::Display for PrintableStruct {
 //                                        ^^ punctuation.separator
 //                                           ^^^^^ meta.path
 //                                                       ^ meta.block punctuation.definition.block.begin
-        write!(f, "{}", self.0)
+        write!(f, "{:44}", self.0)
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function
 //      ^^^^^^ support.macro
 //            ^^^^^^^^^^^^^^^^^ meta.group
 //            ^ punctuation.definition.group.begin
 //                ^^^^ string.quoted.double
-//                 ^^ constant.other.placeholder
-//                            ^ punctuation.definition.group.end
+//                 ^^^^^ constant.other.placeholder
+//                               ^ punctuation.definition.group.end
         write!(get_writer(), "{}", "{}")
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function
 //      ^^^^^^ support.macro
