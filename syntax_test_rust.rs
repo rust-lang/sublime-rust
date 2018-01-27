@@ -98,6 +98,15 @@ let raw_bytes = br#"This won't escape anything either \x01 \""#;
 // <- constant.numeric.float
  // <- storage.type - constant.numeric.float
 //^^ storage.type - constant.numeric.float
+1e+8;
+// <- constant.numeric.float
+ // <- constant.numeric.float
+//^^ constant.numeric.float
+1.0E-8234987_f64;
+// <- constant.numeric.float
+ // <- constant.numeric.float
+//^^^^^^^^^^^ constant.numeric.float
+//           ^^^ storage.type - constant.numeric.float
 
 0x0;
 // <- constant.numeric.integer.hexadecimal
