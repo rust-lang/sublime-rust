@@ -395,7 +395,7 @@ contexts:
   type:
     - match: '{{identifier}}(?=<)'
       push: generic-angles
-    - match: \b(Self|i8|i16|i32|i64|isize|u8|u16|u32|u64|usize|f32|f64|bool|char|str)\b
+    - match: \b(Self|{{int_suffixes}}|{{float_suffixes}}|bool|char|str)\b
       scope: storage.type.rust
 
   generic-angles:
