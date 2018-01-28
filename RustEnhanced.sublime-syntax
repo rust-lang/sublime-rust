@@ -974,8 +974,8 @@ contexts:
             [+-]?                 # [sign]
             \#?                   # ['#']
             0?                    # [0]
-            (\d+\$?)?              # [width]
-            (\.(\d+\$?|\*)?)?      # ['.' precision]
+            (\d+\$?)?             # [width]
+            (\.(\d+\$?|\*)?)?     # ['.' precision]
             (\?|{{identifier}})?  # [type]
           )?
         \}
