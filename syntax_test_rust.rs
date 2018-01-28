@@ -269,6 +269,8 @@ impl fmt::Display for PrintableStruct {
 //                 ^^^^^^^^^ constant.other.placeholder
         write!(f, "{4j:#xf10}", self.0)
 //                 ^^^^^^^^^^ string.quoted.double
+        write!(f, "{{}}", self.0)
+//                 ^^^^ constant.character.escape.rust
         write!(get_writer(), "{}", "{}")
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function
 //      ^^^^^^ support.macro
