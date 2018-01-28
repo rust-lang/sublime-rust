@@ -251,14 +251,24 @@ impl fmt::Display for PrintableStruct {
 //                                        ^^ punctuation.separator
 //                                           ^^^^^ meta.path
 //                                                       ^ meta.block punctuation.definition.block.begin
-        write!(f, "{:44}", self.0)
+        write!(f, "{}", self.0)
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function
 //      ^^^^^^ support.macro
 //            ^^^^^^^^^^^^^^^^^ meta.group
 //            ^ punctuation.definition.group.begin
 //                ^^^^ string.quoted.double
-//                 ^^^^^ constant.other.placeholder
+//                 ^^ constant.other.placeholder
 //                               ^ punctuation.definition.group.end
+        write!(f, "{:10}", self.0)
+//                 ^^^^^ constant.other.placeholder
+        write!(f, "{:^10}", self.0)
+//                 ^^^^^^ constant.other.placeholder
+        write!(f, "{:+046.89?}", self.0)
+//                 ^^^^^^^^^^^ constant.other.placeholder
+        write!(f, "{:-^#10x}", self.0)
+//                 ^^^^^^^^^ constant.other.placeholder
+        write!(f, "{4j:#xf10}", self.0)
+//                 ^^^^^^^^^^ string.quoted.double
         write!(get_writer(), "{}", "{}")
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function
 //      ^^^^^^ support.macro
