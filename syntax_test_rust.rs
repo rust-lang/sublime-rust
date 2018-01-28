@@ -258,7 +258,7 @@ impl fmt::Display for PrintableStruct {
 //            ^ punctuation.definition.group.begin
 //                ^^^^ string.quoted.double
 //                 ^^ constant.other.placeholder
-//                               ^ punctuation.definition.group.end
+//                            ^ punctuation.definition.group.end
         write!(f, "{:10}", self.0)
 //                 ^^^^^ constant.other.placeholder
         write!(f, "{:^10}", self.0)
