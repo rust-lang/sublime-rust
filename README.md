@@ -93,15 +93,19 @@ Projects with multiple build targets are supported too (--lib, --bin, --example,
        }
    }
 ```
-## RLS 
-[RLS (Rust Language Server)](https://github.com/rust-lang-nursery/rls) Support is experimental and won't be available just yet.   
-This is because the RLS Server is still in Alpha and the Sublime LSP plugin is work in progress. However, if you are interested in playing with RLS early, here are the steps.   
-* Setup Rust Language Server - Instructions here https://github.com/rust-lang-nursery/rls
-* Check its ready to use by running `rustup run nightly rls --version` if you get a version back its up and running.
-* Now install LSP https://github.com/tomv564/LSP (follow the git install option if it doesn't work from package control)
-* Once you’ve got LSP installed, go Sublime preferences —> Package settings —> LSP , and paste this into user settings (the right-hand pane): https://gist.github.com/urschrei/b0427f513dc78a9e32329e4bc8a65846  Soon this step won't be needed once our changes are merged in.
-* Once LSP is installed, enable it for Rust using LSP: Enable Language Server Globally | Project
-* You should see rls initialized in the status bar at the bottom, it should be working at this point.
+## RLS Support
+[RLS (Rust Language Server)](https://github.com/rust-lang-nursery/rls) support is experimental, because RLS is still in Alpha and the Sublime LSP plugin is work in progress. However, it's quite usable, and trying it is easy:
+* Set up RLS - follow the [instructions](https://github.com/rust-lang-nursery/rls#setup), using the **Nightly** toolchain
+* Check that RLS is working correctly by running `rustup run nightly rls --version`. If you get a version back RLS is installed
+* Install [LSP](https://github.com/tomv564/LSP) using Package Control
+* Enable LSP for Rust:
+  * Open a Rust project, and open its `lib.rs` or `main.rs` file
+  * Open the Command Palette, and select the `LSP: Enable Language Server Globally | Project` command
+* RLS should then initialise: you'll see a message in the status bar, and once the initial build has completed (this can be slow initially, as the RLS has to build your project), it is ready to use.
+
+Note that as well as error checking, code-completion, and renaming, RLS can run [`rustfmt`](https://github.com/rust-lang-nursery/rustfmt) on your code: right-click, and select `Format Document` or `Format Selection` in a Rust source file.
+
+You can keep RLS updated by running `rustup update nightly`, which will ensure that you get the latest features. LSP is also developing quickly, so it's worth checking package control for updates.
 
 ## Context Menu
 The Sublime context menu includes a Rust entry with a variety of commands.
