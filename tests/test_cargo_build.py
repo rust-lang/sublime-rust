@@ -304,6 +304,8 @@ class TestCargoBuild(TestBase):
 
     def test_clippy(self):
         """Test "Clippy" variant."""
+        if self._skip_clippy():
+            return
         self._with_open_file('tests/error-tests/examples/clippy_ex.rs',
             self._test_clippy)
 
@@ -412,8 +414,6 @@ class TestCargoBuild(TestBase):
     def test_auto_build(self):
         """Test "auto" build."""
         tests = [
-            # This should probably automatically use nightly?
-            ('benches/bench1.rs', r'may not be used on the (stable|beta) release channel'),
             ('examples/ex1.rs', r'(?m)^ex1$'),
             ('src/bin/bin1.rs', r'(?m)^bin1$'),
             ('src/altmain.rs', r'(?m)^altmain$'),
@@ -422,6 +422,18 @@ class TestCargoBuild(TestBase):
             ('src/main.rs', r'(?m)^Hello$'),
             ('tests/test1.rs', r'(?m)^test sample_test1 \.\.\. ok$'),
         ]
+        rustc_version = util.get_rustc_version(sublime.active_window(),
+                                               plugin_path)
+        if 'nightly' in rustc_version:
+            # Benches are allowed to run on nightly.
+            tests.append(
+                ('benches/bench1.rs',
+                 r'\[Running: cargo bench --bench bench1'))
+        else:
+            tests.append(
+                ('benches/bench1.rs',
+                 r'may not be used on the (stable|beta) release channel'))
+
         for path, pattern in tests:
             self._with_open_file('tests/multi-targets/' + path,
                 self._test_auto_build, pattern=pattern)

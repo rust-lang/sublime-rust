@@ -152,8 +152,14 @@ class TestContext(TestBase):
         ]
         self.quick_panel_index = 2
         window.run_command('rust_list_messages')
-        new_view = window.active_view()
         expected_path = os.path.normpath(
             os.path.join(plugin_path, 'tests/message-order/examples/warning2.rs'))
-        self.assertEqual(new_view.file_name(), expected_path)
+        # Give Sublime some time to switch views.
+        for n in range(5):
+            new_view = window.active_view()
+            if new_view.file_name() == expected_path:
+                break
+            time.sleep(0.5)
+        else:
+            self.assertEqual(new_view.file_name(), expected_path)
         new_view.run_command('close_file')

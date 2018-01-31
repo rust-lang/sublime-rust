@@ -1,0 +1,32 @@
+environment:
+    global:
+        PACKAGE: "Rust Enhanced"
+        SUBLIME_TEXT_VERSION : "3"
+
+    matrix:
+        - RUST_VERSION: stable
+        - RUST_VERSION: beta
+        - RUST_VERSION: nightly
+
+
+install:
+    - ps: appveyor DownloadFile "https://raw.githubusercontent.com/SublimeText/UnitTesting/master/sbin/appveyor.ps1"
+    # Install Sublime and Sublime Unittesting.
+    - ps: .\appveyor.ps1 "bootstrap" -verbose
+    - ps: .\appveyor.ps1 "install_package_control" -verbose
+    # Install rust.
+    - curl -sSf -o rustup-init.exe https://win.rustup.rs/
+    - rustup-init.exe -y --default-toolchain %RUST_VERSION%
+    - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
+    # Ensure nightly is installed to run no-trans, benchmarks, and Clippy.
+    - rustup install nightly
+    # Install Rust packages needed by integration tests.
+    - cargo +nightly install clippy || set RE_SKIP_CLIPPY=1
+    - cargo install cargo-script
+    - rustc -Vv
+
+build: off
+
+test_script:
+    - ps: .\appveyor.ps1 "run_syntax_tests" -verbose
+    - ps: .\appveyor.ps1 "run_tests" -verbose

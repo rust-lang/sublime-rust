@@ -3,6 +3,7 @@ import queue
 import sys
 import os
 import unittest
+import subprocess
 import threading
 import time
 # Used for debugging.
@@ -45,9 +46,25 @@ class TestBase(unittest.TestCase):
         window = sublime.active_window()
         # Clear any rust project settings.
         data = window.project_data()
+        if not data:
+            data = {}
+        # Ensure any user settings don't interfere with the test.
         if 'cargo_build' in data.get('settings', {}):
             del data['settings']['cargo_build']
-            window.set_project_data(data)
+        # When the tests run automatically, they are not part of a sublime
+        # project.  However, various tests depend on checking relative paths,
+        # so ensure that `folders` is set.
+        #
+        # Set `folder_exclude_patterns` to prevent the Rust build directory
+        # from being recognized by Sublime.  I have a suspicion this causes
+        # spurious errors on Windows because Sublime may be indexing the
+        # files, preventing `cargo clean` from being able to remove them.
+        if 'folders' not in data:
+            data['folders'] = [{
+                'path': plugin_path,
+                'folder_exclude_patterns': ['target'],
+            }]
+        window.set_project_data(data)
         plugin.cargo_build.ON_LOAD_MESSAGES_ENABLED = False
 
         # Override settings.
@@ -75,12 +92,18 @@ class TestBase(unittest.TestCase):
         self._restore_settings()
         plugin.cargo_build.ON_LOAD_MESSAGES_ENABLED = True
 
-    def _get_rust_thread(self):
-        """Waits for a rust thread to get started and returns it."""
-        for n in range(500):
+    def _get_rust_thread(self, previous_thread=None):
+        """Waits for a rust thread to get started and returns it.
+
+        :param previous_thread: If set, it will avoid returning this thread.
+            Use this when there is a thread currently running, and you want to
+            make sure you get the next thread that starts.
+        """
+        for n in range(1000):
             t = rust_thread.THREADS.get(sublime.active_window().id())
             if t:
-                return t
+                if previous_thread is None or previous_thread != t:
+                    return t
             time.sleep(0.01)
         raise AssertionError('Rust thread never started.')
 
@@ -151,10 +174,22 @@ class TestBase(unittest.TestCase):
         else:
             path = view_or_path
         window = sublime.active_window()
-        rust_proc.check_output(window,
-                               'cargo clean'.split(),
-                               path)
+        try:
+            rust_proc.check_output(window,
+                                   'cargo clean'.split(),
+                                   path)
+        except subprocess.CalledProcessError as e:
+            print('Cargo clean failure')
+            print(e.output)
+            raise
         messages.clear_messages(window)
+
+    def _skip_clippy(self):
+        if 'RE_SKIP_CLIPPY' in os.environ:
+            print('Skipping Clippy test.')
+            return True
+        else:
+            return False
 
 
 class AlteredSetting(object):

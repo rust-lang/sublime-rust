@@ -423,9 +423,7 @@ class CargoCurrentFile(sublime_plugin.WindowCommand):
     what = None
 
     def run(self):
-        print('current file')
         def _test_file(target):
-            print('target is %r' % target)
             self.window.run_command('cargo_exec', args={
                 'command': self.what,
                 'settings': {

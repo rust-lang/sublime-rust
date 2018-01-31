@@ -324,7 +324,7 @@ class RustProc(object):
         self.proc.stdout.close()
         rc = self.proc.wait()
         with PROCS_LOCK:
-            p = PROCS[self.window.id()]
+            p = PROCS.get(self.window.id())
             if p is self:
                 del PROCS[self.window.id()]
         return rc

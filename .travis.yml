@@ -1,0 +1,54 @@
+env:
+    global:
+        - PACKAGE="Rust Enhanced"
+        - SUBLIME_TEXT_VERSION="3"
+
+language: rust
+
+matrix:
+    include:
+        - os: linux
+          rust: stable
+
+        - os: osx
+          rust: stable
+
+        - os: linux
+          rust: beta
+
+        - os: osx
+          rust: beta
+
+        - os: linux
+          rust: nightly
+
+        - os: osx
+          rust: nightly
+
+
+before_install:
+    - curl -OL https://raw.githubusercontent.com/SublimeText/UnitTesting/master/sbin/travis.sh
+
+    # enable gui, see https://docs.travis-ci.com/user/gui-and-headless-browsers
+    - if [ "$TRAVIS_OS_NAME" == "linux"  ]; then
+            export DISPLAY=:99.0;
+            sh -e /etc/init.d/xvfb start;
+      fi
+
+
+install:
+    # Install Sublime and Sublime Unittesting.
+    - sh travis.sh bootstrap
+    # Install Package Control, needed for dependencies.
+    - sh travis.sh install_package_control
+
+    # Ensure nightly is installed to run no-trans, benchmarks, and Clippy.
+    - rustup install nightly
+    # Install Rust packages needed by integration tests.
+    - cargo +nightly install clippy || export RE_SKIP_CLIPPY=1
+    - cargo install cargo-script
+
+
+script:
+    - sh travis.sh run_syntax_tests
+    - sh travis.sh run_tests

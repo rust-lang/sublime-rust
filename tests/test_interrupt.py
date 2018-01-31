@@ -87,7 +87,6 @@ class TestInterrupt(TestBase):
 
     def test_build_cancel(self):
         """Test manually canceling a build."""
-        # So it doesn't hide the UnitTest output panel.
         self._with_open_file('tests/slow-build/src/lib.rs',
             self._test_build_cancel)
 
@@ -101,6 +100,7 @@ class TestInterrupt(TestBase):
         window.run_command('rust_cancel')
         # Sleep long enough to make sure the build didn't continue running.
         time.sleep(4)
+        t.join()
         self.assertEqual(self.terminated, [t])
         # Start, but no end.
         self.assertEqual(self._files(), [pattern + '-start-1'])
@@ -119,6 +119,7 @@ class TestInterrupt(TestBase):
         view.window().run_command('rust_cancel')
         # Sleep long enough to make sure the build didn't continue running.
         time.sleep(4)
+        t.join()
         self.assertEqual(self.terminated, [t])
         # Start, but no end.
         self.assertEqual(self._files(), [pattern + '-start-1'])
@@ -140,6 +141,8 @@ class TestInterrupt(TestBase):
         # This thread will silently exit without running.
         check_t.start()
         time.sleep(4)
+        check_t.join()
+        build_t.join()
         self.assertEqual(self.terminated, [])
         self.assertEqual(self._files(),
             [pattern + '-start-1',
@@ -158,9 +161,11 @@ class TestInterrupt(TestBase):
         self._wait_for_start()
         # Should silently kill the syntax check thread.
         self._run_build()
-        build_t = self._get_rust_thread()
+        build_t = self._get_rust_thread(previous_thread=check_t)
         self._wrap_terminate(build_t)
         time.sleep(4)
+        build_t.join()
+        check_t.join()
         self.assertEqual(self.terminated, [check_t])
         self.assertEqual(self._files(),
             [pattern + '-start-1',
@@ -176,12 +181,17 @@ class TestInterrupt(TestBase):
         self._cargo_clean(view)
         # Trigger on_save for syntax checking.
         view.run_command('save')
+        on_save_thread = self._get_rust_thread()
+        self._wrap_terminate(on_save_thread)
         # Doing this immediately afterwards should cancel the syntax check
         # before it gets a chance to do much.
         self._run_build()
-        build_t = self._get_rust_thread()
+        build_t = self._get_rust_thread(previous_thread=on_save_thread)
         self._wrap_terminate(build_t)
-        time.sleep(5)
+        # Wait for threads to finish.
+        on_save_thread.join()
+        build_t.join()
+        self.assertEqual(self.terminated, [on_save_thread])
         self.assertEqual(self._files(),
             [pattern + '-start-1',
              pattern + '-end-1'])
@@ -210,13 +220,15 @@ class TestInterrupt(TestBase):
             self._wrap_terminate(build_t)
             # Start a second build.
             self._run_build()
-            time.sleep(1)
+            next_build_t = self._get_rust_thread(previous_thread=build_t)
+            build_t.join()
             self.assertEqual(self.terminated, [build_t])
             # Start again, but hit cancel.
             ok_value = False
             self._run_build()
             time.sleep(4)
-            # Should not have interrupted.
+            next_build_t.join()
+            # Should not have interrupted next_build_t.
             self.assertEqual(self.terminated, [build_t])
             self.assertEqual(self._files(),
                 [pattern + '-start-1',
@@ -226,7 +238,7 @@ class TestInterrupt(TestBase):
             sublime.ok_cancel_dialog = orig_ok_cancel_dialog
 
     def _wait_for_start(self):
-        for _ in range(50):
+        for _ in range(100):
             time.sleep(0.1)
             if self._files() == [pattern + '-start-1']:
                 break

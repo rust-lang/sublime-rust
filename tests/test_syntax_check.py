@@ -134,6 +134,8 @@ class TestSyntaxCheck(TestBase):
 
     def test_clippy_messages(self):
         """Test clippy messages."""
+        if self._skip_clippy():
+            return
         to_test = [
             'tests/error-tests/examples/clippy_ex.rs',
         ]

@@ -125,6 +125,15 @@ CARGO_COMMANDS = {
 }
 
 
+CARGO_BUILD_DEFAULTS = {
+    'variants': {
+        'clippy': {
+            'toolchain': 'nightly',
+        }
+    }
+}
+
+
 class CargoSettings(object):
 
     """Interface to Cargo project settings stored in `sublime-project`
@@ -146,9 +155,11 @@ class CargoSettings(object):
         self.re_settings = sublime.load_settings('RustEnhanced.sublime-settings')
 
     def get_global_default(self, key, default=None):
+        internal_default = CARGO_BUILD_DEFAULTS.get('defaults', {})\
+                                               .get(key, default)
         return self.re_settings.get('cargo_build', {})\
                                .get('defaults', {})\
-                               .get(key, default)
+                               .get(key, internal_default)
 
     def set_global_default(self, key, value):
         cb = self.re_settings.get('cargo_build', {})
@@ -169,10 +180,13 @@ class CargoSettings(object):
         self._set_project_data()
 
     def get_global_variant(self, variant, key, default=None):
+        internal_default = CARGO_BUILD_DEFAULTS.get('variants', {})\
+                                               .get(variant, {})\
+                                               .get(key, default)
         return self.re_settings.get('cargo_build', {})\
                                .get('variants', {})\
                                .get(variant, {})\
-                               .get(key, default)
+                               .get(key, internal_default)
 
     def set_global_variant(self, variant, key, value):
         cb = self.re_settings.get('cargo_build', {})
