@@ -2,6 +2,8 @@
 
 mod no_main_mod;
 // Not sure why no-trans doesn't handle this properly.
-// end-msg: ERR(check) main function not found
-// end-msg: NOTE(check) the main function must be defined
-// end-msg: MSG(check) Note: no_main_mod.rs:1
+// When --profile=test is used with `cargo check`, this error will not happen
+// due to the synthesized main created by the test harness.
+// end-msg: ERR(rust_syntax_checking_include_tests=False) main function not found
+// end-msg: NOTE(rust_syntax_checking_include_tests=False) the main function must be defined
+// end-msg: MSG(rust_syntax_checking_include_tests=False) Note: no_main_mod.rs:1

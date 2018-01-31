@@ -8,6 +8,7 @@
     "rust_syntax_checking_method": "check",
 
     // Enable checking of test code within #[cfg(test)] sections.
+    // `check` method requires Rust 1.23 or newer.
     "rust_syntax_checking_include_tests": true,
 
     // If true, will not display warning messages.

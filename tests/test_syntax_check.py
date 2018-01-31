@@ -4,6 +4,8 @@ This currently runs on Rust 1.15.
 """
 
 
+import contextlib
+import itertools
 import re
 from rust_test_common import *
 
@@ -62,10 +64,15 @@ class TestSyntaxCheck(TestBase):
 
         The current restrictions are:
 
-        - `test`: This message only appears in a cfg(test) block.
         - `no-trans`: This message only appears with no-trans method.
         - `check`: This message only appears with check method.
         - semver: Any semver string to match against the rustc version.
+        - `key=value`: Check a configuration value.
+
+        With multiple restrictions, they must all pass.  You can separate
+        restrictions with " OR " to combine with Boolean OR:
+
+            // ^^^ERR(check OR test,<1.16.0) checks or test less than 1.16.
 
         These tests are somewhat fragile, as new versions of Rust change the
         formatting of messages.  Hopefully these examples are relatively
@@ -92,11 +99,13 @@ class TestSyntaxCheck(TestBase):
             # message with suggestion
             'error-tests/tests/cast-to-unsized-trait-object-suggestion.rs',
             # error in a cfg(test) section
-            'error-tests/src/lib.rs',
+            ([_altered_settings('rust_syntax_checking_include_tests', [True, False])],
+                'error-tests/src/lib.rs'),
             'error-tests/tests/macro-expansion.rs',
             'error-tests/tests/macro-backtrace-println.rs',
             'error-tests/examples/SNAKE.rs',
-            ('error-tests/examples/no_main.rs', 'error-tests/examples/no_main_mod.rs'),
+            ([_altered_settings('rust_syntax_checking_include_tests', [True, False])],
+                'error-tests/examples/no_main.rs', 'error-tests/examples/no_main_mod.rs'),
             ('error-tests/tests/remote_note_1.rs', 'error-tests/tests/remote_note_1_mod.rs'),
             'error-tests/tests/macro-expansion-outside-1.rs',
             'error-tests/tests/macro-expansion-outside-2.rs',
@@ -111,11 +120,15 @@ class TestSyntaxCheck(TestBase):
             'workspace/workspace2/src/lib.rs',
             'workspace/workspace2/src/somemod.rs',
         ]
+
+        # Configure different permutations of settings to test for each file.
         methods = ['no-trans']
         if semver.match(self.rustc_version, '>=1.16.0'):
             methods.append('check')
         else:
             print('Skipping check, need rust >= 1.16.')
+        setups = [_altered_settings('rust_syntax_checking_method', methods)]
+
         if semver.match(self.rustc_version, '>=1.19.0'):
             # -Zno-trans now requires nightly
             self._override_setting('cargo_build', {
@@ -125,23 +138,29 @@ class TestSyntaxCheck(TestBase):
                     }
                 }
             })
+
         for paths in to_test:
             if not isinstance(paths, tuple):
                 paths = (paths,)
+            if isinstance(paths[0], str):
+                extra_setups = []
+            else:
+                extra_setups = paths[0]
+                paths = paths[1:]
             paths = [os.path.join('tests', p) for p in paths]
             self._with_open_file(paths[0], self._test_messages,
-                methods=methods, extra_paths=paths[1:])
+                setups=setups + extra_setups, extra_paths=paths[1:])
 
     def test_clippy_messages(self):
         """Test clippy messages."""
         to_test = [
             'tests/error-tests/examples/clippy_ex.rs',
         ]
+        setups = [[AlteredSetting('rust_syntax_checking_method', 'clippy')]]
         for path in to_test:
-            self._with_open_file(path, self._test_messages, methods=['clippy'])
+            self._with_open_file(path, self._test_messages, setups=setups)
 
-    def _test_messages(self, view, methods=None, extra_paths=()):
-
+    def _test_messages(self, view, setups=None, extra_paths=()):
         # Capture all calls to Sublime to add phantoms and regions.
         # These are keyed by filename.
         phantoms = {}
@@ -163,16 +182,18 @@ class TestSyntaxCheck(TestBase):
 
         # Trigger the generation of messages.
         try:
-            for method in methods:
-                with AlteredSetting('rust_syntax_checking_method', method):
-                    self._test_messages2(view, phantoms, view_regions, method, extra_paths)
+            for setup in itertools.product(*setups):
+                with contextlib.ExitStack() as stack:
+                    for ctx in setup:
+                        stack.enter_context(ctx)
+                    self._test_messages2(view, phantoms, view_regions, extra_paths, setup)
                 phantoms.clear()
                 view_regions.clear()
         finally:
             m._sublime_add_phantom = orig_add_phantom
             m._sublime_add_regions = orig_add_regions
 
-    def _test_messages2(self, view, phantoms, regions, method, extra_paths):
+    def _test_messages2(self, view, phantoms, regions, extra_paths, setup):
         e = plugin.SyntaxCheckPlugin.RustSyntaxCheckEvent()
         # Force Cargo to recompile.
         self._cargo_clean(view)
@@ -180,18 +201,18 @@ class TestSyntaxCheck(TestBase):
         e.on_post_save(view)
         # Wait for it to finish.
         self._get_rust_thread().join()
-        self._test_messages_check(view, phantoms, regions, method)
+        self._test_messages_check(view, phantoms, regions, setup)
 
         def extra_check(view):
             # on_load is disabled during tests, do it manually.
             plugin.rust.messages.show_messages_for_view(view)
-            self._test_messages_check(view, phantoms, regions, method)
+            self._test_messages_check(view, phantoms, regions, setup)
 
         # Load any other views that are expected to have messages.
         for path in extra_paths:
             self._with_open_file(path, extra_check)
 
-    def _test_messages_check(self, view, phantoms, regions, method):
+    def _test_messages_check(self, view, phantoms, regions, setup):
         phantoms = phantoms.get(view.file_name(), [])
         regions = regions.get(view.file_name(), [])
         expected_messages = self._collect_expected_regions(view)
@@ -201,36 +222,45 @@ class TestSyntaxCheck(TestBase):
         manifest_path = util.find_cargo_manifest(view.file_name())
         cs = cargo_settings.CargoSettings(window)
         cs.load()
+        method = util.get_setting('rust_syntax_checking_method')
         toolchain = cs.get_computed(manifest_path, method, None, 'toolchain')
         self.rustc_version = util.get_rustc_version(window, manifest_path,
             toolchain=toolchain)
 
+        def do_check(check):
+            if check == 'check':
+                # This message only shows up in check.
+                return method == 'check'
+            elif check == 'no-trans':
+                # This message only shows up in no-trans.
+                return method == 'no-trans'
+            elif check == 'nightly':
+                # This message only shows on nightly.
+                return 'nightly' in self.rustc_version
+            elif re.match('[<>=!0-9]', check):
+                return semver.match(self.rustc_version, check)
+            elif '=' in check:
+                key, value = check.split('=')
+                if value == 'True':
+                    value = True
+                elif value == 'False':
+                    value = False
+                return util.get_setting(key) == value
+            else:
+                raise ValueError(check)
+
         def restriction_check(restrictions):
             if not restrictions:
                 return True
-            checks = restrictions[1:-1].split(',')
-            for check in checks:
-                if check == 'test':
-                    if method == 'check':
-                        # 'cargo check' currently does not handle cfg(test)
-                        # blocks (see
-                        # https://github.com/rust-lang/cargo/issues/3431)
-                        return False
-                elif check == 'check':
-                    # This message only shows up in check.
-                    if method != 'check':
-                        return False
-                elif check == 'no-trans':
-                    # This message only shows up in no-trans.
-                    if method != 'no-trans':
-                        return False
-                elif check == 'nightly':
-                    # This message only shows on nightly.
-                    return 'nightly' in self.rustc_version
+            ors = restrictions[1:-1].split(' OR ')
+            for conj in ors:
+                checks = conj.split(',')
+                for check in checks:
+                    if not do_check(check):
+                        break
                 else:
-                    if not semver.match(self.rustc_version, check):
-                        return False
-            return True
+                    return True
+            return False
 
         region_set = {(r.begin(), r.end()) for r in regions}
 
@@ -255,14 +285,14 @@ class TestSyntaxCheck(TestBase):
                             self.assertIn(emsg_info['level'], content)
                             break
                 else:
-                    raise AssertionError('Did not find expected message "%s:%s" for region %r:%r for file %r method=%r\nAvailable phantoms=%r' % (
+                    raise AssertionError('Did not find expected message "%s:%s" for region %r:%r for file %r\nsetup=%s\nversion=%s\nAvailable phantoms=%r' % (
                         emsg_info['level'], emsg_info['message'],
                         emsg_info['begin'], emsg_info['end'],
-                        view.file_name(), method, phantoms))
+                        view.file_name(), _setup_debug(setup), self.rustc_version, phantoms))
                 del phantoms[i]
         if len(phantoms):
-            raise AssertionError('Got extra phantoms for %r (method=%s, version=%s): %r' % (
-                view.file_name(), method, self.rustc_version, phantoms))
+            raise AssertionError('Got extra phantoms for %r\nsetup=%s\nversion=%s\n%r' % (
+                view.file_name(), _setup_debug(setup), self.rustc_version, phantoms))
 
         # Check regions.
         found_regions = set()
@@ -273,9 +303,9 @@ class TestSyntaxCheck(TestBase):
                 if r in region_set:
                     found_regions.add(r)
                 else:
-                    raise AssertionError('Did not find expected region %r,%r for file %r method %r\nActual regions=%r' % (
+                    raise AssertionError('Did not find expected region %r,%r for file %r\nsetup=%s\nversion=%s\nActual regions=%r' % (
                         emsg_info['begin'], emsg_info['end'], view.file_name(),
-                        method, region_set))
+                        _setup_debug(setup), self.rustc_version, region_set))
         if len(region_set) != len(found_regions):
             extra_regions = region_set - found_regions
             raise AssertionError('Got extra regions for %r: %r' % (
@@ -373,3 +403,11 @@ class TestSyntaxCheck(TestBase):
             })
 
         return result
+
+
+def _altered_settings(name, values):
+    return [AlteredSetting(name, value) for value in values]
+
+
+def _setup_debug(setup):
+    return '\n' + '\n'.join(['    ' + str(s) for s in setup])

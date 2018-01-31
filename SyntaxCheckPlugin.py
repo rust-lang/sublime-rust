@@ -2,7 +2,7 @@ import sublime
 import sublime_plugin
 import os
 from .rust import (messages, rust_proc, rust_thread, util, target_detect,
-                   cargo_settings)
+                   cargo_settings, semver)
 from pprint import pprint
 
 
@@ -152,6 +152,10 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
                     # It also disables the "main function not found" error for
                     # binaries.
                     cmd['command'].append('--test')
+            elif method == 'check':
+                if (util.get_setting('rust_syntax_checking_include_tests', True) and
+                    semver.match(cmd['rustc_version'], '>=1.23.0')):
+                    cmd['command'].append('--profile=test')
             p = rust_proc.RustProc()
             self.current_target_src = target_src
             p.run(self.window, cmd['command'], self.cwd, self, env=cmd['env'])

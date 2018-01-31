@@ -172,3 +172,6 @@ class AlteredSetting(object):
 
     def __exit__(self, type, value, traceback):
         self.settings.set(self.name, self.orig)
+
+    def __str__(self):
+        return '%s=%s' % (self.name, self.value)
