@@ -756,6 +756,7 @@ contexts:
           pop: true
         - match: \bself\b
           scope: variable.parameter.rust
+        - include: block-body
         - match: '({{identifier}})\s*(:(?!:))'
           captures:
             1: variable.parameter.rust
