@@ -623,7 +623,7 @@ class CargoSetEnvironmentEditor(CargoConfigBase):
         else:
             template += util.multiline_fix("""
                 {
-                    // "RUST_BACKTRACE": 1
+                    // "RUST_BACKTRACE": "1"
                 }
                 """)
         # Unfortunately Sublime indents on 'insert'

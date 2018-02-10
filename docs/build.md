@@ -154,7 +154,7 @@ An example of a `sublime-project` file:
             "variants": {
                 "run": {
                     "env": {
-                        "RUST_BACKTRACE": 1
+                        "RUST_BACKTRACE": "1"
                     }
                 }
             },
