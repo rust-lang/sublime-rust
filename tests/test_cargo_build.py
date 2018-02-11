@@ -460,7 +460,7 @@ class TestCargoBuild(TestBase):
 
     def _quick_panel(self, items, on_done, flags=0,
                      selected_index=-1, on_highlighted=None):
-        self.assertEqual(sorted(items), sorted(self.quick_panel_items))
+        self.assertEqual(items, self.quick_panel_items)
         on_done(self.quick_panel_index)
 
     def _test_ambiguous_auto_build2(self, view):

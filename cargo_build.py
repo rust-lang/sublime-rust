@@ -82,6 +82,7 @@ class CargoExecCommand(sublime_plugin.WindowCommand):
 
         else:
             # Can't determine a single target, let the user choose one.
+            targets.sort()
             display_items = [' '.join(x[1]) for x in targets]
             on_done = functools.partial(self._auto_choice_made, targets)
             self.window.show_quick_panel(display_items, on_done)
