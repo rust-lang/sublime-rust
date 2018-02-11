@@ -73,6 +73,11 @@ class TestBase(unittest.TestCase):
         self._override_setting('show_panel_on_build', False)
         self._override_setting('cargo_build', {})
 
+        # Clear any state.
+        messages.clear_messages(window)
+        # Force output panel to clear.
+        window.create_output_panel(plugin.rust.opanel.PANEL_NAME)
+
     def _override_setting(self, name, value):
         if name not in self._original_settings:
             if self.settings.has(name):

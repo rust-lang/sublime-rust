@@ -1,6 +1,7 @@
 """Tests for Cargo build."""
 
 import fnmatch
+import functools
 import os
 import re
 import sys
@@ -27,6 +28,25 @@ def version(filename, check_version):
         return filename
     else:
         return None
+
+
+def debug_wrapper(f):
+    @functools.wraps(f)
+    def t(self, *args, **kwargs):
+        try:
+            f(self, *args, **kwargs)
+        except:
+            print('Test failed.')
+            print('Messages are:')
+            for window, info in messages.WINDOW_MESSAGES.items():
+                for path, msgs in info['paths'].items():
+                    print(path)
+                    for msg in msgs:
+                        pprint(msg)
+            print('Output panel is:')
+            print(self._get_build_output(sublime.active_window()))
+            raise
+    return t
 
 
 class TestCargoBuild(TestBase):
@@ -302,6 +322,7 @@ class TestCargoBuild(TestBase):
         self._run_build_wait('doc')
         self.assertTrue(os.path.exists(target))
 
+    @debug_wrapper
     def test_clippy(self):
         """Test "Clippy" variant."""
         if self._skip_clippy():
