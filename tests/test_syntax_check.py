@@ -156,7 +156,7 @@ class TestSyntaxCheck(TestBase):
         if self._skip_clippy():
             return
         to_test = [
-            'tests/error-tests/examples/clippy_ex.rs',
+            'tests/clippy/src/lib.rs',
         ]
         setups = [[AlteredSetting('rust_syntax_checking_method', 'clippy')]]
         for path in to_test:

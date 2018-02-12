@@ -1,6 +1,6 @@
 // Testing a Clippy warning (char_lit_as_u8).
 
-fn clippy_example() {
+pub fn clippy_example() {
     println!("libf1");
     'x' as u8;
 //  ^^^^^^^^^WARN casting character literal
@@ -10,8 +10,4 @@ fn clippy_example() {
 //  ^^^^^^^^^^WARN statement with no effect
 //  ^^^^^^^^^^NOTE #[warn(no_effect)]
 //  ^^^^^^^^^^HELP for further information
-}
-
-fn main() {
-    clippy_example();
 }
