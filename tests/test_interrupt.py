@@ -68,7 +68,6 @@ class TestInterrupt(TestBase):
         t1.start()
 
         self._wait_for_start()
-        start = time.time()
 
         # Start a new thread to interrupt the first.
         t2.start()
@@ -77,8 +76,6 @@ class TestInterrupt(TestBase):
         self.assertFalse(t1.is_alive())
         t1.join()
         t2.join()
-        duration = time.time() - start
-        self.assertAlmostEqual(duration, 4.0, delta=1.0)
         self.assertEqual(self.terminated, [t1])
         self.assertEqual(self._files(),
             [pattern + '-start-1',
