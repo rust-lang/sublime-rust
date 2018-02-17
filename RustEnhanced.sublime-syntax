@@ -102,7 +102,7 @@ contexts:
         - include: statements-block
 
     - match: \b(let|const|static)\b
-      scope: storage.type.rust keyword.other.rust
+      scope: storage.type.rust
 
     - match: \bfn\b
       scope: storage.type.function.rust
