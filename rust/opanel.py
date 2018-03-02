@@ -30,7 +30,7 @@ def create_output_panel(window, base_dir):
     s.set('line_numbers', False)
     s.set('gutter', False)
     s.set('scroll_past_end', False)
-    output_view.assign_syntax('Cargo.build-language')
+    output_view.assign_syntax('Cargo.sublime-syntax')
     # 'color_scheme'?
     # XXX: Is this necessary?
     # self.window.create_output_panel(PANEL_NAME)

@@ -1,0 +1,85 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: Cargo Build Results
+file_extensions: rs
+scope: source.build_results
+
+variables:
+  result_prefix: '[1-9]\d* '
+  test_prefix: '^test .* \.{3} '
+
+contexts:
+  main:
+    # Loosely organized by order of appearance
+
+    # comments the command run (as the previous syntax did)
+    - match: '^\[Running: cargo.*\]$'
+      scope: comment meta.command.cargo
+
+    # matches the build logs
+    - match: '^ {3}Compiling '
+      scope: markup.inserted.diff meta.compiling.cargo
+    - match: '^ {4}Finished '
+      scope: markup.inserted.diff meta.finished.cargo
+    - match: '^ {5}Running '
+      scope: markup.inserted.diff meta.running.cargo
+    - match: '^ {3}Doc-tests'
+      scope: markup.inserted.diff meta.doctests.cargo
+
+    # matches the build result
+    - match: '^(..[^:\n]*):(\d+):?(\d+)?:? '
+      scope: entity.name.filename meta.filename.cargo
+    - match: '^(note|warning): '
+      scope: variable.parameter meta.warning.cargo
+    - match: '^error: '
+      scope: message.error meta.error.cargo
+
+    # matches the test results: 'test <test_path> ... <ok|ignored|bench>'
+    - match: '{{test_prefix}}(ok)\b'
+      captures:
+        1: markup.inserted.diff meta.test_ok.cargo
+    - match: '{{test_prefix}}(ignored)\b'
+      captures:
+        1: markup.changed.diff meta.test_ignored.cargo
+    - match: '{{test_prefix}}(FAILED)\b'
+      captures:
+        1: markup.deleted.diff meta.test_failed.cargo
+    # benches are aligned, so they may have extra spaces before the '...'
+    - match: '^test .* +\.{3} (bench): +\d+'
+      captures:
+        1: markup.deleted.diff meta.bench.cargo
+
+    - match: '\bhelp:[\s\S]+$'
+      scope: markup.inserted.diff meta.help.cargo
+    # I don't know what this is
+    - match: '^\s{4}[\S\s]+,\s([\w,\s-]+\.[A-Za-z]{2}):(\d+)'
+      scope: message.error
+
+    - match: '^failures:\n'
+      scope: message.error meta.failures.cargo
+
+    # matches the line 'test result: FAILED. 1 passed; 1 failed; 1 ignored; 0 measured; 0 filtered out'
+    - match: '^(test result:) (?:(ok)|(FAILED))\.'
+      captures:
+        1: variable.parameter meta.test_result.cargo
+        2: markup.inserted.diff meta.ok_result.cargo
+        3: invalid meta.fail_result.cargo
+      push: test-result-counts
+
+    # comments the logs sublime adds
+    - match: '^\[Finished in \d+\.\d+s( with exit code .+)?\]$'
+      set:
+        - meta_scope: comment meta.sublime.cargo
+
+  test-result-counts:
+    - match: '{{result_prefix}}passed(?=;)'
+      scope: markup.inserted.diff meta.passed_count.cargo
+    - match: '{{result_prefix}}failed(?=;)'
+      scope: markup.deleted.diff meta.fail_count.cargo
+    - match: '{{result_prefix}}ignored(?=;)'
+      scope: markup.changed.diff meta.ignore_count.cargo
+    - match: '{{result_prefix}}measured(?=;)'
+      scope: support.constant meta.measured_count.cargo
+    - match: '\n'
+      pop: true

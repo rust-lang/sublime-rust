@@ -1,0 +1,115 @@
+# SYNTAX TEST "Packages/Rust Enhanced/Cargo.sublime-syntax"
+
+[Running: cargo clippy --message-format=json]
+# <- comment
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ comment meta.command.cargo
+
+lib: lib_dice
+   Compiling lib_dice v0.1.0 (file:///Users/daniel/Documents/GitHub/lib_dice)
+#  ^^^^^^^^^ markup.inserted.diff meta.compiling.cargo
+
+# warnings/notes can be printed before the "finished"
+warning: tests/test.rs:84: unreachable statement
+# <- variable.parameter meta.warning.cargo
+#^^^^^^^ variable.parameter meta.warning.cargo
+
+note: tests/test.rs:84: #[warn(unreachable_code)] on by default
+# <- variable.parameter meta.warning.cargo
+#^^^^ variable.parameter meta.warning.cargo
+
+    Finished dev [unoptimized + debuginfo] target(s) in 11.15 secs
+#   ^^^^^^^^ markup.inserted.diff meta.finished.cargo
+     Running target/debug/deps/other_prngs-d5fdc9086767f539
+#    ^^^^^^^ markup.inserted.diff meta.running.cargo
+   Doc-tests other_prngs
+#  ^^^^^^^^^ markup.inserted.diff meta.doctests.cargo
+
+error: src/lib.rs:53: expected expression, found `.`
+# <- message.error meta.error.cargo
+#^^^^^^ message.error meta.error.cargo
+
+test test_1 ... ok
+#               ^^ markup.inserted.diff meta.test_ok.cargo
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+#<- variable.parameter meta.test_result.cargo
+#^^^^^^^^^^^ variable.parameter meta.test_result.cargo
+#           ^ source.build_results
+#            ^^ markup.inserted.diff meta.ok_result.cargo
+#.               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.build_results
+
+     Running target/debug/deps/pcg_test-62146156f74e8a4b
+#    ^^^^^^^^ markup.inserted.diff meta.running.cargo
+
+running 1 test
+test module_1::test_2 ... ok
+#                         ^^ markup.inserted.diff meta.test_ok.cargo
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+#<- variable.parameter meta.test_result.cargo
+#^^^^^^^^^^^ variable.parameter meta.test_result.cargo
+#           ^ source.build_results
+#            ^^ markup.inserted.diff meta.ok_result.cargo
+#              ^^ source.build_results
+#                ^^^^^^^^ markup.inserted.diff meta.passed_count.cargo
+#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.build_results
+
+     Running target/debug/deps/test-2da41379fa5c3c06
+#    ^^^^^^^^ markup.inserted.diff meta.running.cargo
+
+running 3 tests
+test module_2::test_3 ... ignored
+#                         ^^^^^^^ markup.changed.diff meta.test_ignored.cargo
+test test_4 ... ok
+#               ^^ markup.inserted.diff meta.test_ok.cargo
+test test_5 ... FAILED
+#               ^^^^^^ markup.deleted.diff meta.test_failed.cargo
+
+failures:
+#<- message.error meta.failures.cargo
+#^^^^^^^^^ message.error meta.failures.cargo
+
+---- test_5 stdout ----
+   thread 'test_5' panicked at 'explicit panic', tests/test.rs:80:5
+note: Run with `RUST_BACKTRACE=1` for a backtrace.
+#<- variable.parameter meta.warning.cargo
+#^^^^^ variable.parameter meta.warning.cargo
+
+failures:
+#<- message.error meta.failures.cargo
+#^^^^^^^^^ message.error meta.failures.cargo
+    test_5
+
+test result: FAILED. 1 passed; 1 failed; 1 ignored; 0 measured; 0 filtered out
+#<- variable.parameter meta.test_result.cargo
+#^^^^^^^^^^^ variable.parameter meta.test_result.cargo
+#            ^^^^^^ invalid meta.fail_result.cargo
+#                    ^^^^^^^^ markup.inserted.diff meta.passed_count.cargo
+#                              ^^^^^^^^ markup.deleted.diff meta.fail_count.cargo
+#                                        ^^^^^^^^^ markup.changed.diff meta.ignore_count.cargo
+#                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.build_results
+
+test tests::bench_1      ... bench:         532 ns/iter (+/- 472)
+#                            ^^^^^ markup.deleted.diff meta.bench.cargo
+test tests::ignored_test ... ignored
+#                            ^^^^^^^ markup.changed.diff meta.test_ignored.cargo
+test tests::bench_2      ... bench:       1,013 ns/iter (+/- 541)
+#                            ^^^^^ markup.deleted.diff meta.bench.cargo
+
+test result: ok. 0 passed; 0 failed; 7 ignored; 2 measured; 0 filtered out
+#<- variable.parameter meta.test_result.cargo
+#^^^^^^^^^^^ variable.parameter meta.test_result.cargo
+#            ^^ markup.inserted.diff meta.ok_result.cargo
+#                                    ^^^^^^^^^ markup.changed.diff meta.ignore_count.cargo
+#                                               ^^^^^^^^^^ support.constant meta.measured_count.cargo
+
+
+[Finished in 11.0s with exit code 101]
+#<- comment meta.sublime.cargo
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ comment meta.sublime.cargo
+anything
+#<- comment meta.sublime.cargo
+#^^^^^^^ comment meta.sublime.cargo
+else
+#<- comment meta.sublime.cargo
+#^^^ comment meta.sublime.cargo
