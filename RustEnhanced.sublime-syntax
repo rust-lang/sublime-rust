@@ -162,7 +162,10 @@ contexts:
     - match: '\b[[:lower:]_][[:lower:][:digit:]_]*(?=\()'
       scope: support.function.rust
 
-    - match: '\b((?:format|print|println|panic|format_args|unreachable)!)\s*(\()'
+    # macros which take format specs as the only parameter
+    # - match: '\b((?:format|format_args|eprint|eprintln|print|println|panic|unreachable|unimplemented)!)\s*(\()'
+    # is more performant as the below (using the Triealyzer at http://brianreilly.me/triealyzer)
+    - match: '\b((?:format(?:_args)?|eprint(?:ln)?|p(?:rint(?:ln)?|anic)|un(?:reachable|implemented))!)\s*(\()'
       captures:
         1: support.macro.rust
         2: meta.group.rust punctuation.definition.group.begin.rust
@@ -174,7 +177,10 @@ contexts:
         - match: '(?=\S)'
           set: group-tail
 
-    - match: '\b((?:write|writeln)!)\s*(\()'
+    # macros which take format specs as the second parameter
+    # - match: '\b((?:write|writeln|assert|debug_assert)!)\s*(\()'
+    # is more performant as the below
+    - match: '\b((?:write(?:ln)?|assert|debug_assert)!)\s*(\()'
       captures:
         1: support.macro.rust
         2: meta.group.rust punctuation.definition.group.begin.rust
@@ -189,6 +195,11 @@ contexts:
             - match: '(?=\S)'
               set: group-tail
         - include: group-tail
+
+    # macros which take format specs as the third parameter
+    # - match: '\b((?:assert_eq|assert_ne|debug_assert_eq|debug_assert_ne)!)\s*(\()'
+    # is more performant as the below
+    # - match: '\b((?:assert_(?:eq|ne)|debug_assert_(?:eq|ne))!)\s*(\()'
 
     - match: '\b[[:lower:]_][[:lower:][:digit:]_]*!(?=\s*(\(|\{|\[))'
       scope: support.macro.rust
