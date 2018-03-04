@@ -9,7 +9,7 @@ variables:
   identifier: '(?:[[:alpha:]][_[:alnum:]]*|_[_[:alnum:]]+)'
   escaped_byte: '\\([nrt0\"''\\]|x\h{2})'
   escaped_char: '\\([nrt0\"''\\]|x\h{2}|u\{\h{1,6}\})'
-  int_suffixes: '[iu](?:8|16|32|64|size)'
+  int_suffixes: '[iu](?:8|16|32|64|128|size)'
   float_suffixes: 'f(32|64)'
 contexts:
   main:
