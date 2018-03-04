@@ -270,14 +270,18 @@ impl fmt::Display for PrintableStruct {
 //                            ^ punctuation.definition.group.end
         write!(f, "{:10}", self.0)
 //                 ^^^^^ constant.other.placeholder
-        write!(f, "{:^10}", self.0)
-//                 ^^^^^^ constant.other.placeholder
-        write!(f, "{:+046.89?}", self.0)
+        eprint!("{:^10}", self.0)
+//      ^^^^^^^ support.macro
+//               ^^^^^^ constant.other.placeholder
+        eprintln!("{:+046.89?}", self.0)
+//      ^^^^^^^^^ support.macro
 //                 ^^^^^^^^^^^ constant.other.placeholder
-        write!(f, "{:-^#10x}", self.0)
-//                 ^^^^^^^^^ constant.other.placeholder
-        write!(f, "{4j:#xf10}", self.0)
-//                 ^^^^^^^^^^ string.quoted.double
+        assert!(true, "{:-^#10x}", self.0)
+//      ^^^^^^^ support.macro
+//                     ^^^^^^^^^ constant.other.placeholder
+        debug_assert!(true, "{4j:#xf10}", self.0)
+//      ^^^^^^^^^^^^^ support.macro
+//                           ^^^^^^^^^^ string.quoted.double
         write!(f, "{{}}", self.0)
 //                 ^^^^ constant.character.escape.rust
         write!(get_writer(), "{}", "{}")
@@ -1039,6 +1043,9 @@ pub fn macro_tests() {
     unreachable!("{:?}", e);
 //  ^^^^^^^^^^^^ support.macro.rust
 //                ^^^^ constant.other.placeholder.rust
+    unimplemented!("{:?}", e);
+//  ^^^^^^^^^^^^^^ support.macro.rust
+//                  ^^^^ constant.other.placeholder.rust
 }
 
 #[derive(Clone)]
