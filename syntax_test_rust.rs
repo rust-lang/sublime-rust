@@ -141,6 +141,11 @@ let raw_bytes = br#"This won't escape anything either \x01 \""#;
  // <- constant.numeric.integer.octal
 //^^^^^^^^^ constant.numeric.integer.octal
 //         ^^^ storage.type - constant.numeric.integer.octal
+0x12e15e35b500f16e2e714eb2b37916a5_u128;
+// <- constant.numeric.integer.hexadecimal
+ // <- constant.numeric.integer.hexadecimal
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ constant.numeric.integer.hexadecimal
+//                                 ^^^^ storage.type - constant.numeric.integer.hexadecimal
 
 extern crate foo;
 // <- keyword.other
