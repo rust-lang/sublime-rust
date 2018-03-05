@@ -67,6 +67,13 @@ contexts:
         2: storage.type.struct.rust
       push: struct-identifier
 
+    - match: '\b(?:(pub)\s+)?(union)\s+'
+      scope: meta.union.rust
+      captures:
+        1: storage.modifier.rust
+        2: storage.type.union.rust
+      push: union-identifier
+
     - match: '\b(?:(pub)\s+)?(type)\s+({{identifier}})\b'
       captures:
         1: storage.modifier.rust
@@ -540,23 +547,53 @@ contexts:
       pop: true
     - match: '\{'
       scope: punctuation.definition.block.begin.rust
+      push: struct-classic-body
+
+  struct-classic-body:
+    - meta_scope: meta.block.rust
+    - match: '(?=\})'
+      pop: true
+    - include: comments
+    - include: attribute
+    - match: \bpub\b
+      scope: storage.modifier.rust
+    - match: '{{identifier}}(?=\s*:)'
+      scope: variable.other.member.rust
       push:
-        - meta_scope: meta.block.rust
-        - match: '(?=\})'
+        - match: ',|(?=\})'
           pop: true
         - include: comments
-        - include: attribute
-        - match: \bpub\b
-          scope: storage.modifier.rust
-        - match: '{{identifier}}(?=\s*:)'
-          scope: variable.other.member.rust
-          push:
-            - match: ',|(?=\})'
-              pop: true
-            - include: comments
-            - match: ':'
-              scope: punctuation.separator.rust
-            - include: type-any-identifier
+        - match: ':'
+          scope: punctuation.separator.rust
+        - include: type-any-identifier
+
+
+  union-identifier:
+    - match: '{{identifier}}(?=<)'
+      scope: entity.name.union.rust
+      set:
+        - meta_scope: meta.union.rust meta.generic.rust
+        - match: '(?=<)'
+          push: generic-angles
+        - match: ''
+          set: union-body
+    - match: '{{identifier}}'
+      scope: entity.name.union.rust
+      set: union-body
+
+  union-body:
+    - meta_scope: meta.union.rust
+    - include: comments
+    - match: '(?=\bwhere\b)'
+      push: impl-where
+    - match: '\{'
+      scope: punctuation.definition.block.begin.rust
+      push: struct-classic-body
+    - match: '\}'
+      scope: meta.block.rust punctuation.definition.block.end.rust
+      pop: true
+    - match: '(?=;)'
+      pop: true
 
   macro-block:
     - meta_scope: meta.macro.rust
