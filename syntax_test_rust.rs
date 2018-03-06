@@ -1191,3 +1191,8 @@ pub union Foo<'a, Y: Baz>
 //               ^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.union meta.block comment.line.double-slash
 }
 // <- meta.union meta.block punctuation.definition.block.end
+
+// Union was implemented in such a way that `union` is not a keyword.  Verify
+// that we don't accidentally interpret it as a keyword.
+fn union() {}
+// ^^^^^ meta.function entity.name.function
