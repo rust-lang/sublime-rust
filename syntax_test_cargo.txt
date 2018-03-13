@@ -5,7 +5,7 @@
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ comment meta.command.cargo
 
 lib: lib_dice
-   Updating registry `https://github.com/rust-lang/crates.io-index`
+    Updating registry `https://github.com/rust-lang/crates.io-index`
 #  ^^^^^^^^ markup.inserted.diff meta.updating.cargo
 
  Downloading crate-name v0.2.5
