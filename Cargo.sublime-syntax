@@ -18,6 +18,10 @@ contexts:
       scope: comment meta.command.cargo
 
     # matches the build logs
+    - match: '^ {3}Updating '
+      scope: markup.inserted.diff meta.updating.cargo
+    - match: '^ {1}Downloading '
+      scope: markup.inserted.diff meta.downloading.cargo
     - match: '^ {3}Compiling '
       scope: markup.inserted.diff meta.compiling.cargo
     - match: '^ {4}Finished '
