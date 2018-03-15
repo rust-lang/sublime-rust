@@ -8,7 +8,7 @@ lib: lib_dice
     Updating registry `https://github.com/rust-lang/crates.io-index`
 #   ^^^^^^^^ markup.inserted.diff meta.updating.cargo
 
- Documenting registry `https://github.com/rust-lang/crates.io-index`
+ Documenting crate-name v0.2.5
 #^^^^^^^^^^^ markup.inserted.diff meta.documenting.cargo
 
  Downloading crate-name v0.2.5
