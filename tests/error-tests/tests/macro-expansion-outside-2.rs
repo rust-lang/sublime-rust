@@ -11,4 +11,5 @@ fn f() {
 //              ^^^^^^^^^^^^^^^^^^^^ERR this error originates in a macro outside
 //              ^^^^^^^^^^^^^^^^^^^^ERR expected (), found i32
 //              ^^^^^^^^^^^^^^^^^^^^NOTE expected type
+//              ^^^^^^^^^^^^^^^^^^^^NOTE(<1.16.0) found type
 }

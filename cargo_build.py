@@ -3,6 +3,7 @@
 import functools
 import sublime
 import sublime_plugin
+import sys
 from .rust import (rust_proc, rust_thread, opanel, util, messages,
                    cargo_settings, target_detect)
 from .rust.cargo_config import *
@@ -486,3 +487,34 @@ class CargoMessageHover(sublime_plugin.ViewEventListener):
     def on_hover(self, point, hover_zone):
         if util.get_setting('rust_phantom_style', 'normal') == 'popup':
             messages.message_popup(self.view, point, hover_zone)
+
+
+class RustAcceptSuggestedReplacement(sublime_plugin.TextCommand):
+
+    """Used for suggested replacements issued by the compiler to apply the
+    suggested replacement.
+    """
+
+    def run(self, edit, region, replacement):
+        region = sublime.Region(*region)
+        self.view.replace(edit, region, replacement)
+
+
+def plugin_unloaded():
+    messages.clear_all_messages()
+    try:
+        from package_control import events
+    except ImportError:
+        return
+    package_name = __package__.split('.')[0]
+    if events.pre_upgrade(package_name):
+        # When upgrading the package, Sublime currently does not cleanly
+        # unload the `rust` Python package.  This is a workaround to ensure
+        # that it gets completely unloaded so that when it upgrades it will
+        # load the new package. See
+        # https://github.com/SublimeTextIssues/Core/issues/2207
+        re_keys = [key for key in sys.modules if key.startswith(package_name + '.rust')]
+        for key in re_keys:
+            del sys.modules[key]
+        if package_name in sys.modules:
+            del sys.modules[package_name]

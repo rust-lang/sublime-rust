@@ -85,24 +85,21 @@ class OutputListener(rust_proc.ProcListener):
                     # crate's source file (such as libcore), which is probably
                     # not available.
                     return
+                message = messages.Message()
                 lineno = int(m.group(2)) - 1
                 # Region columns appear to the left, so this is +1.
                 col = int(m.group(3))
                 # Rust 1.24 changed column numbering to be 1-based.
                 if semver.match(self.rustc_version, '>=1.24.0-beta'):
                     col -= 1
-                span = ((lineno, col), (lineno, col))
+                message.span = ((lineno, col), (lineno, col))
                 # +2 to skip ", "
                 build_region = sublime.Region(region_start + m.start() + 2,
                                               region_start + m.end())
-
-                # Use callback so the build output window scrolls to this
-                # point.
-                def on_test_cb(message):
-                    message['output_panel_region'] = build_region
-
-                messages.add_message(self.window, path, span, 'error', True,
-                    None, None, on_test_cb)
+                message.output_panel_region = build_region
+                message.path = path
+                message.level = 'error'
+                messages.add_message(self.window, message)
 
     def on_error(self, proc, message):
         self._append(message)
@@ -113,23 +110,30 @@ class OutputListener(rust_proc.ProcListener):
                                        None, self.msg_cb)
 
     def msg_cb(self, message):
-        level = message['level']
-        region_start = self.output_view.size() + len(level) + 2
-        path = message['path']
+        """Display the message in the output panel.  Also marks the message
+        with the output panel region where the message is shown.  This allows
+        us to scroll the output panel to the correct region when cycling
+        through messages.
+        """
+        if not message.text:
+            # Region-only messages can be ignored.
+            return
+        region_start = self.output_view.size() + len(message.level) + 2
+        path = message.path
         if path:
             if self.base_path and path.startswith(self.base_path):
                 path = os.path.relpath(path, self.base_path)
-            if message['span']:
-                highlight_text = '%s:%d' % (path, message['span'][0][0] + 1)
+            if message.span:
+                highlight_text = '%s:%d' % (path, message.span[0][0] + 1)
             else:
                 highlight_text = path
-            self._append('%s: %s: %s' % (level, highlight_text, message['text']))
+            self._append('%s: %s: %s' % (message.level, highlight_text, message.text))
             region = sublime.Region(region_start,
                                     region_start + len(highlight_text))
         else:
-            self._append('%s: %s' % (level, message['text']))
+            self._append('%s: %s' % (message.level, message.text))
             region = sublime.Region(region_start)
-        message['output_panel_region'] = region
+        message.output_panel_region = region
 
     def on_finished(self, proc, rc):
         if rc:

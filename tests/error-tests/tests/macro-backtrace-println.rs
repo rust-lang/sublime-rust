@@ -24,10 +24,11 @@ macro_rules! myprintln {
     ($fmt:expr) => (myprint!(concat!($fmt, "\n")));
 //                           ^^^^^^^^^^^^^^^^^^^ERR(<1.23.0-beta) invalid reference
 //                           ^^^^^^^^^^^^^^^^^^^ERR(>=1.23.0-beta) 1 positional argument
-//                           ^^^^^^^^^^^^^^^^^^^MSG Note: ↓:31
+//                           ^^^^^^^^^^^^^^^^^^^MSG See Also: ↓:31
 }
 
 fn main() {
     myprintln!("{}");
 //  ^^^^^^^^^^^^^^^^^HELP in this macro invocation
+//  ^^^^^^^^^^^^^^^^^MSG See Primary: ↑:24
 }

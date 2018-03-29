@@ -30,7 +30,7 @@ It is possible that the built-in `Rust` package will cause conflicts with Rust E
 ## Features
 ### Go To Definition
 ### Cargo Build
-Rust Enhanced has a custom build system tailored for running Cargo.  It will display errors and warnings in line using Sublime's phantoms.  It also supports a variety of configuration options to control how Cargo is run.
+Rust Enhanced has a custom build system tailored for running Cargo.  It will display errors and warnings in line using Sublime's phantoms (see [Messages](docs/messages.md) for settings to control how messages are displayed).  It also supports a variety of configuration options to control how Cargo is run.
 
 ![testingrust](https://cloud.githubusercontent.com/assets/43198/22944409/7780ab9a-f2a5-11e6-87ea-0e253d6c40f6.png)
 
@@ -119,7 +119,7 @@ To customize the settings, use the command from the Sublime menu:
 Additionally, you can customize settings per-project by adding settings to your `.sublime-project` file under the `"settings"` key.
 
 ## Development
-Development is quite simple, just check out this project to your Sublime Text 3 packages folder, and switch to using this one.   
+Development is quite simple, just check out this project to your Sublime Text 3 packages folder, and switch to using this one.
 Syntax definitions are defined in the `RustEnhanced.sublime-syntax` file.
 
 ## Credits

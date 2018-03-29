@@ -4,6 +4,9 @@ The Rust Enhanced build system provides an interface for running Cargo. It can
 show inline warning and error messages.  It also has a variety of ways of
 configuring options for how Cargo is run.
 
+See [Messages](messages.md) for settings to control how compiler messages are
+displayed.
+
 ## Usage
 
 When Sublime is set to use "Automatic" build system detection, it will choose
@@ -41,28 +44,6 @@ Clean | <code>cargo&nbsp;clean</code> | Removes all built files.
 Document | <code>cargo&nbsp;doc</code> | Builds package documentation.
 Clippy | <code>cargo&nbsp;clippy</code> | Runs [Clippy](https://github.com/Manishearth/rust-clippy).  Clippy must be installed, and currently requires the nightly toolchain.
 Script | <code>cargo&nbsp;script&nbsp;$path</code> | Runs [Cargo Script](https://github.com/DanielKeep/cargo-script).  Cargo Script must be installed.  This is an addon that allows you to run a Rust source file like a script (without a Cargo.toml manifest).
-
-## General Settings
-
-General settings (see [Settings](../README.md#settings)) for how messages are displayed are:
-
-| Setting | Default | Description |
-| :------ | :------ | :---------- |
-| `rust_syntax_hide_warnings` | `false` | If true, will not display warning messages. |
-| `rust_syntax_error_color` | `"var(--redish)"` | Color of error messages. |
-| `rust_syntax_warning_color` | `"var(--yellowish)"` | Color of warning messages. |
-| `rust_syntax_note_color` | `"var(--greenish)"` | Color of note messages. |
-| `rust_syntax_help_color` | `"var(--bluish)"` | Color of help messages. |
-| `rust_phantom_style` | `"normal"` | How to display inline messages.  Either `normal`, `popup`, or `none`. |
-| `rust_region_style` | `"outline"` | How to highlight messages.  Either `outline` or `none`. |
-| `rust_gutter_style` | `"shape"` | Type of icon to show in the gutter.  Either `shape`, `circle`, or `none`. |
-
-It also supports Sublime's build settings:
-
-| Setting | Default | Description |
-| :------ | :------ | :---------- |
-| `show_errors_inline` | `true` | If true, messages are displayed in line using Sublime's phantoms.  If false, messages are only displayed in the output panel. |
-| `show_panel_on_build` | `true` | If true, an output panel is displayed at the bottom of the window showing the compiler output. |
 
 ## Cargo Settings
 

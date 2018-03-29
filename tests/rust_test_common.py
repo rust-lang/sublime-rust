@@ -23,6 +23,7 @@ cargo_settings = plugin.rust.cargo_settings
 cargo_config = plugin.rust.cargo_config
 target_detect = plugin.rust.target_detect
 messages = plugin.rust.messages
+themes = plugin.rust.themes
 util = plugin.rust.util
 semver = plugin.rust.semver
 
@@ -72,6 +73,11 @@ class TestBase(unittest.TestCase):
         self.settings = sublime.load_settings('RustEnhanced.sublime-settings')
         self._override_setting('show_panel_on_build', False)
         self._override_setting('cargo_build', {})
+        # Disable incremental compilation (first enabled in 1.24).  It slows
+        # down the tests.
+        self._override_setting('rust_env', {
+            'CARGO_INCREMENTAL': '0',
+        })
 
         # Clear any state.
         messages.clear_messages(window)
@@ -79,6 +85,8 @@ class TestBase(unittest.TestCase):
         window.create_output_panel(plugin.rust.opanel.PANEL_NAME)
 
     def _override_setting(self, name, value):
+        """Tests can call this to override a Sublime setting, which will get
+        restored once the test is complete."""
         if name not in self._original_settings:
             if self.settings.has(name):
                 self._original_settings[name] = self.settings.get(name)
@@ -171,6 +179,8 @@ class TestBase(unittest.TestCase):
         finally:
             if view.window():
                 window.focus_view(view)
+                if view.is_dirty():
+                    view.run_command('revert')
                 window.run_command('close_file')
 
     def _cargo_clean(self, view_or_path):
@@ -215,3 +225,64 @@ class AlteredSetting(object):
 
     def __str__(self):
         return '%s=%s' % (self.name, self.value)
+
+
+class UiIntercept(object):
+
+    """Context manager that assists with mocking some Sublime UI components."""
+
+    def __init__(self, passthrough=False):
+        self.passthrough = passthrough
+
+    def __enter__(self):
+        self.phantoms = {}
+        self.view_regions = {}
+        self.popups = {}
+
+        def collect_popups(v, content, flags=0, location=-1,
+                           max_width=None, max_height=None,
+                           on_navigate=None, on_hide=None):
+            ps = self.popups.setdefault(v.file_name(), [])
+            result = {'view': v,
+                      'content': content,
+                      'flags': flags,
+                      'location': location,
+                      'max_width': max_width,
+                      'max_height': max_height,
+                      'on_navigate': on_navigate,
+                      'on_hide': on_hide}
+            ps.append(result)
+            if self.passthrough:
+                filtered = {k: v for (k, v) in result.items() if v is not None}
+                self.orig_show_popup(**filtered)
+
+        def collect_phantoms(v, key, region, content, layout, on_navigate):
+            ps = self.phantoms.setdefault(v.file_name(), [])
+            ps.append({
+                'region': region,
+                'content': content,
+                'on_navigate': on_navigate,
+            })
+            if self.passthrough:
+                self.orig_add_phantom(v, key, region, content, layout, on_navigate)
+
+        def collect_regions(v, key, regions, scope, icon, flags):
+            rs = self.view_regions.setdefault(v.file_name(), [])
+            rs.extend(regions)
+            if self.passthrough:
+                self.orig_add_regions(v, key, regions, scope, icon, flags)
+
+        m = plugin.rust.messages
+        self.orig_add_phantom = m._sublime_add_phantom
+        self.orig_add_regions = m._sublime_add_regions
+        self.orig_show_popup = m._sublime_show_popup
+        m._sublime_add_phantom = collect_phantoms
+        m._sublime_add_regions = collect_regions
+        m._sublime_show_popup = collect_popups
+        return self
+
+    def __exit__(self, type, value, traceback):
+        m = plugin.rust.messages
+        m._sublime_add_phantom = self.orig_add_phantom
+        m._sublime_add_regions = self.orig_add_regions
+        m._sublime_show_popup = self.orig_show_popup

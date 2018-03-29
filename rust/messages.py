@@ -8,155 +8,173 @@ import html
 import itertools
 import os
 import re
+import urllib.parse
+import uuid
 import webbrowser
 
-from . import util
+from . import util, themes
+from .batch import *
 
 # Key is window id.
 # Value is a dictionary: {
-#     'paths': {path: [msg_dict,...]},
-#     'msg_index': (path_idx, message_idx)
+#     'paths': {path: [MessageBatch, ...]},
+#     'batch_index': (path_idx, message_idx),
 # }
+# `paths` is an OrderedDict to handle next/prev message.
 # `path` is the absolute path to the file.
-# Each msg_dict has the following:
-# - `level`: Message level as a string such as "error", or "info".
-# - `span`: Location of the message (0-based):
-#   `((line_start, col_start), (line_end, col_end))`
-#   May be `None` to indicate no particular spot.
-# - `is_main`: If True, this is a top-level message.  False is used for
-#   attached detailed diagnostic information, child notes, etc.
-# - `path`: Absolute path to the file.
-# - `text`: The raw text of the message without any minihtml markup.  May be
-#   None if the content is raw markup.
-# - `minihtml_text`: The string used for showing phantoms that includes the
-#   minihtml markup.
-# - `output_panel_region`: Optional Sublime Region object that indicates the
-#   region in the build output panel that corresponds with this message.
 WINDOW_MESSAGES = {}
 
 
 LINK_PATTERN = r'(https?://[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-zA-Z]{2,6}\b[-a-zA-Z0-9@:%_+.~#?&/=]*)'
 
 
-CSS_TEMPLATE = """
-<style>
-    span {{
-        font-family: monospace;
-    }}
-    .rust-error {{
-        color: {error_color};
-    }}
-    .rust-warning {{
-        color: {warning_color};
-    }}
-    .rust-note {{
-        color: {note_color};
-    }}
-    .rust-help {{
-        color: {help_color};
-    }}
-    .rust-link {{
-        background-color: var(--background);
-        color: var(--bluish);
-        text-decoration: none;
-        border-radius: 0.5rem;
-        padding: 0.1rem 0.3rem;
-        border: 1px solid var(--bluish);
-    }}
-    .rust-links {{
-        margin: 0.4rem 0rem;
-    }}
-    a {{
-        text-decoration: inherit;
-        padding: 0.35rem 0.5rem 0.45rem 0.5rem;
-        position: relative;
-        font-weight: bold;
-    }}
-    {extra_css}
-</style>
-<body id="rust-message">
-{content}
-</body>
-"""
+class Message:
 
-POPUP_CSS = """
-    body {
-        margin: 0.25em;
-    }
-"""
+    """A diagnostic message.
+
+    :ivar id: A unique uuid for this message.
+    :ivar region_key: A string for the Sublime highlight region and phantom
+        for this message.  Unique per view.
+    :ivar text: The raw text of the message without any minihtml markup.  May
+        be None if the content is raw markup (such as a minihtml link) or if
+        it is an outline-only region (which happens with things such as
+        dual-region messages added in 1.21).
+    :ivar minihtml_text: The string used for showing phantoms that includes
+        the minihtml markup.  May be None.
+    :ivar level: Message level as a string such as "error", or "info".
+    :ivar span: Location of the message (0-based):
+        `((line_start, col_start), (line_end, col_end))`
+        May be `None` to indicate no particular spot.
+    :ivar path: Absolute path to the file.
+    :ivar code: Rust error code as a string such as 'E0001'.  May be None.
+    :ivar output_panel_region: Optional Sublime Region object that indicates
+        the region in the build output panel that corresponds with this
+        message.
+    :ivar primary: True if this is the primary message, False if a child.
+    :ivar children: List of additional Message objects.  This is *not*
+        recursive (children cannot have children).
+    :ivar parent: The primary Message object if this a child.
+    """
+    region_key = None
+    text = None
+    minihtml_text = None
+    level = None
+    span = None
+    path = None
+    code = None
+    output_panel_region = None
+    primary = True
+    parent = None
+
+    def __init__(self):
+        self.id = uuid.uuid4()
+        self.children = []
+
+    def lineno(self, first=False):
+        """Return the line number of the message (0-based).
+
+        :param first: If True, returns the line number of the start of the
+            region.  Otherwise returns the last line of the region.
+        """
+        if self.span:
+            if first:
+                return self.span[0][0]
+            else:
+                return self.span[1][0]
+        else:
+            return 999999999
+
+    def __iter__(self):
+        """Convenience iterator for iterating over the message and its children."""
+        yield self
+        for child in self.children:
+            yield child
+
+    def escaped_text(self, indent):
+        """Returns the minihtml markup of the message.
+
+        :param indent: String used for indentation when the message spans
+            multiple lines.  Typically a series of &nbsp; to get correct
+            alignment.
+        """
+        if self.minihtml_text:
+            return self.minihtml_text
+        if not self.text:
+            return ''
+
+        def escape_and_link(i_txt):
+            i, txt = i_txt
+            if i % 2:
+                return '<a href="%s">%s</a>' % (txt, txt)
+            else:
+                # Call strip() because sometimes rust includes newlines at the
+                # end of the message, which we don't want.
+                escaped = html.escape(txt.strip(), quote=False)
+                return re.sub('^( +)', lambda m: '&nbsp;'*len(m.group()), escaped, flags=re.MULTILINE)\
+                    .replace('\n', '<br>' + indent)
+
+        parts = re.split(LINK_PATTERN, self.text)
+        return ' '.join(map(escape_and_link, enumerate(parts)))
+
+    def is_similar(self, other):
+        """Returns True if this message is essentially the same as the given
+        message.  Used for deduplication."""
+        keys = ('path', 'span', 'level', 'text', 'minihtml_text')
+        for key in keys:
+            if getattr(other, key) != getattr(self, key):
+                return False
+        else:
+            return True
+
+    def sublime_region(self, view):
+        """Returns a sublime.Region object for this message."""
+        if self.span:
+            return sublime.Region(
+                view.text_point(self.span[0][0], self.span[0][1]),
+                view.text_point(self.span[1][0], self.span[1][1])
+            )
+        else:
+            # Place at bottom of file for lack of anywhere better.
+            return sublime.Region(view.size())
+
+    def __repr__(self):
+        result = ['<Message\n']
+        for key, value in self.__dict__.items():
+            if key == 'parent':
+                result.append('    parent=%r\n' % (value.id,))
+            else:
+                result.append('    %s=%r\n' % (key, value))
+        result.append('>')
+        return ''.join(result)
 
 
 def clear_messages(window):
-    WINDOW_MESSAGES.pop(window.id(), None)
-    for view in window.views():
-        view.erase_phantoms('rust-syntax-phantom')
-        view.erase_regions('rust-error')
-        view.erase_regions('rust-warning')
-        view.erase_regions('rust-note')
-        view.erase_regions('rust-help')
+    """Remove all messages for the given window."""
+    for path, batches in WINDOW_MESSAGES.pop(window.id(), {})\
+                                        .get('paths', {})\
+                                        .items():
+        view = window.find_open_file(path)
+        if view:
+            for batch in batches:
+                for msg in batch:
+                    view.erase_regions(msg.region_key)
+                    view.erase_phantoms(msg.region_key)
 
 
-def add_message(window, path, span, level, is_main, text, minihtml_text, msg_cb):
-    """Add a message to be displayed.
+def clear_all_messages():
+    """Remove all messages in all windows."""
+    for window in sublime.windows():
+        if window.id() in WINDOW_MESSAGES:
+            clear_messages(window)
+
+
+def add_message(window, message):
+    """Add a message to be displayed (ignores children).
 
     :param window: The Sublime window.
-    :param path: The absolute path of the file to show the message for.
-    :param span: Location of the message (0-based):
-        `((line_start, col_start), (line_end, col_end))`
-        May be `None` to indicate no particular spot.
-    :param level: The Rust message level ('error', 'note', etc.).
-    :param is_main: If True, this is a top-level message.  False is used for
-        attached detailed diagnostic information, child notes, etc.
-    :param text: The raw text of the message without any minihtml markup. May
-        be None if there is no text (such as when adding pure markup).
-    :param minihtml_text: The message to display with minihtml markup.
-    :param msg_cb: Callback that will be given the message.  May be None.
+    :param message: The `Message` object to add.
     """
-    if 'macros>' in path:
-        # Macros from external crates will be displayed in the console
-        # via msg_cb.
-        return
-    wid = window.id()
-    try:
-        messages_by_path = WINDOW_MESSAGES[wid]['paths']
-    except KeyError:
-        # This is an OrderedDict to handle next/prev message.
-        messages_by_path = collections.OrderedDict()
-        WINDOW_MESSAGES[wid] = {
-            'paths': messages_by_path,
-            'msg_index': (-1, -1)
-        }
-    messages = messages_by_path.setdefault(path, [])
-
-    to_add = {
-        'path': path,
-        'level': level,
-        'span': span,
-        'is_main': is_main,
-        'text': text,
-        'minihtml_text': minihtml_text,
-    }
-    if _is_duplicate(to_add, messages):
-        # Don't add duplicates.
-        return
-    messages.append(to_add)
-    view = window.find_open_file(path)
-    if view:
-        _show_phantom(view, level, span, minihtml_text)
-    if msg_cb:
-        msg_cb(to_add)
-
-
-def _is_duplicate(to_add, messages):
-    # Ignore 'minihtml_text' and 'output_panel_region' keys.
-    keys = ('path', 'span', 'is_main', 'level', 'text')
-    for message in messages:
-        for key in keys:
-            if to_add[key] != message[key]:
-                break
-        else:
-            return True
-    return False
+    _save_batches(window, [PrimaryBatch(message)], None)
 
 
 def has_message_for_path(window, path):
@@ -166,8 +184,8 @@ def has_message_for_path(window, path):
 
 def messages_finished(window):
     """This should be called after all messages have been added."""
-    _draw_all_region_highlights(window)
     _sort_messages(window)
+    _draw_all_region_highlights(window)
 
 
 def _draw_all_region_highlights(window):
@@ -175,119 +193,97 @@ def _draw_all_region_highlights(window):
     been received since Sublime does not have an API to incrementally add
     them."""
     paths = WINDOW_MESSAGES.get(window.id(), {}).get('paths', {})
-    for path, messages in paths.items():
+    for path, batches in paths.items():
         view = window.find_open_file(path)
         if view:
-            _draw_region_highlights(view, messages)
+            _draw_region_highlights(view, batches)
 
 
-def _draw_region_highlights(view, messages):
-    if util.get_setting('rust_region_style', 'outline') == 'none':
+def _draw_region_highlights(view, batches):
+    if util.get_setting('rust_region_style') == 'none':
         return
 
+    # Collect message regions by level.
     regions = {
         'error': [],
         'warning': [],
         'note': [],
         'help': [],
     }
-    for message in messages:
-        region = _span_to_region(view, message['span'])
-        if message['level'] not in regions:
-            print('RustEnhanced: Unknown message level %r encountered.' % message['level'])
-            message['level'] = 'error'
-        regions[message['level']].append(region)
-
-    # Remove lower-level regions that are identical to higher-level regions.
-    def filter_out(to_filter, to_check):
-        def check_in(region):
-            for r in regions[to_check]:
-                if r == region:
-                    return False
-            return True
-        regions[to_filter] = list(filter(check_in, regions[to_filter]))
-    filter_out('help', 'note')
-    filter_out('help', 'warning')
-    filter_out('help', 'error')
-    filter_out('note', 'warning')
-    filter_out('note', 'error')
-    filter_out('warning', 'error')
-
-    package_name = __package__.split('.')[0]
-    gutter_style = util.get_setting('rust_gutter_style', 'shape')
+    for batch in batches:
+        if batch.hidden:
+            continue
+        for msg in batch:
+            region = msg.sublime_region(view)
+            if msg.level not in regions:
+                print('RustEnhanced: Unknown message level %r encountered.' % msg.level)
+                msg.level = 'error'
+            regions[msg.level].append((msg.region_key, region))
 
     # Do this in reverse order so that errors show on-top.
     for level in ['help', 'note', 'warning', 'error']:
-        # Unfortunately you cannot specify colors, but instead scopes as
-        # defined in the color theme.  If the scope is not defined, then it
-        # will show up as foreground color (white in dark themes).  I just use
-        # "info" as an undefined scope (empty string will remove regions).
-        # "invalid" will typically show up as red.
+        # Use scope names from color themes to drive the color of the outline.
+        # 'invalid' typically is red.  We use 'info' for all other levels, which
+        # is usually not defined in any color theme, and will end up showing as
+        # the foreground color (white in dark themes).
+        #
+        # TODO: Consider using the new magic scope names added in build 3148
+        # to manually specify colors:
+        #     region.redish, region.orangish, region.yellowish,
+        #     region.greenish, region.bluish, region.purplish and
+        #     region.pinkish
         if level == 'error':
             scope = 'invalid'
         else:
             scope = 'info'
-        key = 'rust-%s' % level
-        if gutter_style == 'none':
-            icon = ''
-        else:
-            icon = 'Packages/%s/images/gutter/%s-%s.png' % (
-                package_name, gutter_style, level)
-        if regions[level]:
+        icon = util.icon_path(level)
+        for key, region in regions[level]:
             _sublime_add_regions(
-                view, key, regions[level], scope, icon,
+                view, key, [region], scope, icon,
                 sublime.DRAW_NO_FILL | sublime.DRAW_EMPTY)
-
-
-def _wrap_css(content, extra_css=''):
-    """Takes the given minihtml content and places it inside a <body> with the
-    appropriate CSS."""
-    return CSS_TEMPLATE.format(content=content,
-        error_color=util.get_setting('rust_syntax_error_color', 'var(--redish)'),
-        warning_color=util.get_setting('rust_syntax_warning_color', 'var(--yellowish)'),
-        note_color=util.get_setting('rust_syntax_note_color', 'var(--greenish)'),
-        help_color=util.get_setting('rust_syntax_help_color', 'var(--bluish)'),
-        extra_css=extra_css,
-    )
 
 
 def message_popup(view, point, hover_zone):
     """Displays a popup if there is a message at the given point."""
     paths = WINDOW_MESSAGES.get(view.window().id(), {}).get('paths', {})
-    msgs = paths.get(view.file_name(), [])
+    batches = paths.get(view.file_name(), [])
 
     if hover_zone == sublime.HOVER_GUTTER:
         # Collect all messages on this line.
         row = view.rowcol(point)[0]
 
-        def filter_row(msg):
-            span = msg['span']
+        def filter_row(batch):
+            span = batch.first().span
             if span:
                 return row >= span[0][0] and row <= span[1][0]
             else:
                 last_row = view.rowcol(view.size())[0]
                 return row == last_row
 
-        msgs = filter(filter_row, msgs)
+        batches = filter(filter_row, batches)
     else:
         # Collect all messages covering this point.
-        def filter_point(msg):
-            span = msg['span']
-            if span:
-                start_pt = view.text_point(*span[0])
-                end_pt = view.text_point(*span[1])
-                return point >= start_pt and point <= end_pt
-            else:
-                return point == view.size()
+        def filter_point(batch):
+            for msg in batch:
+                if msg.span:
+                    start_pt = view.text_point(*msg.span[0])
+                    end_pt = view.text_point(*msg.span[1])
+                    if point >= start_pt and point <= end_pt:
+                        return True
+                elif point == view.size():
+                    return True
+            return False
 
-        msgs = filter(filter_point, msgs)
+        batches = filter(filter_point, batches)
 
-    if msgs:
-        to_show = '\n'.join(msg['minihtml_text'] for msg in msgs)
-        minihtml = _wrap_css(to_show, extra_css=POPUP_CSS)
+    if batches:
+        theme = themes.THEMES[util.get_setting('rust_message_theme')]
+        minihtml = '\n'.join(theme.render(batch, for_popup=True) for batch in batches)
+        if not minihtml:
+            return
         on_nav = functools.partial(_click_handler, view, hide_popup=True)
         max_width = view.em_width() * 79
-        view.show_popup(minihtml, sublime.COOPERATE_WITH_AUTO_COMPLETE,
+        _sublime_show_popup(view, minihtml, sublime.COOPERATE_WITH_AUTO_COMPLETE,
             point, max_width=max_width, on_navigate=on_nav)
 
 
@@ -298,17 +294,48 @@ def _click_handler(view, url, hide_popup=False):
             view.hide_popup()
     elif url.startswith('file:///'):
         view.window().open_file(url[8:], sublime.ENCODED_POSITION)
+    elif url.startswith('replace:'):
+        info = urllib.parse.parse_qs(url[8:])
+        _accept_replace(view, info['id'][0], info['replacement'][0])
+        if hide_popup:
+            view.hide_popup()
     else:
         webbrowser.open_new(url)
 
 
-def _show_phantom(view, level, span, minihtml_text):
-    if util.get_setting('rust_phantom_style', 'normal') != 'normal':
+def _accept_replace(view, mid, replacement):
+    def batch_and_msg():
+        for batch in batches:
+            for msg in batch:
+                if str(msg.id) == mid:
+                    return batch, msg
+        raise ValueError('Rust Enhanced internal error: Could not find ID %r' % (mid,))
+    batches = WINDOW_MESSAGES.get(view.window().id(), {})\
+                             .get('paths', {})\
+                             .get(view.file_name(), [])
+    batch, msg = batch_and_msg()
+    # Retrieve the updated region from Sublime (since it may have changed
+    # since the messages were generated).
+    regions = view.get_regions(msg.region_key)
+    if not regions:
+        print('Rust Enhanced internal error: Could not find region for suggestion.')
         return
-    if not minihtml_text:
+    region = (regions[0].a, regions[0].b)
+    batch.dismiss(view.window())
+    view.run_command('rust_accept_suggested_replacement', {
+        'region': region,
+        'replacement': replacement
+    })
+
+
+def _show_phantom(view, batch):
+    if util.get_setting('rust_phantom_style') != 'normal':
+        return
+    if batch.hidden:
         return
 
-    region = _span_to_region(view, span)
+    first = batch.first()
+    region = first.sublime_region(view)
     # For some reason if you have a multi-line region, the phantom is only
     # displayed under the first line.  I think it makes more sense for the
     # phantom to appear below the last line.
@@ -321,24 +348,18 @@ def _show_phantom(view, level, span, minihtml_text):
             region.end()
         )
 
+    theme = themes.THEMES[util.get_setting('rust_message_theme')]
+    content = theme.render(batch)
+    if not content:
+        return
+
     _sublime_add_phantom(
         view,
-        'rust-syntax-phantom', region,
-        _wrap_css(minihtml_text),
+        first.region_key, region,
+        content,
         sublime.LAYOUT_BLOCK,
         functools.partial(_click_handler, view)
     )
-
-
-def _span_to_region(view, span):
-    if span:
-        return sublime.Region(
-            view.text_point(span[0][0], span[0][1]),
-            view.text_point(span[1][0], span[1][1])
-        )
-    else:
-        # Place at bottom of file for lack of anywhere better.
-        return sublime.Region(view.size())
 
 
 def _sublime_add_phantom(view, key, region, content, layout, on_navigate):
@@ -356,6 +377,11 @@ def _sublime_add_regions(view, key, regions, scope, icon, flags):
     view.add_regions(key, regions, scope, icon, flags)
 
 
+def _sublime_show_popup(view, content, *args, **kwargs):
+    """Pulled out to assist testing."""
+    view.show_popup(content, *args, **kwargs)
+
+
 def _sort_messages(window):
     """Sorts messages so that errors are shown first when using Next/Prev
     commands."""
@@ -368,27 +394,23 @@ def _sort_messages(window):
         window_info = WINDOW_MESSAGES[wid]
     except KeyError:
         return
-    messages_by_path = window_info['paths']
+    batches_by_path = window_info['paths']
     items = []
-    for path, messages in messages_by_path.items():
-        for message in messages:
+    for path, batches in batches_by_path.items():
+        for batch in batches:
             level = {
                 'error': 0,
                 'warning': 1,
                 'note': 2,
                 'help': 3,
-            }.get(message['level'], 0)
-            if message['span']:
-                lineno = message['span'][0][0]
-            else:
-                lineno = 99999999
-            items.append((level, path, lineno, message))
+            }.get(batch.first().level, 0)
+            items.append((level, path, batch.first().lineno(), batch))
     items.sort(key=lambda x: x[:3])
-    messages_by_path = collections.OrderedDict()
-    for _, path, _, message in items:
-        messages = messages_by_path.setdefault(path, [])
-        messages.append(message)
-    window_info['paths'] = messages_by_path
+    batches_by_path = collections.OrderedDict()
+    for _, path, _, batch in items:
+        batches = batches_by_path.setdefault(path, [])
+        batches.append(batch)
+    window_info['paths'] = batches_by_path
 
 
 def show_next_message(window, levels):
@@ -409,8 +431,9 @@ def _show_message(window, current_idx, transient=False, force_open=False):
     except KeyError:
         return
     paths = window_info['paths']
-    path, messages = _ith_iter_item(paths.items(), current_idx[0])
-    msg = messages[current_idx[1]]
+    path, batches = _ith_iter_item(paths.items(), current_idx[0])
+    batch = batches[current_idx[1]]
+    msg = batch.first()
     _scroll_build_panel(window, msg)
     view = None
     if not transient and not force_open:
@@ -426,23 +449,23 @@ def _show_message(window, current_idx, transient=False, force_open=False):
             # focus. See:
             # https://github.com/SublimeTextIssues/Core/issues/1041
             flags |= sublime.TRANSIENT | sublime.FORCE_GROUP
-        if msg['span']:
+        if msg.span:
             # show_at_center is buggy with newly opened views (see
             # https://github.com/SublimeTextIssues/Core/issues/538).
             # ENCODED_POSITION is 1-based.
-            row, col = msg['span'][0]
+            row, col = msg.span[0]
         else:
             row, col = (999999999, 1)
         view = window.open_file('%s:%d:%d' % (path, row + 1, col + 1),
                                 flags)
         # Block until the view is loaded.
-        _show_message_wait(view, messages, current_idx)
+        _show_message_wait(view)
 
 
-def _show_message_wait(view, messages, current_idx):
+def _show_message_wait(view):
     if view.is_loading():
         def f():
-            _show_message_wait(view, messages, current_idx)
+            _show_message_wait(view)
         sublime.set_timeout(f, 10)
     # The on_load event handler will call show_messages_for_view which
     # should handle displaying the messages.
@@ -451,16 +474,17 @@ def _show_message_wait(view, messages, current_idx):
 def _scroll_build_panel(window, message):
     """If the build output panel is open, scroll the output to the message
     selected."""
-    if 'output_panel_region' in message:
+    if message.output_panel_region:
         # Defer cyclic import.
         from . import opanel
         view = window.find_output_panel(opanel.PANEL_NAME)
         if view:
             view.sel().clear()
-            region = message['output_panel_region']
+            region = message.output_panel_region
             view.sel().add(region)
             view.show(region)
             # Force panel to update.
+            # TODO: See note about workaround below.
             view.add_regions('bug', [region], 'bug', 'dot', sublime.HIDDEN)
             view.erase_regions('bug')
 
@@ -469,13 +493,12 @@ def _scroll_to_message(view, message, transient):
     """Scroll view to the message."""
     if not transient:
         view.window().focus_view(view)
-    r = _span_to_region(view, message['span'])
+    r = message.sublime_region(view)
     view.sel().clear()
     view.sel().add(r.a)
     view.show_at_center(r)
-    # Work around bug in Sublime where the visual of the cursor
-    # does not update.  See
-    # https://github.com/SublimeTextIssues/Core/issues/485
+    # TODO: Fix this to use a TextCommand to properly handle undo.
+    # See https://github.com/SublimeTextIssues/Core/issues/485
     view.add_regions('bug', [r], 'bug', 'dot', sublime.HIDDEN)
     view.erase_regions('bug')
 
@@ -483,19 +506,12 @@ def _scroll_to_message(view, message, transient):
 def show_messages_for_view(view):
     """Adds all phantoms and region outlines for a view."""
     window = view.window()
-    paths = WINDOW_MESSAGES.get(window.id(), {}).get('paths', {})
-    messages = paths.get(view.file_name(), None)
-    if messages:
-        _show_messages_for_view(view, messages)
-
-
-def _show_messages_for_view(view, messages):
-    for message in messages:
-        _show_phantom(view,
-                      message['level'],
-                      message['span'],
-                      message['minihtml_text'])
-    _draw_region_highlights(view, messages)
+    batches = WINDOW_MESSAGES.get(window.id(), {})\
+                             .get('paths', {})\
+                             .get(view.file_name(), [])
+    for batch in batches:
+        _show_phantom(view, batch)
+    _draw_region_highlights(view, batches)
 
 
 def _ith_iter_item(d, i):
@@ -503,37 +519,37 @@ def _ith_iter_item(d, i):
 
 
 def _advance_next_message(window, levels, wrap_around=False):
-    """Update global msg_index to the next index."""
+    """Update global batch_index to the next index."""
     try:
         win_info = WINDOW_MESSAGES[window.id()]
     except KeyError:
         return None
     paths = win_info['paths']
-    path_idx, msg_idx = win_info['msg_index']
+    path_idx, batch_idx = win_info['batch_index']
     if path_idx == -1:
         # First time.
         path_idx = 0
-        msg_idx = 0
+        batch_idx = 0
     else:
-        msg_idx += 1
+        batch_idx += 1
 
     while path_idx < len(paths):
-        messages = _ith_iter_item(paths.values(), path_idx)
-        while msg_idx < len(messages):
-            msg = messages[msg_idx]
-            if _is_matching_level(levels, msg):
-                current_idx = (path_idx, msg_idx)
-                win_info['msg_index'] = current_idx
+        batches = _ith_iter_item(paths.values(), path_idx)
+        while batch_idx < len(batches):
+            batch = batches[batch_idx]
+            if _is_matching_level(levels, batch.first()):
+                current_idx = (path_idx, batch_idx)
+                win_info['batch_index'] = current_idx
                 return current_idx
-            msg_idx += 1
+            batch_idx += 1
         path_idx += 1
-        msg_idx = 0
+        batch_idx = 0
     if wrap_around:
         # No matching entries, give up.
         return None
     else:
         # Start over at the beginning of the list.
-        win_info['msg_index'] = (-1, -1)
+        win_info['batch_index'] = (-1, -1)
         return _advance_next_message(window, levels, wrap_around=True)
 
 
@@ -544,50 +560,49 @@ def _last_index(paths):
 
 
 def _advance_prev_message(window, levels, wrap_around=False):
-    """Update global msg_index to the previous index."""
+    """Update global batch_index to the previous index."""
     try:
         win_info = WINDOW_MESSAGES[window.id()]
     except KeyError:
         return None
     paths = win_info['paths']
-    path_idx, msg_idx = win_info['msg_index']
+    path_idx, batch_idx = win_info['batch_index']
     if path_idx == -1:
         # First time, start at the end.
-        path_idx, msg_idx = _last_index(paths)
+        path_idx, batch_idx = _last_index(paths)
     else:
-        msg_idx -= 1
+        batch_idx -= 1
 
     while path_idx >= 0:
-        messages = _ith_iter_item(paths.values(), path_idx)
-        while msg_idx >= 0:
-            msg = messages[msg_idx]
-            if _is_matching_level(levels, msg):
-                current_idx = (path_idx, msg_idx)
-                win_info['msg_index'] = current_idx
+        batches = _ith_iter_item(paths.values(), path_idx)
+        while batch_idx >= 0:
+            batch = batches[batch_idx]
+            if _is_matching_level(levels, batch.first()):
+                current_idx = (path_idx, batch_idx)
+                win_info['batch_index'] = current_idx
                 return current_idx
-            msg_idx -= 1
+            batch_idx -= 1
         path_idx -= 1
         if path_idx >= 0:
-            msg_idx = len(_ith_iter_item(paths.values(), path_idx)) - 1
+            batch_idx = len(_ith_iter_item(paths.values(), path_idx)) - 1
     if wrap_around:
         # No matching entries, give up.
         return None
     else:
         # Start over at the end of the list.
-        win_info['msg_index'] = (-1, -1)
+        win_info['batch_index'] = (-1, -1)
         return _advance_prev_message(window, levels, wrap_around=True)
 
 
-def _is_matching_level(levels, msg_dict):
-    if not msg_dict['is_main']:
+def _is_matching_level(levels, message):
+    if not message.primary:
         # Only navigate to top-level messages.
         return False
-    level = msg_dict['level']
     if levels == 'all':
         return True
-    elif levels == 'error' and level == 'error':
+    elif levels == 'error' and message.level == 'error':
         return True
-    elif levels == 'warning' and level != 'error':
+    elif levels == 'warning' and message.level != 'error':
         # Warning, Note, Help
         return True
     else:
@@ -613,18 +628,19 @@ def list_messages(window):
         return
     panel_items = []
     jump_to = []
-    for path_idx, (path, msgs) in enumerate(win_info['paths'].items()):
-        for msg_idx, msg_dict in enumerate(msgs):
-            if not msg_dict['is_main']:
+    for path_idx, (path, batches) in enumerate(win_info['paths'].items()):
+        for batch_idx, batch in enumerate(batches):
+            if not isinstance(batch, PrimaryBatch):
                 continue
-            jump_to.append((path_idx, msg_idx))
-            if msg_dict['span']:
+            message = batch.primary_message
+            jump_to.append((path_idx, batch_idx))
+            if message.span:
                 path_label = '%s:%s' % (
                     _relative_path(window, path),
-                    msg_dict['span'][0][0] + 1)
+                    message.span[0][0] + 1)
             else:
                 path_label = _relative_path(window, path)
-            item = [msg_dict['text'], path_label]
+            item = [message.text, path_label]
             panel_items.append(item)
 
     def on_done(idx):
@@ -639,21 +655,13 @@ def list_messages(window):
 def add_rust_messages(window, base_path, info, target_path, msg_cb):
     """Add messages from Rust JSON to Sublime views.
 
-    - `window`: Sublime Window object.
-    - `base_path`: Base path used for resolving relative paths from Rust.
-    - `info`: Dictionary of messages from rustc or cargo.
-    - `target_path`: Absolute path to the top-level source file of the target
-      (lib.rs, main.rs, etc.).  May be None if it is not known.
-    - `msg_cb`: Function called for each message (if not None).  It is given a
-      single parameter, a dictionary of the message to display with the
-      following keys:
-        - `path`: Full path to the file.  None if no file associated.
-        - `span`: Sublime (0-based) offsets into the file for the region
-          `((line_start, col_start), (line_end, col_end))`.  None if no
-          region.
-        - `level`: Rust level ('error', 'warning', 'note', etc.)
-        - `is_main`: If True, a top-level message.
-        - `text`: Raw text of the message without markup.
+    :param window: Sublime Window object.
+    :param base_path: Base path used for resolving relative paths from Rust.
+    :param info: Dictionary of messages from rustc or cargo.
+    :param target_path: Absolute path to the top-level source file of the
+      target (lib.rs, main.rs, etc.).  May be None if it is not known.
+    :param msg_cb: Callback that will be given the message object (and each
+        child separately).
     """
     # cargo check emits in a slightly different format.
     if 'reason' in info:
@@ -664,95 +672,32 @@ def add_rust_messages(window, base_path, info, target_path, msg_cb):
             # 'compiler-artifact' or 'build-script-executed'.
             return
 
-    # Each message dictionary contains the following:
-    # - 'text': The text of the message.
-    # - 'level': The level (a string such as 'error').
-    # - 'span_path': Absolute path to the file for this message.
-    # - 'span_region': Sublime region where the message is.  Tuple of
-    #   ((line_start, column_start), (line_end, column_end)), 0-based.  None
-    #   if no region.
-    # - 'is_main': Boolean of whether or not this is the main message.  Only
-    #   the `main_message` should be True.
-    # - 'help_link': Optional string of an HTML link for additional
-    #   information on the message.
-    # - 'links': Optional string of HTML code that contains links to other
-    #   messages (populated by _create_cross_links).  Should only be set in
-    #   `main_message`.
-    # - 'back_link': Optional string of HTML code that is a link back to the
-    #   main message (populated by _create_cross_links).
-    main_message = {}
-    # List of message dictionaries, belonging to the main message.
-    additional_messages = []
+    primary_message = Message()
 
     _collect_rust_messages(window, base_path, info, target_path, msg_cb, {},
-        main_message, additional_messages)
+        primary_message)
+    if not primary_message.path:
+        return
+    if _is_duplicate_message(window, primary_message):
+        return
+    batches = _batch_and_cross_link(primary_message)
+    _save_batches(window, batches, msg_cb)
 
-    messages = _create_cross_links(main_message, additional_messages)
 
-    content_template = '<div class="{cls}">{level}{msg}{help_link}{back_link}<a href="hide">\xD7</a></div>'
-    links_template = '<div class="rust-links">{indent}{links}</div>'
-
-    last_level = None
-    last_path = None
-    for message in messages:
-        level = message['level']
-        cls = {
-            'error': 'rust-error',
-            'warning': 'rust-warning',
-            'note': 'rust-note',
-            'help': 'rust-help',
-        }.get(level, 'rust-error')
-        indent = '&nbsp;' * (len(level) + 2)
-        if level == last_level and message['span_path'] == last_path:
-            level_text = indent
-        else:
-            level_text = '%s: ' % (level,)
-        last_level = level
-        last_path = message['span_path']
-
-        def escape_and_link(i_txt):
-            i, txt = i_txt
-            if i % 2:
-                return '<a href="%s">%s</a>' % (txt, txt)
-            else:
-                # Call strip() because sometimes rust includes newlines at the
-                # end of the message, which we don't want.
-                return html.escape(txt.strip(), quote=False).\
-                    replace('\n', '<br>' + indent)
-
-        if message['text']:
-            parts = re.split(LINK_PATTERN, message['text'])
-            escaped_text = ''.join(map(escape_and_link, enumerate(parts)))
-
-            content = content_template.format(
-                cls=cls,
-                level=level_text,
-                msg=escaped_text,
-                help_link=message.get('help_link', ''),
-                back_link=message.get('back_link', ''),
-            )
-        else:
-            content = None
-
-        add_message(window, message['span_path'], message['span_region'],
-                    level, message['is_main'], message['text'], content,
-                    msg_cb)
-
-    if main_message.get('links'):
-        content = links_template.format(
-            indent='&nbsp;' * (len(main_message['level']) + 2),
-            links=main_message['links']
-        )
-        add_message(window,
-                    main_message['span_path'],
-                    main_message['span_region'],
-                    main_message['level'],
-                    False, None, content, None)
+def _is_duplicate_message(window, primary_message):
+    batches = WINDOW_MESSAGES.get(window.id(), {})\
+                             .get('paths', {})\
+                             .get(primary_message.path, [])
+    for batch in batches:
+        if isinstance(batch, PrimaryBatch):
+            if batch.primary_message.is_similar(primary_message):
+                return True
+    return False
 
 
 def _collect_rust_messages(window, base_path, info, target_path,
                            msg_cb, parent_info,
-                           main_message, additional_messages):
+                           message):
     """
     - `info`: The dictionary from Rust has the following structure:
 
@@ -792,9 +737,7 @@ def _collect_rust_messages(window, base_path, info, target_path,
               None (AFAIK, this only happens when is_primary is True, in which
               case the main 'message' is all that should be displayed).
             - 'suggested_replacement':  If not None, a string with a
-              suggestion of the code to replace this span.  If this is set, we
-              actually display the 'rendered' value instead, because it's
-              easier to read.
+              suggestion of the code to replace this span.
             - 'expansion': If not None, a dictionary indicating the expansion
               of the macro within this span.  The values are:
 
@@ -819,13 +762,11 @@ def _collect_rust_messages(window, base_path, info, target_path,
     - `parent_info`: Dictionary used for tracking "children" messages.
       Currently only has 'span' key, the span of the parent to display the
       message (for children without spans).
-    - `main_message`: Dictionary where we store the main message information.
-    - `additional_messages`:  List where we add dictionaries of messages that
-      are associated with the main message.
+    - `message`: `Message` object where we store the message information.
     """
     # Include "notes" tied to errors, even if warnings are disabled.
     if (info['level'] != 'error' and
-        util.get_setting('rust_syntax_hide_warnings', False) and
+        util.get_setting('rust_syntax_hide_warnings') and
         not parent_info
        ):
         return
@@ -842,31 +783,34 @@ def _collect_rust_messages(window, base_path, info, target_path,
         else:
             return None
 
-    def set_primary_message(span, message):
+    def set_primary_message(span, text):
         parent_info['span'] = span
         # Not all codes have explanations (yet).
         if info['code'] and info['code']['explanation']:
-            # TODO
-            # This could potentially be a link that opens a Sublime popup, or
-            # a new temp buffer with the contents of 'explanation'.
-            # (maybe use sublime-markdown-popups)
-            main_message['help_link'] = \
-                ' <a href="https://doc.rust-lang.org/error-index.html#%s">?</a>' % (
-                    info['code']['code'],)
-        main_message['span_path'] = make_span_path(span)
-        main_message['span_region'] = make_span_region(span)
-        main_message['text'] = message
-        main_message['level'] = info['level']
-        main_message['is_main'] = True
+            message.code = info['code']['code']
+        message.path = make_span_path(span)
+        message.span = make_span_region(span)
+        message.text = text
+        message.level = info['level']
 
     def add_additional(span, text, level):
-        additional_messages.append({
-            'span_path': make_span_path(span),
-            'span_region': make_span_region(span),
-            'text': text,
-            'level': level,
-            'is_main': False,
-        })
+        child = Message()
+        child.text = text
+        child.level = level
+        child.primary = False
+        if 'macros>' in span['file_name']:
+            # Nowhere to display this, just send it to the console via msg_cb.
+            msg_cb(child)
+        else:
+            child.path = make_span_path(span)
+            child.span = make_span_region(span)
+            if any(map(lambda m: m.is_similar(child), message.children)):
+                # Duplicate message, skip.  This happens with some of the
+                # macro help messages.
+                return child
+            child.parent = message
+            message.children.append(child)
+        return child
 
     if len(info['spans']) == 0:
         if parent_info:
@@ -879,7 +823,9 @@ def _collect_rust_messages(window, base_path, info, target_path,
             # Some of the messages are not very interesting, though.
             imsg = info['message']
             if not (imsg.startswith('aborting due to') or
-                    imsg.startswith('cannot continue')):
+                    imsg.startswith('cannot continue') or
+                    imsg.startswith('Some errors occurred') or
+                    imsg.startswith('For more information about')):
                 if target_path:
                     # Display at the bottom of the root path (like main.rs)
                     # for lack of a better place to put it.
@@ -889,13 +835,10 @@ def _collect_rust_messages(window, base_path, info, target_path,
                     # Not displayed as a phantom since we don't know where to
                     # put it.
                     if msg_cb:
-                        msg_cb({
-                            'path': None,
-                            'level': info['level'],
-                            'span': None,
-                            'is_main': True,
-                            'text': imsg,
-                        })
+                        tmp_msg = Message()
+                        tmp_msg.level = info['level']
+                        tmp_msg.text = imsg
+                        msg_cb(tmp_msg)
 
     def find_span_r(span, expansion=None):
         if span['expansion']:
@@ -958,7 +901,7 @@ def _collect_rust_messages(window, base_path, info, target_path,
                 # Check if the main message is already set since there might
                 # be multiple spans that are primary (in which case, we
                 # arbitrarily show the main message on the first one).
-                if not main_message:
+                if not message.path:
                     set_primary_message(span, info['message'])
 
         label = span['label']
@@ -970,89 +913,121 @@ def _collect_rust_messages(window, base_path, info, target_path,
         #
         # Label with an empty string can happen for messages that have
         # multiple spans (starting in 1.21).
-        if label != None:
+        if label is not None:
             # Display the label for this Span.
             add_additional(span, label, info['level'])
         if span['suggested_replacement']:
             # The "suggested_replacement" contains the code that
-            # should replace the span.  However, it can be easier to
-            # read if you repeat the entire line (from "rendered").
-            add_additional(span, span['suggested_replacement'], 'help')
+            # should replace the span.
+            child = add_additional(span, None, 'help')
+            replacement_template = util.multiline_fix("""
+                <div class="rust-replacement"><a href="replace:%s" class="rust-button">Accept Replacement:</a> %s</div>
+            """)
+            child.minihtml_text = replacement_template % (
+                urllib.parse.urlencode({
+                    'id': child.id,
+                    'replacement': span['suggested_replacement'],
+                }),
+                html.escape(span['suggested_replacement'], quote=False),
+            )
 
     # Recurse into children (which typically hold notes).
     for child in info['children']:
         _collect_rust_messages(window, base_path, child, target_path,
                                msg_cb, parent_info.copy(),
-                               main_message, additional_messages)
+                               message)
 
 
-def _create_cross_links(main_message, additional_messages):
-    """Returns a list of dictionaries of messages to be displayed.
-
-    This is responsible for creating links from the main message to any
-    additional messages.
-    """
-    if not main_message:
-        return []
-
+def _batch_and_cross_link(primary_message):
+    """Creates a list of MessageBatch objects with appropriate cross links."""
     def make_file_path(msg):
-        if msg['span_region']:
+        if msg.span:
             return 'file:///%s:%s:%s' % (
-                msg['span_path'].replace('\\', '/'),
-                msg['span_region'][0][0] + 1,
-                msg['span_region'][0][1] + 1,
+                msg.path.replace('\\', '/'),
+                msg.span[1][0] + 1,
+                msg.span[1][1] + 1,
             )
         else:
             # Arbitrarily large line number to force it to the bottom of the
             # file, since we don't know ahead of time how large the file is.
-            return 'file:///%s:999999999' % (msg['span_path'],)
+            return 'file:///%s:999999999' % (msg.path,)
 
-    back_link = '<a href="%s">\u2190</a>' % (make_file_path(main_message),)
+    # Group messages by line.
+    primary_batch = PrimaryBatch(primary_message)
+    path_line_map = collections.OrderedDict()
+    key = (primary_message.path, primary_message.lineno())
+    path_line_map[key] = primary_batch
+    for msg in primary_message.children:
+        key = (msg.path, msg.lineno())
+        try:
+            batch = path_line_map[key]
+        except KeyError:
+            batch = ChildBatch(primary_batch)
+            primary_batch.child_batches.append(batch)
+            path_line_map[key] = batch
+        batch.children.append(msg)
 
-    def get_lineno(msg):
-        if msg['span_region']:
-            return msg['span_region'][0][0]
+    def make_link_text(msg, other):
+        # text for msg -> other
+        if msg.path == other.path:
+            if msg.lineno() < other.lineno():
+                filename = '\u2193'  # down arrow
+            else:
+                filename = '\u2191'  # up arrow
         else:
-            return 999999999
+            filename = os.path.basename(other.path)
+        if other.span:
+            return '%s:%s' % (filename, other.lineno() + 1,)
+        else:
+            return filename
 
-    link_set = set()
-    links = []
-    link_template = '<a href="{url}" class="rust-link">Note: {filename}{lineno}</a>'
-    for msg in additional_messages:
-        msg_lineno = get_lineno(msg)
-        seen_key = (msg['span_path'], msg_lineno)
-        # Only include a link if it is not close to the main message.
-        if msg['span_path'] != main_message['span_path'] or \
-           abs(msg_lineno - get_lineno(main_message)) > 5:
-            if seen_key in link_set:
-                continue
-            link_set.add(seen_key)
-            if msg['span_region']:
-                lineno = ':%s' % (msg_lineno + 1,)
-            else:
-                # AFAIK, this code path is not possible, but leaving it here
-                # to be safe.
-                lineno = ''
-            if msg['span_path'] == main_message['span_path']:
-                if get_lineno(msg) < get_lineno(main_message):
-                    filename = '\u2191'  # up arrow
-                else:
-                    filename = '\u2193'  # down arrow
-            else:
-                filename = os.path.basename(msg['span_path'])
-            links.append(link_template.format(
-                url=make_file_path(msg),
-                filename=filename,
-                lineno=lineno,
-            ))
-            msg['back_link'] = back_link
+    # Create cross links.
+    back_url = make_file_path(primary_message)
 
-    if links:
-        link_text = '\n'.join(links)
-    else:
-        link_text = ''
-    main_message['links'] = link_text
+    for (path, lineno), batch in path_line_map.items():
+        if batch == primary_batch:
+            continue
+        # Only include a link if the message is "far away".
+        msg = batch.first()
+        if msg.path != primary_message.path or \
+           abs(msg.lineno() - primary_message.lineno()) > 5:
+            url = make_file_path(msg)
+            text = make_link_text(primary_message, msg)
+            primary_batch.child_links.append((url, text))
+            back_text = make_link_text(msg, primary_message)
+            batch.back_link = (back_url, back_text)
 
-    result = additional_messages[:]
-    result.insert(0, main_message)
-    return result
+    return list(path_line_map.values())
+
+
+def _save_batches(window, batches, msg_cb):
+    """Save the batches.  This does several things:
+
+    - Saves batches to WINDOW_MESSAGES global.
+    - Updates the region_key for each message.
+    - Displays phantoms if a view is already open.
+    - Calls `msg_cb` for each individual message.
+    """
+    wid = window.id()
+    try:
+        path_to_batches = WINDOW_MESSAGES[wid]['paths']
+    except KeyError:
+        path_to_batches = collections.OrderedDict()
+        WINDOW_MESSAGES[wid] = {
+            'paths': path_to_batches,
+            'batch_index': (-1, -1)
+        }
+
+    for batch in batches:
+        path_batches = path_to_batches.setdefault(batch.path(), [])
+        # Flatten to a list of messages so each message gets a unique ID.
+        num = len(list(itertools.chain.from_iterable(path_batches)))
+        path_batches.append(batch)
+        for i, msg in enumerate(batch):
+            msg.region_key = 'rust-%i' % (num + i,)
+        view = window.find_open_file(batch.path())
+        if view:
+            _show_phantom(view, batch)
+        if msg_cb:
+            for msg in batch:
+                msg_cb(msg)

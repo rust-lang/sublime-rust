@@ -341,11 +341,11 @@ class TestCargoBuild(TestBase):
         self._check_added_message(window, view.file_name(), r'char_lit_as_u8')
 
     def _check_added_message(self, window, filename, pattern):
-        msgs = messages.WINDOW_MESSAGES[window.id()]
-        path_msgs = msgs['paths'][filename]
-        for msg in path_msgs:
-            if re.search(pattern, msg['text']):
-                break
+        batches = messages.WINDOW_MESSAGES[window.id()]['paths'][filename]
+        for batch in batches:
+            for msg in batch:
+                if re.search(pattern, msg.text):
+                    return
         else:
             raise AssertionError('Failed to find %r' % pattern)
 

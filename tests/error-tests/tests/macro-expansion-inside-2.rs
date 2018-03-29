@@ -6,4 +6,5 @@ mod macro_expansion_inside_mod2;
 fn f() {
     let x: () = example_bad_value!();
 //              ^^^^^^^^^^^^^^^^^^^^HELP in this macro invocation
+//              ^^^^^^^^^^^^^^^^^^^^MSG See Primary: macro_expansion_inside_mod2.rs:3
 }

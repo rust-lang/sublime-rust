@@ -12,9 +12,9 @@ fn main() {
     &1 as Send;
 //  ^^^^^^^^^^ERR cast to unsized type
 //        ^^^^HELP try casting to
-//        ^^^^HELP &Send
+//        ^^^^HELP /Accept Replacement:.*&Send/
     Box::new(1) as Send;
 //  ^^^^^^^^^^^^^^^^^^^ERR cast to unsized type
 //                 ^^^^HELP try casting to a `Box` instead
-//                 ^^^^HELP Box<Send>
+//                 ^^^^HELP /Accept Replacement:.*Box<Send>/
 }

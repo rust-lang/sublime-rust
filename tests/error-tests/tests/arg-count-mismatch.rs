@@ -12,12 +12,15 @@
 
 /*BEGIN*/fn f(x: isize) {
 //       ^^^^^^^^^^^^^^ERR(>=1.24.0-beta) defined here
+//       ^^^^^^^^^^^^^^MSG(>=1.24.0-beta) See Primary: ↓:22
 }/*END*/
 // ~ERR(<1.24.0-beta) defined here
+// ~MSG(<1.24.0-beta) See Primary: ↓:22
 
 // children without spans, spans with no labels
 // Should display error (with link) and a note of expected type.
 fn main() { let i: (); i = f(); }
 //                         ^^^ERR this function takes 1 parameter
 //                         ^^^ERR expected 1 parameter
-//                         ^^^MSG Note: ↑:13
+//                         ^^^MSG(<1.24.0-beta) See Also: ↑:16
+//                         ^^^MSG(>=1.24.0-beta) See Also: ↑:13

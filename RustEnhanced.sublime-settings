@@ -14,7 +14,7 @@
     // If true, will not display warning messages.
     "rust_syntax_hide_warnings": false,
 
-    // Color of messages.
+    // Color of messages for "clear" theme.
     // These use CSS colors.  See
     // https://www.sublimetext.com/docs/3/minihtml.html for more detail.
     "rust_syntax_error_color": "var(--redish)",
@@ -45,6 +45,11 @@
     // "circle" - Simple circle icons.
     // "none" - Do not place icons in the gutter.
     "rust_gutter_style": "shape",
+
+    // Style for displaying inline messages.  Can be:
+    // "clear" - Clear background with colors matching your color scheme.
+    // "solid" - Solid background color.
+    "rust_message_theme": "clear",
 
     // If your cargo project has several build targets, it's possible to specify mapping of
     // source code filenames to the target names to enable syntax checking.

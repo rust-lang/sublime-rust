@@ -9,3 +9,4 @@
 }/*END*/
 // ~NOTE(<1.21.0) ...the reference is valid
 // ~NOTE(<1.21.0) ...but the borrowed content
+// ~HELP(<1.16.0) consider using an explicit lifetime
