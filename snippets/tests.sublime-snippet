@@ -1,0 +1,14 @@
+<snippet>
+    <content><![CDATA[
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ${1:name}() {
+        ${2:unimplemented!();}
+    }
+}]]></content>
+    <tabTrigger>tests</tabTrigger>
+    <scope>source.rust</scope>
+</snippet>
