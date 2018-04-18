@@ -9,6 +9,6 @@ mod tests {
         ${2:unimplemented!();}
     }
 }]]></content>
-    <tabTrigger>tests</tabTrigger>
+    <tabTrigger>tests-mod</tabTrigger>
     <scope>source.rust</scope>
 </snippet>
