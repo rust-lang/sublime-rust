@@ -17,6 +17,24 @@ Block doc comments
 // ^^^^^^^^^^^^^^^^^^ comment.block.documentation comment.block
 */
 
+#[macro_use]
+//          <- meta.annotation
+extern crate std_web;
+//    <- keyword.other
+//     ^^^^^ keyword.other
+//           ^^^^^^^ source
+//                  ^ punctuation.terminator
+/*#[macro_use]
+//            <- comment.block
+extern extern crate simd_rng_derive;*/
+//                                    <- comment.block
+
+// This one is just to visually confirm the testing comments don't intefere
+#[macro_use]
+extern crate std_web;
+/*#[macro_use]      
+extern extern crate simd_rng_derive;*/
+
 let c = 'c';
 // <- storage.type
 //    ^ keyword.operator
