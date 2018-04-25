@@ -5,6 +5,8 @@
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ comment meta.command.cargo
 
 lib: lib_dice
+    Blocking waiting for file lock on build directory
+#   ^^^^^^^^ markup.deleted.diff meta.blocking.cargo
     Updating registry `https://github.com/rust-lang/crates.io-index`
 #   ^^^^^^^^ markup.inserted.diff meta.updating.cargo
 
