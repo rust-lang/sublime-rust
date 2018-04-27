@@ -800,11 +800,22 @@ contexts:
           pop: true
         - match: \bself\b
           scope: variable.parameter.rust
-        - match: '({{identifier}})\s*(:(?!:))'
-          captures:
-            1: variable.parameter.rust
-            2: punctuation.separator.rust
+        - include: basic-identifiers
+        - match: '[\{\(]'
+          scope: punctuation.definition.block.begin.rust
+          push:
+            - match: '[\}\)]'
+              scope: punctuation.definition.block.end.rust
+              pop: true
+            - match: '{{ident}}'
+              scope: variable.parameter.rust
+            - include: statements
+            - include: attribute
         - include: type-any-identifier
+        - match: '{{ident}}'
+          scope: variable.parameter.rust
+        - match: ':'
+          scope: punctuation.separator.rust
 
   fn-return:
     - meta_scope: meta.function.rust
