@@ -1203,3 +1203,44 @@ pub union Foo<'a, Y: Baz>
 // that we don't accidentally interpret it as a keyword.
 fn union() {}
 // ^^^^^ meta.function entity.name.function
+
+fn deconstructor(Foo(a, b): Foo) {
+//               ^^^
+//                  ^ meta.function.rust meta.function.parameters.rust punctuation.definition.block.begin.rust
+//                   ^ meta.function.rust meta.function.parameters.rust variable.parameter.rust
+//                      ^ meta.function.rust meta.function.parameters.rust variable.parameter.rust
+//                       ^ meta.function.rust meta.function.parameters.rust punctuation.definition.block.end.rust
+//                        ^ meta.function.rust meta.function.parameters.rust punctuation.separator.rust
+//                          ^^^ meta.function.rust meta.function.parameters.rust storage.type.source.rust
+    unimplemented!();
+}
+
+fn deconstructor(Foo{ 0: x, 1: y }: Foo) {
+//               ^^^ meta.function.rust meta.function.parameters.rust storage.type.source.rust
+//                  ^ meta.function.rust meta.function.parameters.rust punctuation.definition.block.begin.rust
+//                    ^ meta.function.rust meta.function.parameters.rust constant.numeric.integer.decimal.rust
+//                       ^ meta.function.rust meta.function.parameters.rust variable.parameter.rust
+//                          ^ meta.function.rust meta.function.parameters.rust constant.numeric.integer.decimal.rust
+//                           ^ meta.function.rust meta.function.parameters.rust punctuation.separator.rust
+//                             ^ meta.function.rust meta.function.parameters.rust variable.parameter.rust
+//                               ^ meta.function.rust meta.function.parameters.rust punctuation.definition.block.end.rust
+//                                ^ meta.function.rust meta.function.parameters.rust punctuation.separator.rust
+//                                  ^^^ meta.function.rust meta.function.parameters.rust storage.type.source.rust
+    unimplemented!();
+}
+
+fn deconstructor(Foo{ a, b, c, d: _, .. }: Foo) {
+//               ^^^ meta.function.rust meta.function.parameters.rust storage.type.source.rust
+//                  ^ meta.function.rust meta.function.parameters.rust punctuation.definition.block.begin.rust
+//                    ^ meta.function.rust meta.function.parameters.rust variable.parameter.rust
+//                       ^ meta.function.rust meta.function.parameters.rust variable.parameter.rust
+//                          ^ meta.function.rust meta.function.parameters.rust variable.parameter.rust
+//                             ^ meta.function.rust meta.function.parameters.rust variable.parameter.rust
+//                              ^ meta.function.rust meta.function.parameters.rust punctuation.separator.rust
+//                                ^^^ meta.function.rust meta.function.parameters.rust
+//                                   ^^ meta.function.rust meta.function.parameters.rust keyword.operator.rust
+//                                      ^ meta.function.rust meta.function.parameters.rust punctuation.definition.block.end.rust
+//                                       ^ meta.function.rust meta.function.parameters.rust punctuation.separator.rust
+//                                         ^^^ meta.function.rust meta.function.parameters.rust storage.type.source.rust
+    unimplemented!();
+}
