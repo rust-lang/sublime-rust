@@ -1,0 +1,6 @@
+<snippet>
+    <content><![CDATA[eprintln!("${1:\{${2::?}\}}"${1/([^\{])*(\{.*\})?.*/(?2:, :\);)/}$3${1/([^\{])*(\{.*\})?.*/(?2:\);)/}]]></content>
+    <scope>source.rust</scope>
+    <tabTrigger>eprintln</tabTrigger>
+    <description>eprintln!(…)</description>
+</snippet>
