@@ -58,8 +58,6 @@ class TargetDetector(object):
             if result:
                 return result
 
-        # TODO: Alternatively, could run rustc directly without cargo.
-        # rustc -Zno-trans -Zunstable-options --error-format=json file_name
         print('Rust Enhanced: Failed to find target for %r' % file_name)
         return []
 

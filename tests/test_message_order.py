@@ -11,8 +11,8 @@ class TestMessageOrder(TestBase):
         super(TestMessageOrder, self).setUp()
         # Set a base version for these tests.
         version = util.get_rustc_version(sublime.active_window(), plugin_path)
-        if semver.match(version, '<1.18.0'):
-            self.skipTest('Tests require rust 1.18 or newer.')
+        if semver.match(version, '<1.20.0'):
+            self.skipTest('Tests require rust 1.20 or newer.')
 
         # Make it so that the build target is automatically determined from
         # the active view so each test doesn't have to specify it.

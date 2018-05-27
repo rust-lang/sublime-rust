@@ -61,14 +61,13 @@ This relies on Cargo and Rust (>= 1.8.0) being installed and on your system path
 | :------ | :------ | :---------- |
 | `rust_syntax_checking` | `true` | Enable the on-save syntax checking. |
 | `rust_syntax_checking_method` | `"check"` | The method used for checking your code (see below). |
-| `rust_syntax_checking_include_tests` | `true` | Enable checking of test code within `#[cfg(test)]` sections (only for `no-trans` method). |
+| `rust_syntax_checking_include_tests` | `true` | Enable checking of test code within `#[cfg(test)]` sections. |
 | `rust_syntax_hide_warnings` | `false` | Don't show warnings when syntax checking |
 
 The available checking methods are:
 
 | Method | Description |
 | :----- | :---------- |
-| `no-trans` | Runs the rustc compiler with the `-Zno-trans` option. This will be deprecated soon, however it has the benefit of supporting `#[test]` sections. |
 | `check` | Uses `cargo check` (requires at least Rust 1.16). |
 | `clippy` | Uses `cargo clippy`.  This requires [Clippy](https://github.com/Manishearth/rust-clippy) to be installed.  This also may be a little slower since it must check every target in your package. |
 

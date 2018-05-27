@@ -278,9 +278,7 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
     def filter_variant(self, x):
         """Subclasses override this to filter variants from the variant
         list."""
-        # no-trans is a special, hidden, internal command. In theory, a user
-        # can configure it, but since it is deprecated, just hide it for now.
-        return x['name'] != 'no-trans'
+        return True
 
     def items_which(self):
         """Choice to select at which level the setting should be saved at."""

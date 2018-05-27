@@ -64,8 +64,6 @@ class TestSyntaxCheck(TestBase):
 
         The current restrictions are:
 
-        - `no-trans`: This message only appears with no-trans method.
-        - `check`: This message only appears with check method.
         - semver: Any semver string to match against the rustc version.
         - `key=value`: Check a configuration value.
 
@@ -88,8 +86,6 @@ class TestSyntaxCheck(TestBase):
             'error-tests/tests/arg-count-mismatch.rs',
             # "children" with spans
             'error-tests/tests/binop-mul-bool.rs',
-            # This is currently broken (-Zno-trans does not produce errors).
-            # 'error-tests/tests/const-err.rs',
             # Macro-expansion test.
             'error-tests/tests/dead-code-ret.rs',
             # "code" test
@@ -122,23 +118,12 @@ class TestSyntaxCheck(TestBase):
             'workspace/workspace2/src/somemod.rs',
         ]
 
-        # Configure different permutations of settings to test for each file.
-        methods = ['no-trans']
-        if semver.match(self.rustc_version, '>=1.16.0'):
-            methods.append('check')
-        else:
-            print('Skipping check, need rust >= 1.16.')
-        setups = [_altered_settings('rust_syntax_checking_method', methods)]
+        if semver.match(self.rustc_version, '<1.19.0'):
+            self.skipTest('Tests require rust 1.19 or newer.')
 
-        if semver.match(self.rustc_version, '>=1.19.0'):
-            # -Zno-trans now requires nightly
-            self._override_setting('cargo_build', {
-                'variants': {
-                    'no-trans': {
-                        'toolchain': 'nightly'
-                    }
-                }
-            })
+        # Configure different permutations of settings to test for each file.
+        methods = ['check']
+        setups = [_altered_settings('rust_syntax_checking_method', methods)]
 
         for paths in to_test:
             if not isinstance(paths, tuple):
@@ -298,13 +283,7 @@ class TestSyntaxCheck(TestBase):
             toolchain=toolchain)
 
         def do_check(check):
-            if check == 'check':
-                # This message only shows up in check.
-                return method == 'check'
-            elif check == 'no-trans':
-                # This message only shows up in no-trans.
-                return method == 'no-trans'
-            elif check == 'nightly':
+            if check == 'nightly':
                 # This message only shows on nightly.
                 return 'nightly' in self.rustc_version
             elif re.match('[<>=!0-9]', check):

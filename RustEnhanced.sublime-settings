@@ -4,7 +4,7 @@
     "rust_syntax_checking": true,
 
     // The method used to check code on-save.
-    // "check", "no-trans", or "clippy" (see README.md)
+    // "check" or "clippy" (see README.md)
     "rust_syntax_checking_method": "check",
 
     // Enable checking of test code within #[cfg(test)] sections.

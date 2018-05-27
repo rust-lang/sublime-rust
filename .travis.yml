@@ -1,54 +1,56 @@
 env:
-    global:
-        - PACKAGE="Rust Enhanced"
-        - SUBLIME_TEXT_VERSION="3"
+  global:
+    - PACKAGE="Rust Enhanced"
+    - SUBLIME_TEXT_VERSION="3"
 
 language: rust
 
+os:
+  - linux
+  - osx
+
+rust:
+  - stable
+  - beta
+  - nightly
+
 matrix:
-    include:
-        - os: linux
-          rust: stable
-
-        - os: osx
-          rust: stable
-
-        - os: linux
-          rust: beta
-
-        - os: osx
-          rust: beta
-
-        - os: linux
-          rust: nightly
-
-        - os: osx
-          rust: nightly
-
+  allow_failures:
+    - rust: beta
+    - rust: nightly
 
 before_install:
-    - curl -OL https://raw.githubusercontent.com/SublimeText/UnitTesting/master/sbin/travis.sh
+  - curl -OL https://raw.githubusercontent.com/SublimeText/UnitTesting/master/sbin/travis.sh
 
-    # enable gui, see https://docs.travis-ci.com/user/gui-and-headless-browsers
-    - if [ "$TRAVIS_OS_NAME" == "linux"  ]; then
-            export DISPLAY=:99.0;
-            sh -e /etc/init.d/xvfb start;
-      fi
+  # enable gui, see https://docs.travis-ci.com/user/gui-and-headless-browsers
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      export DISPLAY=:99.0;
+      sh -e /etc/init.d/xvfb start;
+    fi
 
 
 install:
-    # Install Sublime and Sublime Unittesting.
-    - sh travis.sh bootstrap
-    # Install Package Control, needed for dependencies.
-    - sh travis.sh install_package_control
+  # Install Sublime and Sublime Unittesting.
+  - sh travis.sh bootstrap
+  # Install Package Control, needed for dependencies.
+  - sh travis.sh install_package_control
 
-    # Ensure nightly is installed to run no-trans, benchmarks, and Clippy.
-    - rustup install nightly
-    # Install Rust packages needed by integration tests.
-    - cargo +nightly install clippy || export RE_SKIP_CLIPPY=1
-    - cargo install cargo-script
+  # Ensure nightly is installed to run benchmarks and Clippy.
+  # Pin a known good version of nightly and clippy.
+  - >
+    if [ "$TRAVIS_RUST_VERSION" != "nightly" ]; then
+      rustup install nightly-2018-05-26;
+      host=$(rustc -Vv | grep ^host: | sed -e "s/host: //g");
+      toolchains=$(dirname $(dirname $(dirname $(rustup which rustc))));
+      mv $toolchains/nightly-* $toolchains/nightly-$host;
+      cargo +nightly install --version 0.0.205 clippy || export RE_SKIP_CLIPPY=1;
+    else
+      cargo +nightly install clippy || export RE_SKIP_CLIPPY=1;
+    fi
+  # Install Rust packages needed by integration tests.
+  - cargo install cargo-script
 
 
 script:
-    - sh travis.sh run_syntax_tests
-    - sh travis.sh run_tests
+  - sh travis.sh run_syntax_tests
+  - sh travis.sh run_tests

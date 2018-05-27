@@ -80,10 +80,11 @@ class TestCargoBuild(TestBase):
                 'libmulti_targets.rlib']),
             ('--bin otherbin', [
                 exe('otherbin'),
-                'libmulti_targets.rlib']),
+                # Changed by https://github.com/rust-lang/cargo/pull/5460
+                version('libmulti_targets.rlib', '<1.28.0-beta')]),
             ('--bin multi-targets', [
                 exe('multi-targets'),
-                'libmulti_targets.rlib']),
+                version('libmulti_targets.rlib', '<1.28.0-beta')]),
             ('--lib', [
                 'libmulti_targets.rlib']),
             # Not clear to me why it produces ex1-* files.
@@ -98,7 +99,7 @@ class TestCargoBuild(TestBase):
                 exe('otherbin'),
                 exe('feats'),
                 exe('penv'),
-                'libmulti_targets.rlib',
+                version('libmulti_targets.rlib', '<1.28.0-beta'),
                 'test1-*']),
             # bench requires nightly
         ]
