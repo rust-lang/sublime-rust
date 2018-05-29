@@ -255,7 +255,7 @@ class TestSyntaxCheck(TestBase):
                                               .get(view.file_name(), [])
             theme_data[theme] = output = []
             for batch in batches:
-                output.append(themes.THEMES[theme].render(batch))
+                output.append(themes.THEMES[theme].render(view, batch))
         # Check that the message appears *somewhere*.  This is just a rough
         # verification.
         for emsg_info in expected_messages:

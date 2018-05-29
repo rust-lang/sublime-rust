@@ -8,6 +8,7 @@ import html
 import itertools
 import os
 import re
+import textwrap
 import urllib.parse
 import uuid
 import webbrowser
@@ -90,7 +91,7 @@ class Message:
         for child in self.children:
             yield child
 
-    def escaped_text(self, indent):
+    def escaped_text(self, view, indent):
         """Returns the minihtml markup of the message.
 
         :param indent: String used for indentation when the message spans
@@ -102,18 +103,26 @@ class Message:
         if not self.text:
             return ''
 
+        # Call rstrip() because sometimes rust includes newlines at the
+        # end of the message, which we don't want.
+        text = self.text.rstrip()
+        if not view.settings().get('word_wrap', False):
+            # Rough assumption of using monospaced font, but should be
+            # reasonable in most cases for proportional fonts.
+            width = view.viewport_extent()[0] / view.em_width() - 5
+            text = textwrap.fill(self.text, width=width,
+                break_long_words=False, break_on_hyphens=False)
+
         def escape_and_link(i_txt):
             i, txt = i_txt
             if i % 2:
                 return '<a href="%s">%s</a>' % (txt, txt)
             else:
-                # Call strip() because sometimes rust includes newlines at the
-                # end of the message, which we don't want.
-                escaped = html.escape(txt.strip(), quote=False)
+                escaped = html.escape(txt, quote=False)
                 return re.sub('^( +)', lambda m: '&nbsp;'*len(m.group()), escaped, flags=re.MULTILINE)\
                     .replace('\n', '<br>' + indent)
 
-        parts = re.split(LINK_PATTERN, self.text)
+        parts = re.split(LINK_PATTERN, text)
         return ' '.join(map(escape_and_link, enumerate(parts)))
 
     def is_similar(self, other):
@@ -278,7 +287,7 @@ def message_popup(view, point, hover_zone):
 
     if batches:
         theme = themes.THEMES[util.get_setting('rust_message_theme')]
-        minihtml = '\n'.join(theme.render(batch, for_popup=True) for batch in batches)
+        minihtml = '\n'.join(theme.render(view, batch, for_popup=True) for batch in batches)
         if not minihtml:
             return
         on_nav = functools.partial(_click_handler, view, hide_popup=True)
@@ -349,7 +358,7 @@ def _show_phantom(view, batch):
         )
 
     theme = themes.THEMES[util.get_setting('rust_message_theme')]
-    content = theme.render(batch)
+    content = theme.render(view, batch)
     if not content:
         return
 
@@ -923,12 +932,19 @@ def _collect_rust_messages(window, base_path, info, target_path,
             replacement_template = util.multiline_fix("""
                 <div class="rust-replacement"><a href="replace:%s" class="rust-button">Accept Replacement:</a> %s</div>
             """)
+            html_suggestion = html.escape(span['suggested_replacement'], quote=False)
+            if '\n' in html_suggestion:
+                # Start on a new line so the text doesn't look too weird.
+                html_suggestion = '\n' + html_suggestion
+            html_suggestion = html_suggestion\
+                .replace(' ', '&nbsp;')\
+                .replace('\n', '<br>\n')
             child.minihtml_text = replacement_template % (
                 urllib.parse.urlencode({
                     'id': child.id,
                     'replacement': span['suggested_replacement'],
                 }),
-                html.escape(span['suggested_replacement'], quote=False),
+                html_suggestion,
             )
 
     # Recurse into children (which typically hold notes).
