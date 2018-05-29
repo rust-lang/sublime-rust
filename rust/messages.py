@@ -185,21 +185,9 @@ def has_message_for_path(window, path):
 def messages_finished(window):
     """This should be called after all messages have been added."""
     _sort_messages(window)
-    _draw_all_region_highlights(window)
 
 
-def _draw_all_region_highlights(window):
-    """Drawing region outlines must be deferred until all the messages have
-    been received since Sublime does not have an API to incrementally add
-    them."""
-    paths = WINDOW_MESSAGES.get(window.id(), {}).get('paths', {})
-    for path, batches in paths.items():
-        view = window.find_open_file(path)
-        if view:
-            _draw_region_highlights(view, batches)
-
-
-def _draw_region_highlights(view, batches):
+def _draw_region_highlights(view, batch):
     if util.get_setting('rust_region_style') == 'none':
         return
 
@@ -210,15 +198,14 @@ def _draw_region_highlights(view, batches):
         'note': [],
         'help': [],
     }
-    for batch in batches:
-        if batch.hidden:
-            continue
-        for msg in batch:
-            region = msg.sublime_region(view)
-            if msg.level not in regions:
-                print('RustEnhanced: Unknown message level %r encountered.' % msg.level)
-                msg.level = 'error'
-            regions[msg.level].append((msg.region_key, region))
+    if batch.hidden:
+        return
+    for msg in batch:
+        region = msg.sublime_region(view)
+        if msg.level not in regions:
+            print('RustEnhanced: Unknown message level %r encountered.' % msg.level)
+            msg.level = 'error'
+        regions[msg.level].append((msg.region_key, region))
 
     # Do this in reverse order so that errors show on-top.
     for level in ['help', 'note', 'warning', 'error']:
@@ -511,7 +498,7 @@ def show_messages_for_view(view):
                              .get(view.file_name(), [])
     for batch in batches:
         _show_phantom(view, batch)
-    _draw_region_highlights(view, batches)
+        _draw_region_highlights(view, batch)
 
 
 def _ith_iter_item(d, i):
@@ -1028,6 +1015,7 @@ def _save_batches(window, batches, msg_cb):
         view = window.find_open_file(batch.path())
         if view:
             _show_phantom(view, batch)
+            _draw_region_highlights(view, batch)
         if msg_cb:
             for msg in batch:
                 msg_cb(msg)
