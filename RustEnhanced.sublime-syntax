@@ -710,10 +710,13 @@ contexts:
       pop: true
 
   impl-for:
-    - match: '(?=\s*(?:::|{{identifier}}|\$|<)+(<.*?>)?\s+for\s+)'
+    # `!?` here matches opt-out trait impls
+    - match: '(?=\s*(?:::|!?{{identifier}}|\$|<)+(<.*?>)?\s+for\s+)'
       set:
         - meta_scope: meta.impl.rust
         - include: comments
+        - match: '!?(?=\s*{{identifier}})'
+          scope: keyword.operator.rust meta.impl.opt-out.rust
         - match: \bfor\b
           scope: keyword.other.rust
           set: impl-identifier

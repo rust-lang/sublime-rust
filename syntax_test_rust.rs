@@ -675,6 +675,10 @@ impl Point
     }
 }
 
+impl !Send for Point {}
+//^^^^^^^^^^^^^^^^^^^^^ meta.impl.rust
+//   ^ meta.impl.rust keyword.operator.rust meta.impl.opt-out.rust
+
 pub fn pub_function() -> bool
 // <- storage.modifier
 //  ^^ storage.type.function
