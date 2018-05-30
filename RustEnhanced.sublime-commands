@@ -52,4 +52,8 @@
         "caption": "Rust: Run Benchmarks In Current File",
         "command": "cargo_bench_current_file"
     },
+    {
+        "caption": "Rust: Open Debug Log",
+        "command": "rust_open_log"
+    },
 ]

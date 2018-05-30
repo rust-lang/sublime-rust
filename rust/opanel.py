@@ -4,7 +4,7 @@ import sublime
 
 import os
 import re
-from . import rust_proc, messages, util, semver
+from . import rust_proc, messages, util, semver, log
 
 # Use the same panel name that Sublime's build system uses so that "Show Build
 # Results" will open the same panel.  I don't see any particular reason why
@@ -157,6 +157,6 @@ class OutputListener(rust_proc.ProcListener):
 
     def _display_debug(self, proc):
         # Display some information to help the user debug any build problems.
-        self._append('[dir: %s]' % (proc.cwd,))
+        log.log(self.window, 'cwd: %s', proc.cwd)
         # TODO: Fix this when adding PATH/env support.
-        self._append('[path: %s]' % (proc.env.get('PATH'),))
+        log.log(self.window, 'path: %s', proc.env.get('PATH'))

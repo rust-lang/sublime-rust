@@ -82,6 +82,10 @@
                 "command": "rust_cancel"
             },
             {
+                "caption": "Open Debug Log",
+                "command": "rust_open_log"
+            },
+            {
                 "caption": "-",
             },
             {

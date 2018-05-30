@@ -7,6 +7,7 @@ import sys
 from .rust import (rust_proc, rust_thread, opanel, util, messages,
                    cargo_settings, target_detect)
 from .rust.cargo_config import *
+from .rust.log import (log, clear_log, RustOpenLog, RustLogEvent)
 
 # Maps command to an input string. Used to pre-populate the input panel with
 # the last entered value.
@@ -44,6 +45,7 @@ class CargoExecCommand(sublime_plugin.WindowCommand):
     def run(self, command=None, command_info=None, settings=None):
         if command is None:
             return self.window.run_command('build', {'select': True})
+        clear_log(self.window)
         self.initial_settings = settings if settings else {}
         self.settings = cargo_settings.CargoSettings(self.window)
         self.settings.load()

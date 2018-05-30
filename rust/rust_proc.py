@@ -12,9 +12,10 @@ import sys
 import threading
 import time
 import shellenv
+import sublime
 import traceback
 
-from . import util
+from . import util, log
 
 # Map Sublime window ID to RustProc.
 PROCS = {}
@@ -43,7 +44,7 @@ class ProcListener(object):
 
     def on_error(self, proc, message):
         """Called when there is an error, such as failure to decode utf-8."""
-        print('Rust Error: %s' % message)
+        log.critical(sublime.active_window(), 'Rust Error: %s', message)
 
     def on_json(self, proc, obj):
         """Parsed JSON output from the command."""
@@ -93,8 +94,8 @@ def slurp_json(window, cmd, cwd):
     """
     rc, listener = _slurp(window, cmd, cwd)
     if not listener.json and rc:
-        print('Failed to run: %s' % cmd)
-        print(''.join(listener.data))
+        log.critical(window, 'Failed to run: %s', cmd)
+        log.critical(window, ''.join(listener.data))
     return listener.json
 
 
@@ -198,8 +199,7 @@ class RustProc(object):
         if env:
             self.env.update(env)
 
-        # XXX: Debug config.
-        util.debug('Rust running: %s', self.cmd)
+        log.log(window, 'Running: %s', ' '.join(self.cmd))
 
         if sys.platform == 'win32':
             # Prevent a console window from popping up.

@@ -2,7 +2,7 @@ import sublime
 import sublime_plugin
 import os
 from .rust import (messages, rust_proc, rust_thread, util, target_detect,
-                   cargo_settings, semver)
+                   cargo_settings, semver, log)
 from pprint import pprint
 
 
@@ -23,6 +23,7 @@ class RustSyntaxCheckEvent(sublime_plugin.EventListener):
         # We use phantoms which were added in 3118
         if int(sublime.version()) < 3118:
             return
+        log.clear_log(view.window())
 
         enabled = util.get_setting('rust_syntax_checking', True)
         if enabled and util.active_view_is_rust(view=view):
@@ -68,9 +69,11 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         self.cwd = util.find_cargo_manifest(self.triggered_file_name)
         if self.cwd is None:
             # A manifest is required.
-            print('Rust Enhanced skipping on-save syntax check.')
-            print('Failed to find Cargo.toml from %r' % self.triggered_file_name)
-            print('A Cargo.toml manifest is required.')
+            log.critical(self.window, util.multiline_fix("""
+                Rust Enhanced skipping on-save syntax check.
+                Failed to find Cargo.toml from %r
+                A Cargo.toml manifest is required.
+            """), self.triggered_file_name)
             return
 
         self.update_status()
@@ -158,14 +161,10 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
         pass
 
     def on_data(self, proc, data):
-        # Debugging on-save checking problems requires viewing output here,
-        # but it is difficult to segregate useful messages (like "thread
-        # 'main' panicked") from all the other output.  Perhaps make a debug
-        # print setting?
-        pass
+        log.log(self.window, data)
 
     def on_error(self, proc, message):
-        print('Rust Error: %s' % message)
+        log.critical(self.window, 'Rust Error: %s', message)
 
     def on_json(self, proc, obj):
         messages.add_rust_messages(self.window, self.msg_rel_path, obj,
@@ -175,7 +174,7 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
             self.this_view_found = True
 
     def on_finished(self, proc, rc):
-        pass
+        log.log(self.window, 'On-save check finished.')
 
     def on_terminated(self, proc):
-        pass
+        log.log(self.window, 'Process Interrupted')

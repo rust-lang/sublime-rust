@@ -42,20 +42,6 @@ def get_setting(name, default=None):
     return settings.get(name, default)
 
 
-_last_debug = time.time()
-
-
-def debug(msg, *args):
-    """Display a general debug message."""
-    global _last_debug
-    t = time.time()
-    d = t - _last_debug
-    _last_debug = t
-    n = threading.current_thread().name
-    print('%s +%.3f ' % (n, d), end='')
-    print(msg % args)
-
-
 def get_rustc_version(window, cwd, toolchain=None):
     """Returns the rust version for the given directory.
 

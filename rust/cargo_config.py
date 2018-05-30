@@ -10,7 +10,7 @@ import sublime
 import sublime_plugin
 from .cargo_settings import CargoSettings, CARGO_COMMANDS
 from .util import index_with, get_cargo_metadata
-from . import rust_proc, util
+from . import rust_proc, util, log
 
 # Keep track of recent choices to set the default value.
 RECENT_CHOICES = {}
@@ -212,7 +212,8 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
                                 self.packages[manifest_dir] = package
                     else:
                         # Manifest load failure, let it slide.
-                        print('Failed to load Cargo manifest in %r' % dirpath)
+                        log.critical(self.window,
+                            'Failed to load Cargo manifest in %r', dirpath)
 
         if len(self.packages) == 0:
             sublime.error_message(util.multiline_fix("""
@@ -252,7 +253,8 @@ class CargoConfigBase(sublime_plugin.WindowCommand):
                 # build.rs, can't be built explicitly.
                 pass
             else:
-                print('Rust: Unsupported target found: %s' % kind)
+                log.critical(self.window,
+                    'Rust: Unsupported target found: %s', kind)
         items = []
         for kind, values in kinds.items():
             allowed = True

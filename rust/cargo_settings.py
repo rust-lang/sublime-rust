@@ -19,7 +19,7 @@ run.  See `docs/build.md` for a description.
 import sublime
 import os
 import shlex
-from . import util, target_detect
+from . import util, target_detect, log
 
 CARGO_COMMANDS = {
     'auto': {
@@ -269,7 +269,7 @@ class CargoSettings(object):
         if self.window.project_file_name() is None:
             # XXX: Better way to display a warning?  Is
             # sublime.error_message() reasonable?
-            print(util.multiline_fix("""
+            log.critical(self.window, util.multiline_fix("""
                 Rust Enhanced Warning: This window does not have an associated sublime-project file.
                 Any changes to the Cargo build settings will be lost if you close the window."""))
         self.window.set_project_data(self.project_data)

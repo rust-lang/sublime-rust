@@ -13,7 +13,7 @@ import urllib.parse
 import uuid
 import webbrowser
 
-from . import util, themes
+from . import util, themes, log
 from .batch import *
 
 # Key is window id.
@@ -266,7 +266,9 @@ def _draw_region_highlights(view, batch):
     for msg in batch:
         region = msg.sublime_region(view)
         if msg.level not in regions:
-            print('RustEnhanced: Unknown message level %r encountered.' % msg.level)
+            log.critical(view.window(),
+                'RustEnhanced: Unknown message level %r encountered.',
+                msg.level)
             msg.level = 'error'
         regions[msg.level].append((msg.region_key, region))
 
@@ -370,7 +372,8 @@ def _accept_replace(view, mid, replacement):
     # since the messages were generated).
     regions = view.get_regions(msg.region_key)
     if not regions:
-        print('Rust Enhanced internal error: Could not find region for suggestion.')
+        log.critical(view.window(),
+            'Rust Enhanced internal error: Could not find region for suggestion.')
         return
     region = (regions[0].a, regions[0].b)
     view.run_command('rust_accept_suggested_replacement', {

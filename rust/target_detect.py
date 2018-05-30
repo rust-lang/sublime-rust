@@ -7,7 +7,7 @@ https://github.com/rust-lang/cargo/issues/3211
 """
 
 import os
-from . import rust_proc, util
+from . import rust_proc, util, log
 
 
 class TargetDetector(object):
@@ -58,7 +58,8 @@ class TargetDetector(object):
             if result:
                 return result
 
-        print('Rust Enhanced: Failed to find target for %r' % file_name)
+        log.critical(self.window,
+            'Rust Enhanced: Failed to find target for %r', file_name)
         return []
 
     def _targets_manual_config(self, file_name):
