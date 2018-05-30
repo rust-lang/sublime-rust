@@ -115,4 +115,4 @@ class ChildBatch(MessageBatch):
 
     def dismiss(self, window):
         self.hidden = True
-        self.primary_batch.dismiss(window)
+        self._dismiss(window)
