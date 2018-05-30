@@ -518,3 +518,27 @@ def plugin_unloaded():
             del sys.modules[key]
         if package_name in sys.modules:
             del sys.modules[package_name]
+
+
+def plugin_loaded():
+    try:
+        from package_control import events
+    except ImportError:
+        return
+    package_name = __package__.split('.')[0]
+    if events.install(package_name):
+        # Update the syntax for any open views.
+        for window in sublime.windows():
+            for view in window.views():
+                fname = view.file_name()
+                if fname and fname.endswith('.rs'):
+                    view.settings().set('syntax',
+                        'Packages/%s/RustEnhanced.sublime-syntax' % (package_name,))
+
+        # Disable the built-in Rust package.
+        settings = sublime.load_settings('Preferences.sublime-settings')
+        ignored = settings.get('ignored_packages', [])
+        if 'Rust' not in ignored:
+            ignored.append('Rust')
+            settings.set('ignored_packages', ignored)
+            sublime.save_settings('Preferences.sublime-settings')
