@@ -437,7 +437,14 @@ def _show_message(window, current_idx, transient=False, force_open=False):
     _scroll_build_panel(window, msg)
     view = None
     if not transient and not force_open:
-        view = window.find_open_file(path)
+        active = window.active_view()
+        if active.file_name() == path:
+            # If a file is open in multiple views, try to stick to the current
+            # view.  Otherwise it may jump to the other view which is a little
+            # jarring.
+            view = active
+        else:
+            view = window.find_open_file(path)
         if view:
             _scroll_to_message(view, msg, transient)
     if not view:
