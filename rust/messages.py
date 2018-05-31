@@ -19,9 +19,11 @@ from .batch import *
 # Value is a dictionary: {
 #     'paths': {path: [MessageBatch, ...]},
 #     'batch_index': (path_idx, message_idx),
+#     'hidden': bool
 # }
 # `paths` is an OrderedDict to handle next/prev message.
 # `path` is the absolute path to the file.
+# `hidden` indicates that all messages have been dismissed.
 WINDOW_MESSAGES = {}
 
 
@@ -148,11 +150,20 @@ class Message:
         return ''.join(result)
 
 
-def clear_messages(window):
-    """Remove all messages for the given window."""
-    for path, batches in WINDOW_MESSAGES.pop(window.id(), {})\
-                                        .get('paths', {})\
-                                        .items():
+def clear_messages(window, soft=False):
+    """Remove all messages for the given window.
+
+    :param soft: If True, the messages are kept in memory and can be
+        resurrected with various commands (such as list messages, or
+        next/prev).
+    """
+    if soft:
+        winfo = WINDOW_MESSAGES.get(window.id(), {})
+        winfo['hidden'] = True
+    else:
+        winfo = WINDOW_MESSAGES.pop(window.id(), {})
+
+    for path, batches in winfo.get('paths', {}).items():
         view = window.find_open_file(path)
         if view:
             for batch in batches:
@@ -245,8 +256,13 @@ def _draw_region_highlights(view, batches):
 
 def message_popup(view, point, hover_zone):
     """Displays a popup if there is a message at the given point."""
-    paths = WINDOW_MESSAGES.get(view.window().id(), {}).get('paths', {})
-    batches = paths.get(view.file_name(), [])
+    try:
+        winfo = WINDOW_MESSAGES[view.window().id()]
+    except KeyError:
+        return
+    if winfo['hidden']:
+        return
+    batches = winfo['paths'].get(view.file_name(), [])
 
     if hover_zone == sublime.HOVER_GUTTER:
         # Collect all messages on this line.
@@ -289,7 +305,7 @@ def message_popup(view, point, hover_zone):
 
 def _click_handler(view, url, hide_popup=False):
     if url == 'hide':
-        clear_messages(view.window())
+        clear_messages(view.window(), soft=True)
         if hide_popup:
             view.hide_popup()
     elif url.startswith('file:///'):
@@ -430,6 +446,8 @@ def _show_message(window, current_idx, transient=False, force_open=False):
         window_info = WINDOW_MESSAGES[window.id()]
     except KeyError:
         return
+    if window_info['hidden']:
+        redraw_all_open_views(window)
     paths = window_info['paths']
     path, batches = _ith_iter_item(paths.items(), current_idx[0])
     batch = batches[current_idx[1]]
@@ -479,14 +497,8 @@ def _scroll_build_panel(window, message):
         from . import opanel
         view = window.find_output_panel(opanel.PANEL_NAME)
         if view:
-            view.sel().clear()
-            region = message.output_panel_region
-            view.sel().add(region)
-            view.show(region)
-            # Force panel to update.
-            # TODO: See note about workaround below.
-            view.add_regions('bug', [region], 'bug', 'dot', sublime.HIDDEN)
-            view.erase_regions('bug')
+            r = message.output_panel_region
+            view.run_command('rust_scroll_to_region', {'region': (r.a, r.b)})
 
 
 def _scroll_to_message(view, message, transient):
@@ -494,13 +506,20 @@ def _scroll_to_message(view, message, transient):
     if not transient:
         view.window().focus_view(view)
     r = message.sublime_region(view)
-    view.sel().clear()
-    view.sel().add(r.a)
-    view.show_at_center(r)
-    # TODO: Fix this to use a TextCommand to properly handle undo.
-    # See https://github.com/SublimeTextIssues/Core/issues/485
-    view.add_regions('bug', [r], 'bug', 'dot', sublime.HIDDEN)
-    view.erase_regions('bug')
+    view.run_command('rust_scroll_to_region', {'region': (r.a, r.a)})
+
+
+def redraw_all_open_views(window):
+    """Re-display phantoms/regions after being hidden."""
+    try:
+        winfo = WINDOW_MESSAGES[window.id()]
+    except KeyError:
+        return
+    winfo['hidden'] = False
+    for path, batches in winfo['paths'].items():
+        view = window.find_open_file(path)
+        if view:
+            show_messages_for_view(view)
 
 
 def show_messages_for_view(view):
@@ -626,6 +645,8 @@ def list_messages(window):
         # XXX: Or dialog?
         window.show_quick_panel(["No messages available"], None)
         return
+    if win_info['hidden']:
+        redraw_all_open_views(window)
     panel_items = []
     jump_to = []
     for path_idx, (path, batches) in enumerate(win_info['paths'].items()):
@@ -1015,7 +1036,8 @@ def _save_batches(window, batches, msg_cb):
         path_to_batches = collections.OrderedDict()
         WINDOW_MESSAGES[wid] = {
             'paths': path_to_batches,
-            'batch_index': (-1, -1)
+            'batch_index': (-1, -1),
+            'hidden': False,
         }
 
     for batch in batches:
