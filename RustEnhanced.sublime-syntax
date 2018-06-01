@@ -249,7 +249,7 @@ contexts:
     - match: '>=|<=|==|!=|&&|\|\|'
       scope: keyword.operator.rust
 
-    - match: '\*=|/=|+=|-=|%=|\^='
+    - match: '\*=|/=|\+=|-=|%=|\^='
       scope: keyword.operator.rust
 
     - match: '[-=<>&|!~@?+*/%^''#$]'
