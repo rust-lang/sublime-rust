@@ -32,7 +32,7 @@ extern extern crate simd_rng_derive;*/
 // This one is just to visually confirm the testing comments don't intefere
 #[macro_use]
 extern crate std_web;
-/*#[macro_use]      
+/*#[macro_use]
 extern extern crate simd_rng_derive;*/
 
 let c = 'c';
@@ -755,7 +755,7 @@ fn my_other_func(e: OperatingSystem) -> u32 {
 // Test highlighting/scope with struct field attributes
 // https://github.com/rust-lang/sublime-rust/issues/120
 pub struct Claim {
-// ^^^^^^^^^ meta.struct
+//  ^^^^^^^^ meta.struct
     pub claim_id: String,
 //  ^^^ storage.modifier.rust
     pub patient_id: String,
@@ -888,7 +888,7 @@ pub fn from_buf_reader<T>(s: io::BufReader<T>) -> Result<isize, &'static str>
 }
 
 pub mod my_mod {
-//^^^^^^^^^^^^^^ meta.module
+//  ^^^^^^^^^^^^ meta.module
 // <- storage.modifier
 //  ^^^ storage.type.module
 //      ^^^^^^ entity.name.module
@@ -953,7 +953,7 @@ impl<'a, T: MyTrait + OtherTrait> PrintInOption for T where
 
 pub trait Animal {
 // <- storage.modifier
-//^^^^^^^^^^^^^^^^ meta.trait
+//  ^^^^^^^^^^^^^^ meta.trait
 //               ^ meta.block punctuation.definition.block.begin
     fn noise(quiet: bool) {
         // Comment
@@ -1265,7 +1265,7 @@ struct A<T>(T) where T: AsRef<str>;
 //                                ^ punctuation.terminator
 //             ^^^^^ meta.struct meta.where keyword.other
 pub struct A<T>(T)
-//^^^^^^^^^^^^ meta.struct
+//  ^^^^^^^^^^ meta.struct
 //  ^^^^^^ meta.struct storage.type
 where
 //^^^ meta.struct meta.where keyword.other
@@ -1323,7 +1323,7 @@ union Union {
 
 pub union Foo<'a, Y: Baz>
 // <- storage.modifier
-//^^^^^^^^^^^^^^^^^^^^^^^ meta.union
+//  ^^^^^^^^^^^^^^^^^^^^^ meta.union
 //  ^^^^^ meta.union storage.type.union
 //        ^^^ meta.union meta.generic entity.name.union
 //           ^ meta.union meta.generic meta.generic punctuation.definition.generic.begin
@@ -1352,3 +1352,86 @@ impl<A> Thing for &'a mut A {}
 //                 ^^ meta.impl storage.modifier.lifetime
 //                    ^^^ meta.impl storage.modifier
 //                        ^ meta.impl entity.name.impl
+
+pub ( crate ) struct S {}
+// <- storage.modifier
+//  ^ punctuation.definition.group.begin
+//    ^^^^^ keyword.other
+//          ^ punctuation.definition.group.end
+//            ^^^^^^^^^^^ meta.struct
+pub ( in foo::bar ) union U {}
+//  ^ punctuation.definition.group.begin
+//    ^^ keyword.other
+//       ^^^^^^^^ meta.path
+//                ^ punctuation.definition.group.end
+//                  ^^^^^^^^^^ meta.union
+pub ( in foo :: bar ) type T = i32;
+//  ^ punctuation.definition.group.begin
+//    ^^ keyword.other
+//       ^^^ meta.path
+//           ^^ meta.path
+//              ^^^ meta.path
+//                  ^ punctuation.definition.group.end
+//                    ^^^^ storage.type.type
+pub ( in ::foo ) fn f() {}
+//       ^^^^^ meta.path
+//               ^^^^^^^^^ meta.function
+pub ( self ) mod m {}
+//    ^^^^ keyword.other
+//           ^^^^^^^^ meta.module
+pub ( super ) use a::b;
+//    ^^^^^ keyword.other
+//            ^^^ keyword.other
+pub ( in self ) enum E {A,B}
+//    ^^ keyword.other
+//       ^^^^ keyword.other
+//              ^^^^^^^^^^^^ meta.enum
+pub ( in super ) const CONST: i32 = 1;
+//    ^^ keyword.other
+//       ^^^^^ keyword.other
+//               ^^^^^ storage.type
+pub ( in super::super ) static STATIC: i32 = 1;
+//    ^^ keyword.other
+//       ^^^^^ keyword.other
+//            ^^ meta.path
+//              ^^^^^ keyword.other
+//                      ^^^^^^ storage.type
+
+struct S {
+    pub f1: i32,
+//  ^^^ meta.struct storage.modifier
+//      ^^ meta.struct variable.other.member
+    pub(crate) f2: i32,
+//  ^^^ meta.struct storage.modifier
+//     ^ meta.struct punctuation.definition.group.begin
+//      ^^^^^ meta.struct keyword.other
+//           ^ meta.struct punctuation.definition.group.end
+//             ^^ meta.struct variable.other.member
+    pub(in super::foo) f3: i32,
+//  ^^^ meta.struct storage.modifier
+//     ^ meta.struct punctuation.definition.group.begin
+//      ^^ meta.struct keyword.other
+//         ^^^^^ meta.struct keyword.other
+//              ^^^^^ meta.struct meta.path
+//                   ^ meta.struct punctuation.definition.group.end
+//                     ^^ meta.struct variable.other.member
+}
+
+struct S (
+    pub i32,
+//  ^^^ meta.struct storage.modifier
+//      ^^^ meta.struct storage.type
+    pub(crate) i32,
+//  ^^^ meta.struct storage.modifier
+//     ^ meta.struct punctuation.definition.group.begin
+//      ^^^^^ meta.struct keyword.other
+//           ^ meta.struct punctuation.definition.group.end
+//             ^^^ meta.struct storage.type
+    pub(in super) i32,
+//  ^^^ meta.struct storage.modifier
+//     ^ meta.struct punctuation.definition.group.begin
+//      ^^ meta.struct keyword.other
+//         ^^^^^ meta.struct keyword.other
+//              ^ meta.struct punctuation.definition.group.end
+//                ^^^ meta.struct storage.type
+);

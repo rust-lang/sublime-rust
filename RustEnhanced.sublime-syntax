@@ -25,6 +25,8 @@ contexts:
 
   statements:
 
+    - include: visibility
+
     - match: ';'
       scope: punctuation.terminator.rust
 
@@ -36,11 +38,10 @@ contexts:
     - match: '''{{identifier}}(?!\'')\b'
       scope: storage.modifier.lifetime.rust
 
-    - match: '\b(?:(pub)\s+)?\b(mod)\s+({{identifier}})\b'
+    - match: '\b(mod)\s+({{identifier}})\b'
       captures:
-        1: storage.modifier.rust
-        2: storage.type.module.rust
-        3: entity.name.module.rust
+        1: storage.type.module.rust
+        2: entity.name.module.rust
       push:
         - meta_scope: meta.module.rust
         - match: ';'
@@ -53,32 +54,23 @@ contexts:
         2: keyword.operator.rust
       push: closure
 
-    - match: '\b(?:(pub)\s+)?\b(fn)\s+(?={{identifier}})'
-      scope: meta.function.rust
+    - match: '\b(fn)\s+(?={{identifier}})'
       captures:
-        1: storage.modifier.rust
-        2: storage.type.function.rust
+        1: storage.type.function.rust
       push: fn-definition
 
-    - match: '\b(?:(pub)\s+)?(struct)\s+'
-      scope: meta.struct.rust
-      captures:
-        1: storage.modifier.rust
-        2: storage.type.struct.rust
+    - match: '\bstruct\b'
+      scope: storage.type.struct.rust
       push: struct-identifier
 
-    - match: '\b(?:(pub)\s+)?(union)\s+'
-      scope: meta.union.rust
-      captures:
-        1: storage.modifier.rust
-        2: storage.type.union.rust
+    - match: '\bunion\b'
+      scope: storage.type.union.rust
       push: union-identifier
 
-    - match: '\b(?:(pub)\s+)?(type)\s+({{identifier}})\b'
+    - match: '\b(type)\s+({{identifier}})\b'
       captures:
-        1: storage.modifier.rust
-        2: storage.type.type.rust
-        3: entity.name.type.rust
+        1: storage.type.type.rust
+        2: entity.name.type.rust
       push:
       - match: '=(?!=)'
         scope: keyword.operator.rust
@@ -86,11 +78,10 @@ contexts:
       - match: '(?=\S)'
         pop: true
 
-    - match: '\b(?:(pub)\s+)?(trait)\s+({{identifier}})\b'
+    - match: '\b(trait)\s+({{identifier}})\b'
       captures:
-        1: storage.modifier.rust
-        2: storage.type.trait.rust
-        3: entity.name.trait.rust
+        1: storage.type.trait.rust
+        2: entity.name.trait.rust
       push:
         - meta_scope: meta.trait.rust
         - include: statements-block
@@ -99,11 +90,10 @@ contexts:
       scope: storage.type.impl.rust
       push: impl-definition
 
-    - match: '\b(?:(pub)\s+)?(enum)\s+({{identifier}})\b'
+    - match: '\b(enum)\s+({{identifier}})\b'
       captures:
-        1: storage.modifier.rust
-        2: storage.type.enum.rust
-        3: entity.name.enum.rust
+        1: storage.type.enum.rust
+        2: entity.name.enum.rust
       push:
         - meta_scope: meta.enum.rust
         - include: statements-block
@@ -264,6 +254,25 @@ contexts:
 
     - match: '[-=<>&|!~@?+*/%^''#$]'
       scope: keyword.operator.rust
+
+  visibility:
+    - match: '\b(pub)\s*(\()'
+      captures:
+        1: storage.modifier.rust
+        2: punctuation.definition.group.begin.rust
+      push:
+        - include: comments
+        - match: '\)'
+          scope: punctuation.definition.group.end.rust
+          pop: true
+        - match: '(crate|in|self|super)'
+          scope: keyword.other.rust
+        - match: '::'
+          scope: meta.path.rust
+        - match: '{{identifier}}'
+          scope: meta.path.rust
+    - match: '\bpub\b'
+      scope: storage.modifier.rust
 
   attribute:
     - match: '#!?\['
@@ -511,6 +520,7 @@ contexts:
       scope: keyword.operator.rust
 
   struct-identifier:
+    - meta_scope: meta.struct.rust
     - match: '{{identifier}}(?=<)'
       scope: entity.name.struct.rust
       set:
@@ -542,14 +552,12 @@ contexts:
       pop: true
     - match: '\('
       scope: punctuation.definition.group.begin.rust
-      # Ensure that we end the tuple at the next ) to
-      # prevent odd highlighting as the user is typing
-      with_prototype:
+      push:
         - match: '(?=\))'
           pop: true
-      push:
         - meta_scope: meta.group.rust
         - include: comments
+        - include: visibility
         - include: type-any-identifier
 
   struct-classic:
@@ -567,8 +575,7 @@ contexts:
       pop: true
     - include: comments
     - include: attribute
-    - match: \bpub\b
-      scope: storage.modifier.rust
+    - include: visibility
     - match: '{{identifier}}(?=\s*:)'
       scope: variable.other.member.rust
       push:
@@ -581,6 +588,7 @@ contexts:
 
 
   union-identifier:
+    - meta_scope: meta.union.rust
     - match: '{{identifier}}(?=<)'
       scope: entity.name.union.rust
       set:
