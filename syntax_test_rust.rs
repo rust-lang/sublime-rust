@@ -1203,3 +1203,11 @@ pub union Foo<'a, Y: Baz>
 // that we don't accidentally interpret it as a keyword.
 fn union() {}
 // ^^^^^ meta.function entity.name.function
+
+// Ensure that `mut` is a storage modifier.
+impl<A> Thing for &'a mut A {}
+//            ^^^ meta.impl keyword.other
+//                ^ meta.impl keyword.operator
+//                 ^^ meta.impl storage.modifier.lifetime
+//                    ^^^ meta.impl storage.modifier
+//                        ^ meta.impl entity.name.impl

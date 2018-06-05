@@ -728,6 +728,8 @@ contexts:
       set: impl-body
     - match: '(?=\bwhere\b)'
       push: impl-where
+    - match: \b(mut|ref)\b
+      scope: storage.modifier.rust
     - match: '{{identifier}}(?=<)'
       scope: entity.name.impl.rust
       push: generic-angles
@@ -735,8 +737,6 @@ contexts:
       scope: entity.name.impl.rust
     - match: '&'
       scope: keyword.operator.rust
-    - match: \b(mut|ref)\b
-      scope: storage.modifier.rust
     - match: '''{{identifier}}(?!\'')\b'
       scope: storage.modifier.lifetime.rust
 
