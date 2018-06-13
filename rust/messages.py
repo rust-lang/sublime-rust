@@ -42,8 +42,6 @@ class Message:
         be None if the content is raw markup (such as a minihtml link) or if
         it is an outline-only region (which happens with things such as
         dual-region messages added in 1.21).
-    :ivar minihtml_text: The string used for showing phantoms that includes
-        the minihtml markup.  May be None.
     :ivar level: Message level as a string such as "error", or "info".
     :ivar span: Location of the message (0-based):
         `((line_start, col_start), (line_end, col_end))`
@@ -57,10 +55,12 @@ class Message:
     :ivar children: List of additional Message objects.  This is *not*
         recursive (children cannot have children).
     :ivar parent: The primary Message object if this a child.
+    :iver hidden: If true, don't show this message.
+    :ivar suggested_replacement: An optional string of text as a suggestion to
+        replace at the given span.  If this is set, `text` will NOT be set.
     """
     region_key = None
     text = None
-    minihtml_text = None
     level = None
     span = None
     path = None
@@ -68,6 +68,8 @@ class Message:
     output_panel_region = None
     primary = True
     parent = None
+    hidden = False
+    suggested_replacement = None
 
     def __init__(self):
         self.id = uuid.uuid4()
@@ -100,8 +102,8 @@ class Message:
             multiple lines.  Typically a series of &nbsp; to get correct
             alignment.
         """
-        if self.minihtml_text:
-            return self.minihtml_text
+        if self.suggested_replacement is not None:
+            return self._render_suggested_replacement()
         if not self.text:
             return ''
 
@@ -127,10 +129,43 @@ class Message:
         parts = re.split(LINK_PATTERN, text)
         return ' '.join(map(escape_and_link, enumerate(parts)))
 
+    def _render_suggested_replacement(self):
+        replacement_template = util.multiline_fix("""
+            <div class="rust-replacement"><a href="replace:%s" class="rust-button">Accept Replacement:</a> %s</div>
+        """)
+        html_suggestion = html.escape(self.suggested_replacement, quote=False)
+        if '\n' in html_suggestion:
+            # Start on a new line so the text doesn't look too weird.
+            html_suggestion = '\n' + html_suggestion
+        html_suggestion = html_suggestion\
+            .replace(' ', '&nbsp;')\
+            .replace('\n', '<br>\n')
+        return replacement_template % (
+            urllib.parse.urlencode({
+                'id': self.id,
+                'replacement': self.suggested_replacement,
+            }),
+            html_suggestion,
+        )
+
+    def suggestion_count(self):
+        """Number of suggestions in this message.
+
+        This is used to know once all suggestions have been accepted that a
+        message can be dismissed.
+        """
+        if self.parent:
+            return self.parent.suggestion_count()
+        count = 0
+        for m in self:
+            if m.suggested_replacement is not None and not m.hidden:
+                count += 1
+        return count
+
     def is_similar(self, other):
         """Returns True if this message is essentially the same as the given
         message.  Used for deduplication."""
-        keys = ('path', 'span', 'level', 'text', 'minihtml_text')
+        keys = ('path', 'span', 'level', 'text', 'suggested_replacement')
         for key in keys:
             if getattr(other, key) != getattr(self, key):
                 return False
@@ -140,10 +175,18 @@ class Message:
     def sublime_region(self, view):
         """Returns a sublime.Region object for this message."""
         if self.span:
-            return sublime.Region(
-                view.text_point(self.span[0][0], self.span[0][1]),
-                view.text_point(self.span[1][0], self.span[1][1])
-            )
+            regions = view.get_regions(self.region_key)
+            if regions:
+                self.span = (
+                    view.rowcol(regions[0].a),
+                    view.rowcol(regions[0].b)
+                )
+                return regions[0]
+            else:
+                return sublime.Region(
+                    view.text_point(self.span[0][0], self.span[0][1]),
+                    view.text_point(self.span[1][0], self.span[1][1])
+                )
         else:
             # Place at bottom of file for lack of anywhere better.
             return sublime.Region(view.size())
@@ -265,24 +308,21 @@ def message_popup(view, point, hover_zone):
         row = view.rowcol(point)[0]
 
         def filter_row(batch):
-            span = batch.first().span
-            if span:
-                return row >= span[0][0] and row <= span[1][0]
-            else:
-                last_row = view.rowcol(view.size())[0]
-                return row == last_row
+            if batch.hidden:
+                return False
+            region = batch.first().sublime_region(view)
+            batch_row_a = view.rowcol(region.begin())[0]
+            batch_row_b = view.rowcol(region.end())[0]
+            return row >= batch_row_a and row <= batch_row_b
 
         batches = filter(filter_row, batches)
     else:
         # Collect all messages covering this point.
         def filter_point(batch):
+            if batch.hidden:
+                return False
             for msg in batch:
-                if msg.span:
-                    start_pt = view.text_point(*msg.span[0])
-                    end_pt = view.text_point(*msg.span[1])
-                    if point >= start_pt and point <= end_pt:
-                        return True
-                elif point == view.size():
+                if not msg.hidden and msg.sublime_region(view).contains(point):
                     return True
             return False
 
@@ -307,7 +347,7 @@ def _click_handler(view, url, hide_popup=False):
     elif url.startswith('file:///'):
         view.window().open_file(url[8:], sublime.ENCODED_POSITION)
     elif url.startswith('replace:'):
-        info = urllib.parse.parse_qs(url[8:])
+        info = urllib.parse.parse_qs(url[8:], keep_blank_values=True)
         _accept_replace(view, info['id'][0], info['replacement'][0])
         if hide_popup:
             view.hide_popup()
@@ -333,11 +373,21 @@ def _accept_replace(view, mid, replacement):
         print('Rust Enhanced internal error: Could not find region for suggestion.')
         return
     region = (regions[0].a, regions[0].b)
-    batch.dismiss(view.window())
     view.run_command('rust_accept_suggested_replacement', {
         'region': region,
         'replacement': replacement
     })
+    msg.hidden = True
+    if msg.suggestion_count():
+        # Additional suggestions still exist, re-render the phantom.
+        view.erase_phantoms(batch.first().region_key)
+        for m in batch:
+            # Force `span` to be updated to the most recent value.
+            m.sublime_region(view)
+        _show_phantom(view, batch)
+    else:
+        # No more suggestions, just hide the diagnostic completely.
+        batch.primary().dismiss(view.window())
 
 
 def _show_phantom(view, batch):
@@ -820,9 +870,10 @@ def _collect_rust_messages(window, base_path, info, target_path,
         message.text = text
         message.level = info['level']
 
-    def add_additional(span, text, level):
+    def add_additional(span, text, level, suggested_replacement=None):
         child = Message()
         child.text = text
+        child.suggested_replacement = suggested_replacement
         child.level = level
         child.primary = False
         if 'macros>' in span['file_name']:
@@ -830,14 +881,17 @@ def _collect_rust_messages(window, base_path, info, target_path,
             msg_cb(child)
         else:
             child.path = make_span_path(span)
+            if not os.path.exists(child.path):
+                # Sometimes rust gives messages that link to libstd in the
+                # directory where it was built (such as on Travis).
+                return
             child.span = make_span_region(span)
             if any(map(lambda m: m.is_similar(child), message.children)):
                 # Duplicate message, skip.  This happens with some of the
                 # macro help messages.
-                return child
+                return
             child.parent = message
             message.children.append(child)
-        return child
 
     if len(info['spans']) == 0:
         if parent_info:
@@ -925,11 +979,7 @@ def _collect_rust_messages(window, base_path, info, target_path,
                 # Primary child message.
                 add_additional(span, info['message'], info['level'])
             else:
-                # Check if the main message is already set since there might
-                # be multiple spans that are primary (in which case, we
-                # arbitrarily show the main message on the first one).
-                if not message.path:
-                    set_primary_message(span, info['message'])
+                set_primary_message(span, info['message'])
 
         label = span['label']
         # Some spans don't have a label.  These seem to just imply
@@ -943,27 +993,11 @@ def _collect_rust_messages(window, base_path, info, target_path,
         if label is not None:
             # Display the label for this Span.
             add_additional(span, label, info['level'])
-        if span['suggested_replacement']:
-            # The "suggested_replacement" contains the code that
-            # should replace the span.
-            child = add_additional(span, None, 'help')
-            replacement_template = util.multiline_fix("""
-                <div class="rust-replacement"><a href="replace:%s" class="rust-button">Accept Replacement:</a> %s</div>
-            """)
-            html_suggestion = html.escape(span['suggested_replacement'], quote=False)
-            if '\n' in html_suggestion:
-                # Start on a new line so the text doesn't look too weird.
-                html_suggestion = '\n' + html_suggestion
-            html_suggestion = html_suggestion\
-                .replace(' ', '&nbsp;')\
-                .replace('\n', '<br>\n')
-            child.minihtml_text = replacement_template % (
-                urllib.parse.urlencode({
-                    'id': child.id,
-                    'replacement': span['suggested_replacement'],
-                }),
-                html_suggestion,
-            )
+        if span['suggested_replacement'] is not None:
+            # The "suggested_replacement" contains the code that should
+            # replace the span.
+            add_additional(span, None, 'help',
+                suggested_replacement=span['suggested_replacement'])
 
     # Recurse into children (which typically hold notes).
     for child in info['children']:

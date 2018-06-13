@@ -95,10 +95,12 @@ class ClearTheme(Theme):
         msgs = []
         last_level = None
         for i, msg in enumerate(batch):
+            if msg.hidden:
+                continue
             text = msg.escaped_text(view, '')
             if not text:
                 continue
-            if msg.minihtml_text:
+            if msg.suggested_replacement is not None:
                 level_text = ''
             else:
                 if msg.level == last_level:
@@ -252,6 +254,8 @@ class SolidTheme(Theme):
         # Collect all the child messages together.
         children = []
         for child in batch.children:
+            if child.hidden:
+                continue
             # Don't show the icon for children with the same level as the
             # primary message.
             if isinstance(batch, PrimaryBatch) and child.level == batch.primary_message.level:
@@ -310,7 +314,7 @@ class TestTheme(Theme):
         for msg in batch:
             # Region-only messages will get checked by the region-checking
             # code.
-            if msg.text or msg.minihtml_text:
+            if msg.text or msg.suggested_replacement is not None:
                 messages.append(msg)
 
         # Create fake messages for the links to simplify the test code.

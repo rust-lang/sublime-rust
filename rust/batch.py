@@ -26,7 +26,11 @@ class MessageBatch:
         """Returns the first message of the batch."""
         raise NotImplementedError()
 
-    def dismiss(self):
+    def primary(self):
+        """Return the primary batch."""
+        raise NotImplementedError()
+
+    def dismiss(self, window):
         """Permanently remove this message and all its children from the
         view."""
         raise NotImplementedError()
@@ -80,6 +84,9 @@ class PrimaryBatch(MessageBatch):
     def first(self):
         return self.primary_message
 
+    def primary(self):
+        return self
+
     def dismiss(self, window):
         self.hidden = True
         self._dismiss(window)
@@ -113,6 +120,9 @@ class ChildBatch(MessageBatch):
     def first(self):
         return self.children[0]
 
+    def primary(self):
+        return self.primary_batch
+
     def dismiss(self, window):
         self.hidden = True
-        self.primary_batch.dismiss(window)
+        self._dismiss(window)

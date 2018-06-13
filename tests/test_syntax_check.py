@@ -36,6 +36,10 @@ class TestSyntaxCheck(TestBase):
             //     ^^^^ERR binary operation
             //     ^^^^NOTE an implementation of
 
+        Empty regions can use a vertical line to show where the region is:
+
+            //     |HELP message with empty region
+
         Multi-line messages use a marker to indicate where it starts and ends,
         and then comment lines below starting with ~ specify the messages that
         should appear for that region.  Example:
@@ -110,6 +114,8 @@ class TestSyntaxCheck(TestBase):
             ('error-tests/tests/error_across_mod.rs', 'error-tests/tests/error_across_mod_f.rs'),
             'error-tests/tests/derive-error.rs',
             'error-tests/tests/test_new_lifetime_message.rs',
+            'error-tests/tests/test_multiple_primary_spans.rs',
+            'error-tests/tests/impl-generic-mismatch.rs',
             'error-tests/tests/method-ambig-two-traits-with-default-method.rs',
             # Workspace tests.
             'workspace/workspace1/src/lib.rs',
@@ -208,15 +214,18 @@ class TestSyntaxCheck(TestBase):
             if not emsg_info['message']:
                 # This is a region-only highlight.
                 continue
+            emsg_row, _ = view.rowcol(emsg_info['end'])
             for i, msg in enumerate(actual_messages):
-                emsg_row, _ = view.rowcol(emsg_info['end'])
                 if msg.span:
                     actual_row = msg.lineno()
                 else:
                     # Last line of view.
                     actual_row = view.rowcol(view.size())[0]
                 if actual_row == emsg_row:
-                    actual_text = msg.text if msg.text else unescape(msg.minihtml_text)
+                    if msg.suggested_replacement is not None:
+                        actual_text = unescape(msg._render_suggested_replacement())
+                    else:
+                        actual_text = msg.text
                     if check_actual_text(emsg_info['message'], actual_text):
                         self.assertEqual(emsg_info['level'], msg.level)
                         break
@@ -368,7 +377,7 @@ class TestSyntaxCheck(TestBase):
         # Single-line spans.
         last_line = None
         last_line_offset = 1
-        pattern = r'//( *)(\^+)(WARN|ERR|HELP|NOTE|MSG)(\([^)]+\))?(?: (.+))?'
+        pattern = r'//( *)(\||\^+)(WARN|ERR|HELP|NOTE|MSG)(\([^)]+\))?(?: (.+))?'
         regions = view.find_all(pattern)
         for region in regions:
             text = view.substr(region)
@@ -382,7 +391,10 @@ class TestSyntaxCheck(TestBase):
                 last_line = row
                 last_line_offset = 1
             begin = view.text_point(row - 1, col + 2 + len(m.group(1)))
-            end = begin + len(m.group(2))
+            if m.group(2) == '|':
+                end = begin
+            else:
+                end = begin + len(m.group(2))
             result.append({
                 'begin': begin,
                 'end': end,
