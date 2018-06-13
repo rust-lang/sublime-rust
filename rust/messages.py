@@ -524,10 +524,13 @@ def redraw_all_open_views(window):
 
 def show_messages_for_view(view):
     """Adds all phantoms and region outlines for a view."""
-    window = view.window()
-    batches = WINDOW_MESSAGES.get(window.id(), {})\
-                             .get('paths', {})\
-                             .get(view.file_name(), [])
+    try:
+        winfo = WINDOW_MESSAGES[view.window().id()]
+    except KeyError:
+        return
+    if winfo['hidden']:
+        return
+    batches = winfo['paths'].get(view.file_name(), [])
     for batch in batches:
         _show_phantom(view, batch)
     _draw_region_highlights(view, batches)
