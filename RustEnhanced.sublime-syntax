@@ -28,7 +28,7 @@ contexts:
     - match: ';'
       scope: punctuation.terminator
 
-    - match: '''({{identifier}})\s*(:)'
+    - match: '(''{{identifier}})\s*(:)'
       captures:
         1: entity.name.label.rust
         2: punctuation.separator.rust
@@ -138,8 +138,13 @@ contexts:
     - match: \b(crate|extern|use|where)\b
       scope: keyword.other.rust
 
-    - match: \b(break|else|for|if|loop|match|while|continue|yield)\b
+    - match: \b(else|for|if|loop|match|while|yield)\b
       scope: keyword.control.rust
+
+    - match: '\b(break|continue)(?:\s+(''{{identifier}}))?'
+      captures:
+        1: keyword.control.rust
+        2: entity.name.label.rust
 
     - match: \breturn\b
       scope: keyword.control.rust

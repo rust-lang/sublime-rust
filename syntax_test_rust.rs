@@ -500,6 +500,23 @@ let big_n =
     }
 }
 
+'label1: for _ in 0..100 {
+    'label2 : loop {
+//  ^^^^^^^ entity.name.label
+//          ^ punctuation.separator.rust
+        'label3: while true {
+//      ^^^^^^^ entity.name.label
+//             ^ punctuation.separator
+            break 'label2;
+//                ^^^^^^^ entity.name.label
+//                       ^ punctuation.terminator
+        }
+        continue 'label1;
+//               ^^^^^^^ entity.name.label
+//                      ^ punctuation.terminator
+    }
+}
+
 while n < 50 {
 //^^^ keyword.control
     n = n * 2;
