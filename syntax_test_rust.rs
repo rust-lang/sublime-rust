@@ -1442,3 +1442,75 @@ struct S (
 //              ^ meta.struct punctuation.definition.group.end
 //                ^^^ meta.struct storage.type
 );
+
+// Various tests on `where`.
+fn f<'b: 'a>(self) -> &'b mut [i32] where 'a: 'b { }
+//                 ^^^^^^^^^^^^^^ meta.function meta.function.return-type
+//                            ^ meta.function meta.function.return-type punctuation.definition.group.begin
+//                             ^^^ meta.function meta.function.return-type storage.type
+//                                ^ meta.function meta.function.return-type punctuation.definition.group.end
+//                                  ^^^^^ meta.function meta.where keyword.other
+//                                        ^^ meta.function meta.where storage.modifier.lifetime
+//                                          ^ meta.function meta.where punctuation.separator
+//                                            ^^ meta.function meta.where storage.modifier.lifetime
+//                                               ^ meta.function meta.block punctuation.definition.block.begin
+//                                                 ^ meta.function meta.block punctuation.definition.block.end
+
+fn f<F>(func: F) -> usize
+//               ^^ meta.function meta.function.return-type punctuation.separator
+//                  ^^^^^ meta.function meta.function.return-type storage.type
+    where F: Fn(usize) -> usize {}
+//  ^^^^^ meta.function meta.where keyword.other
+//        ^^^^^^^^^^^^^^^^^^^^^ meta.function meta.where
+//         ^ punctuation.separator
+//           ^^ support.type
+//             ^ punctuation.definition.type.begin
+//              ^^^^^ storage.type
+//                   ^ punctuation.definition.type.end
+//                     ^^ meta.function.return-type punctuation.separator
+//                        ^^^^^ meta.function.return-type storage.type
+//                              ^ meta.function meta.block punctuation.definition.block.begin
+//                               ^ meta.function meta.block punctuation.definition.block.end
+
+fn f<L, R>(lhs: L, rhs: R)
+    where L: IntoIterator<Item=(&'a i32, &'a i32)>,
+//  ^^^^^ meta.function meta.where keyword.other
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function meta.where
+//           ^^^^^^^^^^^^ support.type
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^ meta.generic
+//                       ^ punctuation.definition.generic.begin
+//                             ^ punctuation.definition.type.begin
+//                              ^ keyword.operator
+//                               ^^ storage.modifier.lifetime
+//                                  ^^^ storage.type
+//                                       ^ keyword.operator
+//                                        ^^ storage.modifier.lifetime
+//                                           ^^^ storage.type
+//                                              ^ punctuation.definition.type.end
+//                                               ^ punctuation.definition.generic.end
+          R: IntoIterator<Item=(&'a i32, &'a i32)>, {}
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.function meta.where
+//                                                  ^ meta.function meta.block punctuation.definition.block.begin
+//                                                   ^ meta.function meta.block punctuation.definition.block.end
+fn f<F: Fn(usize) -> usize>(func: f) {}
+//  ^^^^^^^^^^^^^^^^^^^^^^^ meta.generic
+//  ^ meta.generic punctuation.definition.generic.begin
+//    ^ meta.generic punctuation.separator
+//      ^^ meta.generic support.type
+//        ^ meta.generic punctuation.definition.type.begin
+//         ^^^^^ meta.generic storage.type
+//              ^ meta.generic punctuation.definition.type.end
+//                   ^^^^^ meta.generic meta.function.return-type storage.type
+//                        ^ meta.generic punctuation.definition.generic.end
+//                         ^ meta.function meta.function.parameters punctuation.definition.parameters.begin
+//                          ^^^^ meta.function meta.function.parameters variable.parameter
+fn f<L: IntoIterator<Item=(&'a i32, &'a i32)>>(lhs: L) {}
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.generic
+//  ^ punctuation.definition.generic.begin
+//                  ^ punctuation.definition.generic.begin
+//                        ^ punctuation.definition.type.begin
+//                          ^^ storage.modifier.lifetime
+//                             ^^^ storage.type
+//                                          ^ punctuation.definition.generic.begin
+//                                           ^ punctuation.definition.generic.end
+//                                            ^ meta.function meta.function.parameters punctuation.definition.parameters.begin

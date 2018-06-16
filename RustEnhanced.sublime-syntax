@@ -461,13 +461,7 @@ contexts:
         - include: strings
         - match: '(?=\S)'
           pop: true
-    - match: '\['
-      scope: punctuation.definition.group.begin.rust
-      push:
-        - match: '\]'
-          scope: punctuation.definition.group.end.rust
-          pop: true
-        - include: type-any-identifier
+    - include: type-slice
     - match: '(?=>)'
       pop: true
     - match: '<'
@@ -528,8 +522,18 @@ contexts:
           pop: true
         - include: type-any-identifier
     - include: type
+    - include: type-slice
     - match: '\b_\b'
       scope: keyword.operator.rust
+
+  type-slice:
+    - match: '\['
+      scope: punctuation.definition.group.begin.rust
+      push:
+        - match: '\]'
+          scope: punctuation.definition.group.end.rust
+          pop: true
+        - include: type-any-identifier
 
   struct-identifier:
     - meta_scope: meta.struct.rust
@@ -859,14 +863,14 @@ contexts:
       push:
         - match: '(?=<)'
           push: generic-angles
-        - include: type-any-identifiers
+        - include: type-any-identifier
         - match: '&'
           scope: keyword.operator.rust
         - match: '''{{identifier}}(?!\'')\b'
           scope: storage.modifier.lifetime.rust
         - match: '(?=\S)'
           pop: true
-    - include: type-any-identifiers
+    - include: type-any-identifier
     - match: ':'
       scope: punctuation.separator.rust
     - match: ';'
