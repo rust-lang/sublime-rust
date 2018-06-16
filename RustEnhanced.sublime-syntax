@@ -26,7 +26,7 @@ contexts:
   statements:
 
     - match: ';'
-      scope: punctuation.terminator
+      scope: punctuation.terminator.rust
 
     - match: '''({{identifier}})\s*(:)'
       captures:
