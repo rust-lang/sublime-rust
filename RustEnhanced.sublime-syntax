@@ -641,6 +641,7 @@ contexts:
       pop: true
 
   macro-matcher:
+    - include: comments
     - meta_include_prototype: false
     - meta_scope: meta.group.rust
     - match: '\)'
