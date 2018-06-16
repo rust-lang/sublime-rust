@@ -411,6 +411,18 @@ contexts:
       push: generic-angles
     - match: \b(Self|{{int_suffixes}}|{{float_suffixes}}|bool|char|str)\b
       scope: storage.type.rust
+    # stdsimd types
+    - match: |-
+        (?x)
+        \b(?:
+          [ium]8x(?:2|4|8|16|32) | [iu]8x64   |
+          [ium]16x(?:2|4|8|16)   | [iu]16x32  | # f16xN types might come later
+          [iumf]32x(?:2|4|8)     | [iuf]32x16 |
+          [iumf]64x(?:2|4)       | [iuf]64x8  |
+          m1x(?:64|32|16|8) # 512-bit masks   |
+          __m(?:64|128|256)[di]? # __m512 should come later
+        )\b
+      scope: storage.type.rust
 
   generic-angles:
     - meta_scope: meta.generic.rust
