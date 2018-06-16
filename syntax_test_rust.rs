@@ -727,9 +727,10 @@ pub fn from_buf_reader<T>(s: io::BufReader<T>) -> Result<isize, &'static str>
 //  ^ keyword.other
 {
     macro_rules! eat_numbers {
-        ($count:expr, $msg:expr) => {{
-        //                          ^ meta.function meta.block meta.macro meta.block meta.block punctuation.definition.block.begin
-        //                           ^ meta.function meta.block meta.macro meta.block meta.block meta.block punctuation.definition.block.begin
+        ($count:expr, /*$comment:ident,*/  $msg:expr) => {{
+        //            ^^^^^^^^^^^^^^^^^^^ meta.function.rust meta.block.rust meta.macro.rust meta.block.rust meta.group.rust comment.block.rust
+        //                                               ^ meta.function meta.block meta.macro meta.block meta.block punctuation.definition.block.begin
+        //                                                ^ meta.function meta.block meta.macro meta.block meta.block meta.block punctuation.definition.block.begin
             let parse_err = concat!("Err parsing value in ", $msg);
             try!{ eat_numbers(&mut lines, $count, parse_err, missing_err, too_many) }
         //  ^^^^ support.macro
