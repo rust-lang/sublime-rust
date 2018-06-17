@@ -1558,3 +1558,19 @@ type A3 = dyn<<dyn as dyn>::dyn>;
 //             ^^^ meta.generic storage.type.trait
 //                    ^^^ meta.generic -storage.type.trait
 //                          ^^^ meta.generic -storage.type.trait
+
+fn lambdas() {
+    let c = |foo,
+//          ^ meta.function.closure meta.function.parameters punctuation.definition.parameters.begin
+//           ^^^ meta.function.parameters variable.parameter
+             bar| {};
+//           ^^^ meta.function.parameters variable.parameter
+//              ^ meta.function.closure meta.function.parameters punctuation.definition.parameters.end
+    let c = |foo,  // weird, but should work
+//          ^ meta.function.closure meta.function.parameters punctuation.definition.parameters.begin
+//           ^^^ meta.function.parameters variable.parameter
+//                 ^^^^^^^^^^^^^^^^^^^^^^^^^ comment.line
+             bar| {};
+//           ^^^ meta.function.parameters variable.parameter
+//              ^ meta.function.closure meta.function.parameters punctuation.definition.parameters.end
+}
