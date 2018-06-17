@@ -1203,3 +1203,10 @@ pub union Foo<'a, Y: Baz>
 // that we don't accidentally interpret it as a keyword.
 fn union() {}
 // ^^^^^ meta.function entity.name.function
+
+let x: __m128i = __m128i::from_bits(f32x4::from_bits(m32x4::new(true, true, true, true)));
+//     ^^^^^^^ storage.type.rust
+//               ^^^^^^^ storage.type.rust
+//                                  ^^^^^ meta.group.rust storage.type.rust
+//                                                   ^^^^^ meta.group.rust meta.group.rust storage.type.rust
+//                                                              ^^^^ meta.group.rust meta.group.rust meta.group.rust constant.language.rust
