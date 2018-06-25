@@ -437,6 +437,8 @@ contexts:
           __m(?:64|128|256)[di]? # __m512 should come later
         )\b
       scope: storage.type.rust
+    - match: '\bdyn\b(?!\s*::)(?=\s*(?:\(|''?{{identifier}}))'
+      scope: storage.type.trait.rust
 
   generic-angles:
     - meta_scope: meta.generic.rust
