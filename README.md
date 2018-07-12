@@ -25,8 +25,6 @@ and select `Package Control: Install Package` and then select `Rust Enhanced` fr
 the list. That's it.
 If you can't see `Rust Enhanced` its most likely because you're using Sublime Text 2.
 
-It is possible that the built-in `Rust` package will cause conflicts with Rust Enhanced. If the default syntax for Rust documents is `Rust` instead of `Rust Enhanced`, then this is likely the case. A recommended solution is to disable the built-in `Rust` package. You can do so through `Package Control: Disable Package` -> `Rust`.
-
 ## Features
 ### Go To Definition
 ### Cargo Build

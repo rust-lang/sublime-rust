@@ -8,6 +8,7 @@ import html
 import itertools
 import os
 import re
+import textwrap
 import urllib.parse
 import uuid
 import webbrowser
@@ -19,9 +20,11 @@ from .batch import *
 # Value is a dictionary: {
 #     'paths': {path: [MessageBatch, ...]},
 #     'batch_index': (path_idx, message_idx),
+#     'hidden': bool
 # }
 # `paths` is an OrderedDict to handle next/prev message.
 # `path` is the absolute path to the file.
+# `hidden` indicates that all messages have been dismissed.
 WINDOW_MESSAGES = {}
 
 
@@ -90,7 +93,7 @@ class Message:
         for child in self.children:
             yield child
 
-    def escaped_text(self, indent):
+    def escaped_text(self, view, indent):
         """Returns the minihtml markup of the message.
 
         :param indent: String used for indentation when the message spans
@@ -102,18 +105,26 @@ class Message:
         if not self.text:
             return ''
 
+        # Call rstrip() because sometimes rust includes newlines at the
+        # end of the message, which we don't want.
+        text = self.text.rstrip()
+        if not view.settings().get('word_wrap', False):
+            # Rough assumption of using monospaced font, but should be
+            # reasonable in most cases for proportional fonts.
+            width = view.viewport_extent()[0] / view.em_width() - 5
+            text = textwrap.fill(self.text, width=width,
+                break_long_words=False, break_on_hyphens=False)
+
         def escape_and_link(i_txt):
             i, txt = i_txt
             if i % 2:
                 return '<a href="%s">%s</a>' % (txt, txt)
             else:
-                # Call strip() because sometimes rust includes newlines at the
-                # end of the message, which we don't want.
-                escaped = html.escape(txt.strip(), quote=False)
+                escaped = html.escape(txt, quote=False)
                 return re.sub('^( +)', lambda m: '&nbsp;'*len(m.group()), escaped, flags=re.MULTILINE)\
                     .replace('\n', '<br>' + indent)
 
-        parts = re.split(LINK_PATTERN, self.text)
+        parts = re.split(LINK_PATTERN, text)
         return ' '.join(map(escape_and_link, enumerate(parts)))
 
     def is_similar(self, other):
@@ -148,11 +159,20 @@ class Message:
         return ''.join(result)
 
 
-def clear_messages(window):
-    """Remove all messages for the given window."""
-    for path, batches in WINDOW_MESSAGES.pop(window.id(), {})\
-                                        .get('paths', {})\
-                                        .items():
+def clear_messages(window, soft=False):
+    """Remove all messages for the given window.
+
+    :param soft: If True, the messages are kept in memory and can be
+        resurrected with various commands (such as list messages, or
+        next/prev).
+    """
+    if soft:
+        winfo = WINDOW_MESSAGES.get(window.id(), {})
+        winfo['hidden'] = True
+    else:
+        winfo = WINDOW_MESSAGES.pop(window.id(), {})
+
+    for path, batches in winfo.get('paths', {}).items():
         view = window.find_open_file(path)
         if view:
             for batch in batches:
@@ -185,21 +205,9 @@ def has_message_for_path(window, path):
 def messages_finished(window):
     """This should be called after all messages have been added."""
     _sort_messages(window)
-    _draw_all_region_highlights(window)
 
 
-def _draw_all_region_highlights(window):
-    """Drawing region outlines must be deferred until all the messages have
-    been received since Sublime does not have an API to incrementally add
-    them."""
-    paths = WINDOW_MESSAGES.get(window.id(), {}).get('paths', {})
-    for path, batches in paths.items():
-        view = window.find_open_file(path)
-        if view:
-            _draw_region_highlights(view, batches)
-
-
-def _draw_region_highlights(view, batches):
+def _draw_region_highlights(view, batch):
     if util.get_setting('rust_region_style') == 'none':
         return
 
@@ -210,15 +218,14 @@ def _draw_region_highlights(view, batches):
         'note': [],
         'help': [],
     }
-    for batch in batches:
-        if batch.hidden:
-            continue
-        for msg in batch:
-            region = msg.sublime_region(view)
-            if msg.level not in regions:
-                print('RustEnhanced: Unknown message level %r encountered.' % msg.level)
-                msg.level = 'error'
-            regions[msg.level].append((msg.region_key, region))
+    if batch.hidden:
+        return
+    for msg in batch:
+        region = msg.sublime_region(view)
+        if msg.level not in regions:
+            print('RustEnhanced: Unknown message level %r encountered.' % msg.level)
+            msg.level = 'error'
+        regions[msg.level].append((msg.region_key, region))
 
     # Do this in reverse order so that errors show on-top.
     for level in ['help', 'note', 'warning', 'error']:
@@ -245,8 +252,13 @@ def _draw_region_highlights(view, batches):
 
 def message_popup(view, point, hover_zone):
     """Displays a popup if there is a message at the given point."""
-    paths = WINDOW_MESSAGES.get(view.window().id(), {}).get('paths', {})
-    batches = paths.get(view.file_name(), [])
+    try:
+        winfo = WINDOW_MESSAGES[view.window().id()]
+    except KeyError:
+        return
+    if winfo['hidden']:
+        return
+    batches = winfo['paths'].get(view.file_name(), [])
 
     if hover_zone == sublime.HOVER_GUTTER:
         # Collect all messages on this line.
@@ -278,7 +290,7 @@ def message_popup(view, point, hover_zone):
 
     if batches:
         theme = themes.THEMES[util.get_setting('rust_message_theme')]
-        minihtml = '\n'.join(theme.render(batch, for_popup=True) for batch in batches)
+        minihtml = '\n'.join(theme.render(view, batch, for_popup=True) for batch in batches)
         if not minihtml:
             return
         on_nav = functools.partial(_click_handler, view, hide_popup=True)
@@ -289,7 +301,7 @@ def message_popup(view, point, hover_zone):
 
 def _click_handler(view, url, hide_popup=False):
     if url == 'hide':
-        clear_messages(view.window())
+        clear_messages(view.window(), soft=True)
         if hide_popup:
             view.hide_popup()
     elif url.startswith('file:///'):
@@ -349,7 +361,7 @@ def _show_phantom(view, batch):
         )
 
     theme = themes.THEMES[util.get_setting('rust_message_theme')]
-    content = theme.render(batch)
+    content = theme.render(view, batch)
     if not content:
         return
 
@@ -430,6 +442,8 @@ def _show_message(window, current_idx, transient=False, force_open=False):
         window_info = WINDOW_MESSAGES[window.id()]
     except KeyError:
         return
+    if window_info['hidden']:
+        redraw_all_open_views(window)
     paths = window_info['paths']
     path, batches = _ith_iter_item(paths.items(), current_idx[0])
     batch = batches[current_idx[1]]
@@ -437,7 +451,14 @@ def _show_message(window, current_idx, transient=False, force_open=False):
     _scroll_build_panel(window, msg)
     view = None
     if not transient and not force_open:
-        view = window.find_open_file(path)
+        active = window.active_view()
+        if active.file_name() == path:
+            # If a file is open in multiple views, try to stick to the current
+            # view.  Otherwise it may jump to the other view which is a little
+            # jarring.
+            view = active
+        else:
+            view = window.find_open_file(path)
         if view:
             _scroll_to_message(view, msg, transient)
     if not view:
@@ -479,14 +500,8 @@ def _scroll_build_panel(window, message):
         from . import opanel
         view = window.find_output_panel(opanel.PANEL_NAME)
         if view:
-            view.sel().clear()
-            region = message.output_panel_region
-            view.sel().add(region)
-            view.show(region)
-            # Force panel to update.
-            # TODO: See note about workaround below.
-            view.add_regions('bug', [region], 'bug', 'dot', sublime.HIDDEN)
-            view.erase_regions('bug')
+            r = message.output_panel_region
+            view.run_command('rust_scroll_to_region', {'region': (r.a, r.b)})
 
 
 def _scroll_to_message(view, message, transient):
@@ -494,24 +509,34 @@ def _scroll_to_message(view, message, transient):
     if not transient:
         view.window().focus_view(view)
     r = message.sublime_region(view)
-    view.sel().clear()
-    view.sel().add(r.a)
-    view.show_at_center(r)
-    # TODO: Fix this to use a TextCommand to properly handle undo.
-    # See https://github.com/SublimeTextIssues/Core/issues/485
-    view.add_regions('bug', [r], 'bug', 'dot', sublime.HIDDEN)
-    view.erase_regions('bug')
+    view.run_command('rust_scroll_to_region', {'region': (r.a, r.a)})
+
+
+def redraw_all_open_views(window):
+    """Re-display phantoms/regions after being hidden."""
+    try:
+        winfo = WINDOW_MESSAGES[window.id()]
+    except KeyError:
+        return
+    winfo['hidden'] = False
+    for path, batches in winfo['paths'].items():
+        view = window.find_open_file(path)
+        if view:
+            show_messages_for_view(view)
 
 
 def show_messages_for_view(view):
     """Adds all phantoms and region outlines for a view."""
-    window = view.window()
-    batches = WINDOW_MESSAGES.get(window.id(), {})\
-                             .get('paths', {})\
-                             .get(view.file_name(), [])
+    try:
+        winfo = WINDOW_MESSAGES[view.window().id()]
+    except KeyError:
+        return
+    if winfo['hidden']:
+        return
+    batches = winfo['paths'].get(view.file_name(), [])
     for batch in batches:
         _show_phantom(view, batch)
-    _draw_region_highlights(view, batches)
+        _draw_region_highlights(view, batch)
 
 
 def _ith_iter_item(d, i):
@@ -626,6 +651,8 @@ def list_messages(window):
         # XXX: Or dialog?
         window.show_quick_panel(["No messages available"], None)
         return
+    if win_info['hidden']:
+        redraw_all_open_views(window)
     panel_items = []
     jump_to = []
     for path_idx, (path, batches) in enumerate(win_info['paths'].items()):
@@ -923,12 +950,19 @@ def _collect_rust_messages(window, base_path, info, target_path,
             replacement_template = util.multiline_fix("""
                 <div class="rust-replacement"><a href="replace:%s" class="rust-button">Accept Replacement:</a> %s</div>
             """)
+            html_suggestion = html.escape(span['suggested_replacement'], quote=False)
+            if '\n' in html_suggestion:
+                # Start on a new line so the text doesn't look too weird.
+                html_suggestion = '\n' + html_suggestion
+            html_suggestion = html_suggestion\
+                .replace(' ', '&nbsp;')\
+                .replace('\n', '<br>\n')
             child.minihtml_text = replacement_template % (
                 urllib.parse.urlencode({
                     'id': child.id,
                     'replacement': span['suggested_replacement'],
                 }),
-                html.escape(span['suggested_replacement'], quote=False),
+                html_suggestion,
             )
 
     # Recurse into children (which typically hold notes).
@@ -1015,7 +1049,8 @@ def _save_batches(window, batches, msg_cb):
         path_to_batches = collections.OrderedDict()
         WINDOW_MESSAGES[wid] = {
             'paths': path_to_batches,
-            'batch_index': (-1, -1)
+            'batch_index': (-1, -1),
+            'hidden': False,
         }
 
     for batch in batches:
@@ -1028,6 +1063,7 @@ def _save_batches(window, batches, msg_cb):
         view = window.find_open_file(batch.path())
         if view:
             _show_phantom(view, batch)
+            _draw_region_highlights(view, batch)
         if msg_cb:
             for msg in batch:
                 msg_cb(msg)

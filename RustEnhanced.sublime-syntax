@@ -8,7 +8,7 @@ scope: source.rust
 variables:
   identifier: '(?:[[:alpha:]][_[:alnum:]]*|_[_[:alnum:]]+)'
   escaped_byte: '\\([nrt0\"''\\]|x\h{2})'
-  escaped_char: '\\([nrt0\"''\\]|x\h{2}|u\{\h{1,6}\})'
+  escaped_char: '\\([nrt0\"''\\]|x[0-7]\h|u\{(?:\h_*){1,6}\})'
   int_suffixes: '[iu](?:8|16|32|64|128|size)'
   float_suffixes: 'f(32|64)'
 contexts:
@@ -26,9 +26,9 @@ contexts:
   statements:
 
     - match: ';'
-      scope: punctuation.terminator
+      scope: punctuation.terminator.rust
 
-    - match: '''({{identifier}})\s*(:)'
+    - match: '(''{{identifier}})\s*(:)'
       captures:
         1: entity.name.label.rust
         2: punctuation.separator.rust
@@ -138,8 +138,13 @@ contexts:
     - match: \b(crate|extern|use|where)\b
       scope: keyword.other.rust
 
-    - match: \b(break|else|for|if|loop|match|while|continue|yield)\b
+    - match: \b(else|for|if|loop|match|while|yield)\b
       scope: keyword.control.rust
+
+    - match: '\b(break|continue)(?:\s+(''{{identifier}}))?'
+      captures:
+        1: keyword.control.rust
+        2: entity.name.label.rust
 
     - match: \breturn\b
       scope: keyword.control.rust
@@ -653,6 +658,7 @@ contexts:
       pop: true
 
   macro-matcher:
+    - include: comments
     - meta_include_prototype: false
     - meta_scope: meta.group.rust
     - match: '\)'
@@ -722,10 +728,13 @@ contexts:
       pop: true
 
   impl-for:
-    - match: '(?=\s*(?:::|{{identifier}}|\$|<)+(<.*?>)?\s+for\s+)'
+    # `!?` here matches opt-out trait impls
+    - match: '(?=\s*(?:::|!?{{identifier}}|\$|<)+(<.*?>)?\s+for\s+)'
       set:
         - meta_scope: meta.impl.rust
         - include: comments
+        - match: '!?(?=\s*{{identifier}})'
+          scope: keyword.operator.rust meta.impl.opt-out.rust
         - match: \bfor\b
           scope: keyword.other.rust
           set: impl-identifier
@@ -740,6 +749,8 @@ contexts:
       set: impl-body
     - match: '(?=\bwhere\b)'
       push: impl-where
+    - match: \b(mut|ref)\b
+      scope: storage.modifier.rust
     - match: '{{identifier}}(?=<)'
       scope: entity.name.impl.rust
       push: generic-angles
@@ -747,8 +758,6 @@ contexts:
       scope: entity.name.impl.rust
     - match: '&'
       scope: keyword.operator.rust
-    - match: \b(mut|ref)\b
-      scope: storage.modifier.rust
     - match: '''{{identifier}}(?!\'')\b'
       scope: storage.modifier.lifetime.rust
 
@@ -914,22 +923,35 @@ contexts:
     - include: char
     - include: byte
 
-  escaped-byte:
-    - match: '{{escaped_byte}}'
-      scope: constant.character.escape.rust
-
   byte:
-    - match: "(b)(')(?=([^'\\\\]|{{escaped_byte}})')"
+    - match: "(b)(')"
       captures:
         1: storage.type.string.rust
         2: punctuation.definition.string.begin.rust
       push:
         - meta_include_prototype: false
         - meta_scope: string.quoted.single.rust
-        - match: \'
-          scope: punctuation.definition.string.end.rust
+        # ASCII except ', \, \n, \r or \t
+        - match: '[\x00-\x08\x0b-\x0c\x0e-\x26\x28-\x5b\x5d-\x7f]'
+          set: byte-tail
+        # Don't mark entire file invalid while writing, even though this is
+        # not valid syntax.
+        - match: '\n'
           pop: true
-        - include: escaped-byte
+        - match: '{{escaped_byte}}'
+          scope: constant.character.escape.rust
+          set: byte-tail
+        - match: ''
+          set: byte-tail
+
+  byte-tail:
+    - match: "'"
+      scope: string.quoted.single.rust punctuation.definition.string.end.rust
+      pop: true
+    - match: '\n'
+      pop: true
+    - match: '.'
+      scope: invalid.illegal.byte.rust
 
   byte-string:
     - match: '(b)(")'
@@ -942,7 +964,10 @@ contexts:
         - match: '"'
           scope: punctuation.definition.string.end.rust
           pop: true
-        - include: escaped-byte
+        - match: '{{escaped_byte}}'
+          scope: constant.character.escape.rust
+        - match: '\\.'
+          scope: invalid.illegal.character.escape.rust
 
   raw-byte-string:
     - match: (br)(#*)"
@@ -959,16 +984,36 @@ contexts:
   escaped-char:
     - match: '{{escaped_char}}'
       scope: constant.character.escape.rust
+    - match: '\\u{[^}]*}'
+      scope: invalid.illegal.character.escape.rust
+    - match: '\\.'
+      scope: invalid.illegal.character.escape.rust
 
   char:
-    - match: "'(?=([^'\\\\]|{{escaped_char}})')"
+    - match: "'"
       scope: punctuation.definition.string.begin.rust
       push:
         - meta_scope: string.quoted.single.rust
-        - match: \'
-          scope: punctuation.definition.string.end.rust
+        - match: "[^'\\\\\n\r\t]"
+          set: char-tail
+        # Don't mark entire file invalid while writing, even though this is
+        # not valid syntax.
+        - match: '\n'
           pop: true
-        - include: escaped-char
+        - match: '{{escaped_char}}'
+          scope: constant.character.escape.rust
+          set: char-tail
+        - match: ''
+          set: char-tail
+
+  char-tail:
+    - match: "'"
+      scope: string.quoted.single.rust punctuation.definition.string.end.rust
+      pop: true
+    - match: '\n'
+      pop: true
+    - match: '.'
+      scope: invalid.illegal.char.rust
 
   string:
     - match: '"'

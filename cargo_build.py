@@ -236,7 +236,11 @@ class CargoEventListener(sublime_plugin.EventListener):
     def on_query_context(self, view, key, operator, operand, match_all):
         # Used by the Escape-key keybinding to dismiss inline phantoms.
         if key == 'rust_has_messages':
-            has_messages = view.window().id() in messages.WINDOW_MESSAGES
+            try:
+                winfo = messages.WINDOW_MESSAGES[view.window().id()]
+                has_messages = not winfo['hidden']
+            except KeyError:
+                has_messages = False
             if operator == sublime.OP_EQUAL:
                 return operand == has_messages
             elif operator == sublime.OP_NOT_EQUAL:
@@ -287,7 +291,7 @@ class RustDismissMessagesCommand(sublime_plugin.WindowCommand):
     """Removes all inline messages."""
 
     def run(self):
-        messages.clear_messages(self.window)
+        messages.clear_messages(self.window, soft=True)
 
 
 class RustListMessagesCommand(sublime_plugin.WindowCommand):
@@ -500,6 +504,17 @@ class RustAcceptSuggestedReplacement(sublime_plugin.TextCommand):
         self.view.replace(edit, region, replacement)
 
 
+class RustScrollToRegion(sublime_plugin.TextCommand):
+
+    """Internal command used to scroll a view to a region."""
+
+    def run(self, edit, region):
+        r = sublime.Region(*region)
+        self.view.sel().clear()
+        self.view.sel().add(r)
+        self.view.show_at_center(r)
+
+
 def plugin_unloaded():
     messages.clear_all_messages()
     try:
@@ -518,3 +533,27 @@ def plugin_unloaded():
             del sys.modules[key]
         if package_name in sys.modules:
             del sys.modules[package_name]
+
+
+def plugin_loaded():
+    try:
+        from package_control import events
+    except ImportError:
+        return
+    package_name = __package__.split('.')[0]
+    if events.install(package_name):
+        # Update the syntax for any open views.
+        for window in sublime.windows():
+            for view in window.views():
+                fname = view.file_name()
+                if fname and fname.endswith('.rs'):
+                    view.settings().set('syntax',
+                        'Packages/%s/RustEnhanced.sublime-syntax' % (package_name,))
+
+        # Disable the built-in Rust package.
+        settings = sublime.load_settings('Preferences.sublime-settings')
+        ignored = settings.get('ignored_packages', [])
+        if 'Rust' not in ignored:
+            ignored.append('Rust')
+            settings.set('ignored_packages', ignored)
+            sublime.save_settings('Preferences.sublime-settings')

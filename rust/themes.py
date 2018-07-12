@@ -19,7 +19,7 @@ class Theme:
 
     """Base class for themes."""
 
-    def render(self, batch, for_popup=False):
+    def render(self, view, batch, for_popup=False):
         """Return a minihtml string of the content in the message batch."""
         raise NotImplementedError()
 
@@ -85,7 +85,7 @@ class ClearTheme(Theme):
         </div>
     """)
 
-    def render(self, batch, for_popup=False):
+    def render(self, view, batch, for_popup=False):
         if for_popup:
             extra_css = POPUP_CSS
         else:
@@ -95,7 +95,7 @@ class ClearTheme(Theme):
         msgs = []
         last_level = None
         for i, msg in enumerate(batch):
-            text = msg.escaped_text('')
+            text = msg.escaped_text(view, '')
             if not text:
                 continue
             if msg.minihtml_text:
@@ -231,7 +231,7 @@ class SolidTheme(Theme):
         <div class="rust-links"><a href="{url}" class="rust-button">{text} {path}</a></div>
     """)
 
-    def render(self, batch, for_popup=False):
+    def render(self, view, batch, for_popup=False):
 
         def icon(level):
             # minihtml does not support switching resolution for images based on DPI.
@@ -258,7 +258,7 @@ class SolidTheme(Theme):
                 child_icon = icon('none')
             else:
                 child_icon = icon(child.level)
-            minihtml_text = child.escaped_text('&nbsp;' + icon('none'))
+            minihtml_text = child.escaped_text(view, '&nbsp;' + icon('none'))
             if minihtml_text:
                 txt = self.CHILD_TMPL.format(level=child.level,
                                              icon=child_icon,
@@ -271,7 +271,7 @@ class SolidTheme(Theme):
                 links.append(
                     self.LINK_TMPL.format(
                         url=url, text='See Also:', path=path))
-            text = batch.primary_message.escaped_text('')
+            text = batch.primary_message.escaped_text(view, '')
             if not text and not children:
                 return None
             content = self.PRIMARY_MSG_TMPL.format(
@@ -304,7 +304,7 @@ class TestTheme(Theme):
     def __init__(self):
         self.path_messages = {}
 
-    def render(self, batch, for_popup=False):
+    def render(self, view, batch, for_popup=False):
         from .messages import Message
         messages = self.path_messages.setdefault(batch.first().path, [])
         for msg in batch:

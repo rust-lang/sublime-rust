@@ -40,6 +40,8 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
     name = 'Syntax Check'
     # The Sublime view that triggered the check.
     view = None
+    # The Sublime window that triggered the check.
+    window = None
     # Absolute path to the view that triggered the check.
     triggered_file_name = None
     # Directory where cargo will be run.
@@ -54,9 +56,11 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
     # The path to the top-level Cargo target filename (like main.rs or
     # lib.rs).
     current_target_src = None
+    done = False
 
     def __init__(self, view):
         self.view = view
+        self.window = view.window()
         super(RustSyntaxCheckThread, self).__init__(view.window())
 
     def run(self):
@@ -69,7 +73,7 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
             print('A Cargo.toml manifest is required.')
             return
 
-        self.view.set_status('rust-check', 'Rust syntax check running...')
+        self.update_status()
         self.this_view_found = False
         try:
             messages.clear_messages(self.window)
@@ -79,7 +83,19 @@ class RustSyntaxCheckThread(rust_thread.RustThread, rust_proc.ProcListener):
                 return
             messages.messages_finished(self.window)
         finally:
-            self.view.erase_status('rust-check')
+            self.done = True
+            self.window.status_message('')
+
+    def update_status(self, count=0):
+        if self.done:
+            return
+        num = count % 4
+        if num == 3:
+            num = 1
+        num += 1
+        msg = 'Rust check running' + '.' * num
+        self.window.status_message(msg)
+        sublime.set_timeout(lambda: self.update_status(count + 1), 200)
 
     def get_rustc_messages(self):
         """Top-level entry point for generating messages for the given
