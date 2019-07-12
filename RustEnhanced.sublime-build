@@ -48,6 +48,13 @@
             "command": "doc",
         },
         {
+            "name": "Document (with args)...",
+            "command": "doc",
+            "command_info": {
+                "wants_run_args": true
+            }
+        },
+        {
             "name": "Clippy",
             "command": "clippy",
         },
