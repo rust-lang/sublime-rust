@@ -28,6 +28,8 @@ fn main() {
     1_usize.method();
 //          ^^^^^^ERR multiple applicable items
 //          ^^^^^^ERR multiple `method` found
+//          ^^^^^^HELP(>=1.38.0-beta) to disambiguate
+//          ^^^^^^HELP(>=1.38.0-beta) to disambiguate
 //          ^^^^^^MSG See Also: ↑:13
 //          ^^^^^^MSG See Also: ↑:18
 }
