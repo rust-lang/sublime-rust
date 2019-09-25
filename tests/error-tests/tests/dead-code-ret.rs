@@ -12,12 +12,17 @@
 
 #![deny(unreachable_code)]
 //      ^^^^^^^^^^^^^^^^NOTE lint level defined here
+//      ^^^^^^^^^^^^^^^^MSG See Primary: ↓:20
 
 fn main() {
     return;
+//  ^^^^^^ERR(>=1.39.0-beta) any code following
     println!("Paul is dead");
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^ERR unreachable statement
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^ERR this error originates in a macro outside of the current crate
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^ERR(>=1.39.0-beta) unreachable statement
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^MSG See Also: ↑:13
+
 }
 
 // This is a test of macro expansion, should print error on println!

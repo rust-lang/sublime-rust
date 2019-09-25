@@ -14,4 +14,8 @@ fn main() {
     let Some(y) = x;
 //      ^^^^^^^ERR pattern `None` not covered
 //      ^^^^^^^ERR refutable pattern in local binding
+//      ^^^^^^^MSG(>=1.39.0-beta) See Also: ↑:1
 }
+// Bug: https://github.com/rust-lang/rust/issues/64769
+// start-msg: ERR(>=1.39.0-beta) not covered
+// start-msg: MSG(>=1.39.0-beta) See Primary: ↓:14
