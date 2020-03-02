@@ -513,6 +513,7 @@ contexts:
       scope: meta.path.rust
     - match: '::(?={{identifier}})'
       scope: meta.path.rust
+    - include: basic-identifiers
     - match: '(?=<)'
       push: generic-angles
     - match: '\('
