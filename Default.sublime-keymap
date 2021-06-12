@@ -3,6 +3,14 @@
     { "keys": ["'"], "command": "insert_snippet", "args": {"contents": "'"}, "context":
         [{ "key": "selector", "operator": "equal", "operand": "source.rust" }]
     },
+    // auto-pair single quotes on selections.
+    { "keys": ["'"], "command": "insert_snippet", "args": {"contents": "'${0:$SELECTION}'"}, "context":
+        [
+            { "key": "selector", "operator": "equal", "operand": "source.rust" },
+            { "key": "setting.auto_match_enabled", "operator": "equal", "operand": true },
+            { "key": "selection_empty", "operator": "equal", "operand": false, "match_all": true }
+        ]
+    },
     // ' in b'c' will skip past the end quote.
     { "keys": ["'"], "command": "move", "args": {"by": "characters", "forward": true}, "context":
         [
