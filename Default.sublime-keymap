@@ -10,7 +10,7 @@
             { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
             { "key": "following_text", "operator": "regex_contains", "operand": "^'", "match_all": true },
             { "key": "selector", "operator": "equal", "operand": "source.rust - punctuation.definition.string.begin" },
-            { "key": "eol_selector", "operator": "not_equal", "operand": "string.quoted.single - punctuation.definition.string.end", "match_all": true },
+            { "key": "eol_selector", "operator": "not_equal", "operand": "string.quoted.single - punctuation.definition.string.end", "match_all": true }
         ]
     },
     // b' will expand to b''
@@ -22,7 +22,6 @@
             { "key": "preceding_text", "operator": "regex_contains", "operand": "b$", "match_all": true },
             { "key": "selector", "operator": "equal", "operand": "source.rust" },
             { "key": "eol_selector", "operator": "not_equal", "operand": "string.quoted.single - punctuation.definition.string.end", "match_all": true }
-
         ]
     },
     // r" will expand to r""
@@ -56,7 +55,42 @@
             { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
             { "key": "following_text", "operator": "regex_contains", "operand": "^#", "match_all": true },
             { "key": "selector", "operator": "equal", "operand": "source.rust string.quoted.double.raw punctuation.definition.string.end" },
-            { "key": "eol_selector", "operator": "not_equal", "operand": "string.quoted.double.raw - punctuation.definition.string.end", "match_all": true },
+            { "key": "eol_selector", "operator": "not_equal", "operand": "string.quoted.double.raw - punctuation.definition.string.end", "match_all": true }
         ]
     },
+
+    // Auto-pair angle brackets
+    { "keys": ["<"], "command": "insert_snippet", "args": {"contents": "<$0>"}, "context":
+        [
+            { "key": "selector", "operator": "equal", "operand": "source.rust" },
+            { "key": "setting.auto_match_enabled", "operator": "equal", "operand": true },
+            { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
+            { "key": "preceding_text", "operator": "regex_contains", "operand": "[a-zA-Z0-9]$", "match_all": true },
+            { "key": "following_text", "operator": "regex_contains", "operand": "^(?:\t| |\\)|]|;|\\}|$)", "match_all": true }
+        ]
+    },
+    { "keys": ["<"], "command": "insert_snippet", "args": {"contents": "<${0:$SELECTION}>"}, "context":
+        [
+            { "key": "selector", "operator": "equal", "operand": "source.rust" },
+            { "key": "setting.auto_match_enabled", "operator": "equal", "operand": true },
+            { "key": "selection_empty", "operator": "equal", "operand": false, "match_all": true }
+        ]
+    },
+    { "keys": [">"], "command": "move", "args": {"by": "characters", "forward": true}, "context":
+        [
+            { "key": "selector", "operator": "equal", "operand": "source.rust" },
+            { "key": "setting.auto_match_enabled", "operator": "equal", "operand": true },
+            { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
+            { "key": "following_text", "operator": "regex_contains", "operand": "^>", "match_all": true }
+        ]
+    },
+    { "keys": ["backspace"], "command": "run_macro_file", "args": {"file": "res://Packages/Default/Delete Left Right.sublime-macro"}, "context":
+        [
+            { "key": "selector", "operator": "equal", "operand": "source.rust" },
+            { "key": "setting.auto_match_enabled", "operator": "equal", "operand": true },
+            { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
+            { "key": "preceding_text", "operator": "regex_contains", "operand": "<$", "match_all": true },
+            { "key": "following_text", "operator": "regex_contains", "operand": "^>", "match_all": true }
+        ]
+    }
 ]
